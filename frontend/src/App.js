@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ExerciseSelectionPage from './pages/ExerciseSelectionPage';
+import SquatPage from './pages/SquatPage';   // ADD THIS
 
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
@@ -18,6 +19,9 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/exercises" element={
           <PrivateRoute><ExerciseSelectionPage /></PrivateRoute>
+        } />
+        <Route path="/exercises/squat" element={
+          <PrivateRoute><SquatPage /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>
