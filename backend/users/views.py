@@ -7,19 +7,21 @@ from .models import CustomUser
 @api_view(['POST'])
 def register(request):
     data = request.data
+    username = data.get('username', '').strip().lower()
     first_name = data.get('first_name')
     last_name = data.get('last_name')
     password = data.get('password')
     confirm_password = data.get('confirm_password')
     age = data.get('age')
 
+    if not username:
+        return Response({'error': 'Username is required'}, status=400)
+
     if password != confirm_password:
         return Response({'error': 'Passwords do not match'}, status=400)
 
-    username = f"{first_name.lower()}{last_name.lower()}"
-
     if CustomUser.objects.filter(username=username).exists():
-        return Response({'error': 'User already exists'}, status=400)
+        return Response({'error': 'Username already exists'}, status=400)
 
     user = CustomUser.objects.create_user(
         username=username,
@@ -34,11 +36,9 @@ def register(request):
 @api_view(['POST'])
 def login_view(request):
     data = request.data
-    first_name = data.get('first_name', '').lower()
-    last_name = data.get('last_name', '').lower()
+    username = data.get('username', '').strip().lower()
     password = data.get('password')
 
-    username = f"{first_name}{last_name}"
     user = authenticate(request, username=username, password=password)
 
     if user:
@@ -46,6 +46,7 @@ def login_view(request):
         return Response({
             'message': 'Login successful',
             'user': {
+                'username': user.username,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'age': user.age,

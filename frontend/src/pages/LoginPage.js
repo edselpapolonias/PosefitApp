@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({ first_name: '', last_name: '', password: '' });
+    const [form, setForm] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
@@ -30,8 +30,7 @@ export default function LoginPage() {
                 <h2 style={styles.title}>Welcome back</h2>
                 {error && <p style={styles.error}>{error}</p>}
                 <form onSubmit={handleSubmit}>
-                    <input style={styles.input} name="first_name" placeholder="First Name" onChange={handleChange} required />
-                    <input style={styles.input} name="last_name" placeholder="Last Name" onChange={handleChange} required />
+                    <input style={styles.input} name="username" placeholder="Username" onChange={handleChange} required />
                     <input style={styles.input} name="password" type="password" placeholder="Password" onChange={handleChange} required />
                     <button style={styles.button} type="submit">Log In</button>
                 </form>

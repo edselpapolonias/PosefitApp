@@ -5,7 +5,7 @@ import axios from 'axios';
 export default function RegisterPage() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        first_name: '', last_name: '', password: '', confirm_password: '', age: ''
+        username: '', first_name: '', last_name: '', password: '', confirm_password: '', age: ''
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -34,6 +34,7 @@ export default function RegisterPage() {
                 {error && <p style={styles.error}>{error}</p>}
                 {success && <p style={styles.success}>{success}</p>}
                 <form onSubmit={handleSubmit}>
+                    <input style={styles.input} name="username" placeholder="Username" onChange={handleChange} required />
                     <input style={styles.input} name="first_name" placeholder="First Name" onChange={handleChange} required />
                     <input style={styles.input} name="last_name" placeholder="Last Name" onChange={handleChange} required />
                     <input style={styles.input} name="age" type="number" placeholder="Age" onChange={handleChange} required />
