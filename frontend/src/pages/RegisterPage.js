@@ -18,7 +18,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setError('');
         try {
-            await axios.post('http://localhost:8000/api/users/register/', form);
+            await axios.post('http://127.0.0.1:8000/api/users/register/', form);
             setSuccess('Account created! Redirecting to login...');
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {

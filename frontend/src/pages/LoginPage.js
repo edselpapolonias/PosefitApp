@@ -15,7 +15,7 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
         try {
-            const res = await axios.post('http://localhost:8000/api/users/login/', form, { withCredentials: true });
+            const res = await axios.post('http://127.0.0.1:8000/api/users/login/', form, { withCredentials: true });
             localStorage.setItem('user', JSON.stringify(res.data.user));
             navigate('/exercises');
         } catch (err) {
