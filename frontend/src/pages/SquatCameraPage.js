@@ -12,6 +12,64 @@ import { Bar, Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
+// ─── Voice Feedback (Web Speech API) ──────────────────────────────────────────
+// Throttled TTS: speaks at most once every VOICE_COOLDOWN_MS milliseconds.
+const VOICE_COOLDOWN_MS = 3000;
+let lastSpeakTime = 0;
+
+function speak(text, force = false) {
+    if (!('speechSynthesis' in window)) return;
+    const now = Date.now();
+    if (!force && now - lastSpeakTime < VOICE_COOLDOWN_MS) return;
+    // Cancel any queued utterances to keep feedback current
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    utterance.lang = 'en-US';
+    window.speechSynthesis.speak(utterance);
+    lastSpeakTime = now;
+}
+
+// ─── Body Readiness Check ─────────────────────────────────────────────────────
+// Checks if the 6 key squat landmarks (hips, knees, ankles) are visible.
+// Returns: 'no_person' | 'too_close' | 'ready'
+const REQUIRED_LANDMARK_IDS = [23, 24, 25, 26, 27, 28]; // hips, knees, ankles
+const VISIBILITY_THRESHOLD = 0.5;
+
+function checkBodyReadiness(poseLandmarks) {
+    if (!poseLandmarks || poseLandmarks.length < 33) return 'no_person';
+
+    // Check if ALL 6 required landmarks have good visibility
+    const allVisible = REQUIRED_LANDMARK_IDS.every(
+        (id) => (poseLandmarks[id]?.visibility ?? 0) >= VISIBILITY_THRESHOLD
+    );
+
+    if (!allVisible) return 'too_close';
+    return 'ready';
+}
+
+// Maps squat analysis → short voice cue
+function getVoiceCue(analysis) {
+    if (!analysis) return null;
+    const { overallClass, avgAngle, phase } = analysis;
+
+    if (phase === 'standing') return null; // Don't coach while standing
+
+    if (overallClass === 'good') {
+        return 'Good squat! Hold it.';
+    }
+    if (overallClass === 'adjust') {
+        return avgAngle < 80 ? 'Slightly too deep. Rise up a bit.' : 'Almost there. Go a little lower.';
+    }
+    // bad
+    if (avgAngle < 60) {
+        return 'Too deep! Rise up to protect your knees.';
+    }
+    return 'Go lower. Bend your knees more.';
+}
+
 // ─── Angle Calculator (same arctan2 formula as Kumaresan et al. 2026) ────────
 // Computes angle at point B formed by vectors B→A and B→C
 function calculateAngle(A, B, C) {
@@ -172,6 +230,8 @@ export default function SquatCameraPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [showSummary, setShowSummary] = useState(false);
     const [repCount, setRepCount] = useState(0);
+    const [voiceMuted, setVoiceMuted] = useState(false);
+    const voiceMutedRef = useRef(false);
     const [sqClassification, setSqClassification] = useState('bad');
     const [feedback, setFeedback] = useState('');
     const [feedbackDetail, setFeedbackDetail] = useState('');
@@ -180,6 +240,9 @@ export default function SquatCameraPage() {
     const [rightAngle, setRightAngle] = useState(0);
     const [sessionTime, setSessionTime] = useState(0);
     const [cameraError, setCameraError] = useState('');
+    const [bodyReadiness, setBodyReadiness] = useState('no_person'); // 'no_person' | 'too_close' | 'ready'
+    const bodyReadinessRef = useRef('no_person');
+    const wasReadyAnnouncedRef = useRef(false);
 
     const repCountRef = useRef(0);
     const phaseRef = useRef('standing');
@@ -250,6 +313,10 @@ export default function SquatCameraPage() {
                 repCountRef.current += 1;
                 setRepCount(repCountRef.current);
                 repAnglesRef.current.push(Math.round(deepestAngleRef.current));
+                // Voice: announce rep counted
+                if (!voiceMutedRef.current) {
+                    speak(`Rep ${repCountRef.current} counted. Good job!`, true);
+                }
             } else {
                 // ✕ INCORRECT REP — store with reasons
                 const reasons = determineIncorrectReason(
@@ -314,9 +381,48 @@ export default function SquatCameraPage() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-        if (!results.poseLandmarks) return;
+        // ── Body Readiness Detection ──────────────────────────────────────────
+        const readiness = checkBodyReadiness(results.poseLandmarks);
+        bodyReadinessRef.current = readiness;
+        setBodyReadiness(readiness);
+
+        if (readiness === 'no_person') {
+            if (!voiceMutedRef.current) {
+                speak('No person detected. Please step into the frame.');
+            }
+            return;
+        }
+
+        if (readiness === 'too_close') {
+            if (!voiceMutedRef.current) {
+                speak('Please step back so your full body is visible.');
+            }
+            wasReadyAnnouncedRef.current = false;
+            // Still draw whatever landmarks are visible, but don't analyze squat
+            if (results.poseLandmarks) {
+                drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
+                    color: '#64748b', lineWidth: 2,
+                });
+                drawLandmarks(ctx, results.poseLandmarks, {
+                    color: '#64748b', lineWidth: 1, radius: 3,
+                });
+            }
+            return;
+        }
+
+        // readiness === 'ready'
+        if (!wasReadyAnnouncedRef.current && !voiceMutedRef.current) {
+            speak("You're in position! You can start squatting now.", true);
+            wasReadyAnnouncedRef.current = true;
+        }
 
         const analysis = analyzeSquatBilateral(results.poseLandmarks);
+
+        // ── Voice Feedback ────────────────────────────────────────────────────
+        if (analysis && !voiceMutedRef.current) {
+            const cue = getVoiceCue(analysis);
+            if (cue) speak(cue);
+        }
         if (!analysis) return;
 
         const skelColor = CLASS_COLORS[analysis.overallClass].skeleton;
@@ -406,6 +512,10 @@ export default function SquatCameraPage() {
             poseRef.current = null;
         }
         clearInterval(timerRef.current);
+        window.speechSynthesis.cancel();
+        setBodyReadiness('no_person');
+        bodyReadinessRef.current = 'no_person';
+        wasReadyAnnouncedRef.current = false;
         setIsStarted(false);
         setShowSummary(true);
     }, []);
@@ -623,6 +733,9 @@ export default function SquatCameraPage() {
                             hadAttemptRef.current = false;
                             formIssuesRef.current = {};
                             phaseRef.current = 'standing';
+                            setBodyReadiness('no_person');
+                            bodyReadinessRef.current = 'no_person';
+                            wasReadyAnnouncedRef.current = false;
                             setRepCount(0);
                             setSessionTime(0);
                             setShowSummary(false);
@@ -647,7 +760,30 @@ export default function SquatCameraPage() {
             <div style={styles.header}>
                 <button style={styles.backBtn} onClick={() => navigate('/exercises/squat')}>← Back</button>
                 <h1 style={styles.logo}>PoseFit</h1>
-                <div style={styles.timerBadge}>{formatTime(sessionTime)}</div>
+                <div style={styles.headerRight}>
+                    {isStarted && (
+                        <button
+                            style={{
+                                ...styles.voiceToggleBtn,
+                                background: voiceMuted ? '#334155' : '#1e293b',
+                                borderColor: voiceMuted ? '#64748b' : '#38bdf8',
+                                color: voiceMuted ? '#64748b' : '#38bdf8',
+                            }}
+                            onClick={() => {
+                                setVoiceMuted(prev => {
+                                    const next = !prev;
+                                    voiceMutedRef.current = next;
+                                    if (next) window.speechSynthesis.cancel();
+                                    return next;
+                                });
+                            }}
+                            title={voiceMuted ? 'Unmute voice coaching' : 'Mute voice coaching'}
+                        >
+                            {voiceMuted ? '🔇' : '🔊'} Voice
+                        </button>
+                    )}
+                    <div style={styles.timerBadge}>{formatTime(sessionTime)}</div>
+                </div>
             </div>
 
             <div style={styles.cameraWrapper}>
@@ -675,8 +811,25 @@ export default function SquatCameraPage() {
                     <video ref={videoRef} style={styles.video} playsInline muted />
                     <canvas ref={canvasRef} style={styles.canvas} />
 
-                    {/* Feedback badge — shows classification label in its color */}
-                    {isStarted && (
+                    {/* Readiness / Feedback badge */}
+                    {isStarted && bodyReadiness !== 'ready' && (
+                        <div style={{
+                            ...styles.readinessBanner,
+                            background: bodyReadiness === 'no_person'
+                                ? 'rgba(239,68,68,0.92)'
+                                : 'rgba(245,158,11,0.92)',
+                        }}>
+                            <span style={styles.readinessIcon}>
+                                {bodyReadiness === 'no_person' ? '👤' : '↔️'}
+                            </span>
+                            <span>
+                                {bodyReadiness === 'no_person'
+                                    ? 'No person detected — step into the frame'
+                                    : 'Step back — your full body needs to be visible'}
+                            </span>
+                        </div>
+                    )}
+                    {isStarted && bodyReadiness === 'ready' && (
                         <div style={{
                             ...styles.feedbackBadge,
                             background: currentColor.badge,
@@ -817,7 +970,9 @@ const styles = {
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', borderBottom: '1px solid #1e293b', background: '#0f172a' },
     logo: { color: '#38bdf8', margin: 0, fontSize: '1.4rem' },
     backBtn: { background: 'transparent', border: '1px solid #334155', color: '#94a3b8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+    headerRight: { display: 'flex', alignItems: 'center', gap: '10px' },
     timerBadge: { background: '#1e293b', border: '1px solid #334155', color: '#38bdf8', padding: '6px 18px', borderRadius: '999px', fontWeight: 700, fontSize: '16px' },
+    voiceToggleBtn: { background: '#1e293b', border: '1px solid #38bdf8', color: '#38bdf8', padding: '6px 14px', borderRadius: '999px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s ease', whiteSpace: 'nowrap' },
 
     cameraWrapper: { display: 'flex', flex: 1, gap: '20px', padding: '20px 24px', alignItems: 'flex-start' },
 
@@ -834,6 +989,8 @@ const styles = {
     canvas: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
 
     feedbackBadge: { position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', color: '#fff', padding: '8px 20px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' },
+    readinessBanner: { position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', color: '#fff', padding: '10px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', zIndex: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' },
+    readinessIcon: { fontSize: '1.3rem' },
 
     preStartOverlay: { position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.93)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 },
     loadingBox: { textAlign: 'center' },
