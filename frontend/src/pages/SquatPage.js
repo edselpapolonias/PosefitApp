@@ -1,198 +1,486 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
-const benefits = [
-    { icon: '💪', title: 'Builds Muscle', desc: 'Targets quads, hamstrings, glutes, and calves for full lower body strength.' },
-    { icon: '🔥', title: 'Burns Calories', desc: 'Burns 150–200 kcal per session, boosting your metabolism.' },
-    { icon: '🦵', title: 'Improves Mobility', desc: 'Increases flexibility in hips, knees, and ankles over time.' },
-    { icon: '🧍', title: 'Better Posture', desc: 'Strengthens your core and back, improving overall posture.' },
-];
-
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const steps = [
-    { num: '01', title: 'Starting Position', desc: 'Stand with feet shoulder-width apart, toes slightly pointed outward.' },
-    { num: '02', title: 'Lower Down', desc: 'Bend your knees and push your hips back as if sitting into a chair. Keep your chest up.' },
-    { num: '03', title: 'Reach Depth', desc: 'Lower until your thighs are parallel to the floor. Keep knees aligned with toes.' },
-    { num: '04', title: 'Drive Up', desc: 'Push through your heels to return to the starting position. Squeeze your glutes at the top.' },
+    { num: 1, text: 'Stand with feet shoulder-width apart, toes slightly turned out.' },
+    { num: 2, text: 'Brace your core and keep your chest tall as you begin to lower.' },
+    { num: 3, text: 'Push knees out in line with your toes as you descend.' },
+    { num: 4, text: 'Lower until thighs are at least parallel to the floor.' },
+    { num: 5, text: 'Drive through your heels to return to standing.' },
 ];
+
+const tips = [
+    'Keep your weight in your heels',
+    "Don't let knees cave inward",
+    'Look straight ahead throughout',
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Options ──────────────────────────────────────────────────────────────────
+const setsOptions = [2, 3, 4, 5, 6];
+const repsOptions = [8, 10, 12, 15, 18];
+const restOptions = [10, 20, 30, 60];
 
 export default function SquatPage() {
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem('user'));
+    const initials = user
+        ? `${(user.first_name || '')[0] || ''}${(user.last_name || '')[0] || ''}`.toUpperCase()
+        : 'U';
+
+    const [sets, setSets] = useState(3);
+    const [reps, setReps] = useState(12);
+    const [rest, setRest] = useState(60);
 
     return (
-        <div style={styles.container}>
+        <div style={s.page}>
 
-            {/* Header */}
-            <div style={styles.header}>
-                <button style={styles.backBtn} onClick={() => navigate('/exercises')}>
-                    ← Back
-                </button>
-
-                <h1 style={styles.logo}>PoseFit</h1>
-
-                <div style={{ width: '80px' }} />
-            </div>
-
-            {/* Hero Section */}
-            <div style={styles.hero}>
-                <div style={styles.heroLeft}>
-                    <span style={styles.categoryTag}>🏋️ Legs · Beginner</span>
-
-                    <h1 style={styles.heroTitle}>Squat</h1>
-
-                    <p style={styles.heroDesc}>
-                        The squat is one of the most fundamental movements in fitness. It trains nearly every muscle in your lower body, builds functional strength, and improves balance and coordination.
-                    </p>
-
-                    <div style={styles.statsRow}>
-                        <div style={styles.statBox}>
-                            <span style={styles.statValue}>15</span>
-                            <span style={styles.statLabel}>Reps</span>
-                        </div>
-
-                        <div style={styles.statBox}>
-                            <span style={styles.statValue}>3</span>
-                            <span style={styles.statLabel}>Sets</span>
-                        </div>
-
-                        <div style={styles.statBox}>
-                            <span style={styles.statValue}>~200</span>
-                            <span style={styles.statLabel}>Calories</span>
-                        </div>
-
-                        <div style={styles.statBox}>
-                            <span style={styles.statValue}>10min</span>
-                            <span style={styles.statLabel}>Duration</span>
-                        </div>
-                    </div>
-
-                    {/* ✅ START BUTTON 1 */}
+            {/* ─── Top Nav / Breadcrumb ─────────────────────────────── */}
+            <motion.nav
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                style={s.nav}
+            >
+                <div style={s.breadcrumb}>
                     <button
-                        style={styles.startBtn}
-                        onClick={() => navigate('/exercises/squat/start')}
+                        id="back-to-exercises"
+                        onClick={() => navigate('/exercises')}
+                        style={s.breadcrumbLink}
+                        onMouseEnter={e => e.currentTarget.style.color = '#F15025'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#888'}
                     >
-                        Start Now 🚀
+                        ← Exercises
                     </button>
+                    <span style={s.breadcrumbSep}>/</span>
+                    <span style={s.breadcrumbCurrent}>Squat</span>
                 </div>
 
-                <div style={styles.heroRight}>
-                    <div style={styles.poseCard}>
-                        <div style={styles.poseEmoji}>🏋️</div>
-                        <p style={styles.poseLabel}>Squat Position</p>
+                <div id="user-avatar" style={s.avatar}>{initials}</div>
+            </motion.nav>
+
+            {/* ─── Main Content ─────────────────────────────────────── */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1 }}
+                style={s.main}
+            >
+                <div style={s.grid}>
+
+                    {/* ═══════════ LEFT COLUMN ═══════════ */}
+                    <div style={s.leftCol}>
+
+                        {/* Illustration / Pose Guide Card */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.4, delay: 0.15 }}
+                            style={s.illustrationCard}
+                        >
+                            <span style={{ fontSize: '4rem' }}>🏋️</span>
+                            <p style={s.illustrationLabel}>Illustration / pose guide</p>
+                        </motion.div>
+
+                        {/* Title & Description */}
+                        <h1 style={s.title}>Squat</h1>
+                        <p style={s.description}>
+                            A compound lower-body movement targeting glutes, quads, and hamstrings
+                            while engaging your core for stability. Great for building strength and overall
+                            mobility.
+                        </p>
+
+                        {/* How to Perform */}
+                        <h2 style={s.sectionLabel}>HOW TO PERFORM</h2>
+
+                        <div style={s.stepsList}>
+                            {steps.map((step, i) => (
+                                <motion.div
+                                    key={step.num}
+                                    initial={{ opacity: 0, x: -16 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.35, delay: 0.2 + i * 0.07 }}
+                                    style={s.stepRow}
+                                >
+                                    <div style={s.stepCircle}>{step.num}</div>
+                                    <p style={s.stepText}>{step.text}</p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ═══════════ RIGHT COLUMN ═══════════ */}
+                    <div style={s.rightCol}>
+
+                        {/* Stat Card — Sets */}
+                        <motion.div
+                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
+                            style={s.statCard}
+                        >
+                            <p style={s.statLabel}>Sets</p>
+                            <div style={s.optionsRow}>
+                                {setsOptions.map(val => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setSets(val)}
+                                        style={sets === val ? s.optionActive : s.optionInactive}
+                                        onMouseEnter={e => { if (sets !== val) e.currentTarget.style.borderColor = '#F15025'; }}
+                                        onMouseLeave={e => { if (sets !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
+                                    >
+                                        {val}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Stat Card — Reps per set */}
+                        <motion.div
+                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
+                            style={s.statCard}
+                        >
+                            <p style={s.statLabel}>Reps per set</p>
+                            <div style={s.optionsRow}>
+                                {repsOptions.map(val => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setReps(val)}
+                                        style={reps === val ? s.optionActive : s.optionInactive}
+                                        onMouseEnter={e => { if (reps !== val) e.currentTarget.style.borderColor = '#F15025'; }}
+                                        onMouseLeave={e => { if (reps !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
+                                    >
+                                        {val}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Stat Card — Rest between sets */}
+                        <motion.div
+                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
+                            style={s.statCard}
+                        >
+                            <p style={s.statLabel}>Rest between sets</p>
+                            <div style={s.optionsRow}>
+                                {restOptions.map(val => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setRest(val)}
+                                        style={rest === val ? s.optionActive : s.optionInactive}
+                                        onMouseEnter={e => { if (rest !== val) e.currentTarget.style.borderColor = '#F15025'; }}
+                                        onMouseLeave={e => { if (rest !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
+                                    >
+                                        {val}s
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Tips Card */}
+                        <div style={s.tipsCard}>
+                            <div style={s.tipsHeader}>
+                                <span style={{ fontSize: '1rem' }}>✨</span>
+                                <span style={s.tipsTitle}>Tips</span>
+                            </div>
+                            {tips.map((tip, i) => (
+                                <div key={i} style={s.tipRow}>
+                                    <span style={s.tipCheck}>✓</span>
+                                    <span style={s.tipText}>{tip}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Start Now Button */}
+                        <motion.button
+                            id="start-now-btn"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => navigate(`/exercises/squat/start?sets=${sets}&reps=${reps}&rest=${rest}`)}
+                            style={s.startBtn}
+                            onMouseEnter={e => e.currentTarget.style.background = '#d9441c'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#F15025'}
+                        >
+                            Start Now ▶
+                        </motion.button>
                     </div>
                 </div>
-            </div>
-
-            {/* How to Perform */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>How to Perform</h2>
-
-                <div style={styles.stepsGrid}>
-                    {steps.map((step) => (
-                        <div key={step.num} style={styles.stepCard}>
-                            <div style={styles.stepNum}>{step.num}</div>
-                            <h3 style={styles.stepTitle}>{step.title}</h3>
-                            <p style={styles.stepDesc}>{step.desc}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Benefits */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>Benefits</h2>
-
-                <div style={styles.benefitsGrid}>
-                    {benefits.map((b, i) => (
-                        <div key={i} style={styles.benefitCard}>
-                            <span style={styles.benefitIcon}>{b.icon}</span>
-                            <div>
-                                <h4 style={styles.benefitTitle}>{b.title}</h4>
-                                <p style={styles.benefitDesc}>{b.desc}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Tips */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>Tips & Reminders</h2>
-
-                <div style={styles.tipsBox}>
-                    {[
-                        '✅ Keep your back straight throughout the movement.',
-                        '✅ Do not let your knees cave inward.',
-                        '✅ Breathe in as you go down, breathe out as you rise.',
-                        '✅ Start with bodyweight before adding resistance.',
-                        '⚠️ Stop if you feel any sharp pain in your knees or lower back.',
-                    ].map((tip, i) => (
-                        <p key={i} style={styles.tip}>{tip}</p>
-                    ))}
-                </div>
-            </div>
-
-            {/* Bottom CTA */}
-            <div style={styles.bottomCTA}>
-                <p style={styles.ctaText}>Ready to get moving?</p>
-
-                {/* ✅ START BUTTON 2 */}
-                <button
-                    style={styles.startBtn}
-                    onClick={() => navigate('/exercises/squat/start')}
-                >
-                    Start Now 🚀
-                </button>
-            </div>
-
+            </motion.div>
         </div>
     );
 }
 
-/* ================= STYLES ================= */
+/* ═══════════════════════ STYLES ═══════════════════════ */
 
-const styles = {
-    container: { minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: 'Segoe UI, sans-serif' },
+const s = {
+    // Page
+    page: {
+        minHeight: '100vh',
+        background: '#F7F7F7',
+        fontFamily: "'Poppins', 'Segoe UI', sans-serif",
+        color: '#222',
+    },
 
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, background: '#0f172a', zIndex: 10 },
-    logo: { color: '#38bdf8', margin: 0, fontSize: '1.4rem' },
-    backBtn: { background: 'transparent', border: '1px solid #334155', color: '#94a3b8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+    // Nav
+    nav: {
+        position: 'sticky',
+        top: 0,
+        zIndex: 20,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '14px 32px',
+        background: 'rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #E6E8E6',
+    },
+    breadcrumb: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '14px',
+    },
+    breadcrumbLink: {
+        background: 'none',
+        border: 'none',
+        color: '#888',
+        fontSize: '14px',
+        cursor: 'pointer',
+        fontWeight: 500,
+        fontFamily: 'inherit',
+        padding: 0,
+        transition: 'color 0.2s',
+    },
+    breadcrumbSep: { color: '#CED0CE', fontWeight: 400 },
+    breadcrumbCurrent: { fontWeight: 700, color: '#222' },
+    avatar: {
+        height: '36px',
+        width: '36px',
+        borderRadius: '50%',
+        background: '#F15025',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: 700,
+        boxShadow: '0 2px 8px rgba(241,80,37,0.25)',
+    },
 
-    hero: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '60px 40px', maxWidth: '1100px', margin: '0 auto', gap: '40px', flexWrap: 'wrap' },
-    heroLeft: { flex: 1, minWidth: '280px' },
-    categoryTag: { background: '#1e293b', color: '#38bdf8', padding: '5px 14px', borderRadius: '999px', fontSize: '13px', fontWeight: 600 },
-    heroTitle: { fontSize: '3.5rem', fontWeight: 800, color: '#f1f5f9', margin: '16px 0', lineHeight: 1.1 },
-    heroDesc: { color: '#94a3b8', fontSize: '15px', lineHeight: '1.8', marginBottom: '30px', maxWidth: '500px' },
+    // Main
+    main: {
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '32px 28px 48px',
+    },
+    grid: {
+        display: 'grid',
+        gridTemplateColumns: '1.6fr 1fr',
+        gap: '32px',
+        alignItems: 'start',
+    },
 
-    statsRow: { display: 'flex', gap: '16px', marginBottom: '36px', flexWrap: 'wrap' },
-    statBox: { background: '#1e293b', borderRadius: '12px', padding: '14px 20px', textAlign: 'center', border: '1px solid #334155' },
-    statValue: { display: 'block', fontSize: '1.5rem', fontWeight: 700, color: '#38bdf8' },
-    statLabel: { fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    // Left Column
+    leftCol: {},
 
-    startBtn: { padding: '15px 40px', background: '#38bdf8', color: '#0f172a', fontWeight: 800, fontSize: '16px', border: 'none', borderRadius: '12px', cursor: 'pointer' },
+    // Illustration Card
+    illustrationCard: {
+        borderRadius: '16px',
+        border: '2px dashed #CED0CE',
+        background: '#FFFFFF',
+        padding: '48px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '200px',
+        marginBottom: '24px',
+    },
+    illustrationLabel: {
+        color: '#999',
+        fontSize: '13px',
+        fontWeight: 500,
+        marginTop: '12px',
+        letterSpacing: '0.3px',
+    },
 
-    heroRight: { display: 'flex', justifyContent: 'center' },
-    poseCard: { background: '#1e293b', border: '1px solid #334155', borderRadius: '24px', width: '260px', height: '280px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' },
-    poseEmoji: { fontSize: '6rem', marginBottom: '16px' },
-    poseLabel: { color: '#64748b', fontSize: '13px' },
+    // Title & Description
+    title: {
+        fontSize: '2rem',
+        fontWeight: 800,
+        color: '#222',
+        margin: '0 0 10px',
+        lineHeight: 1.2,
+    },
+    description: {
+        color: '#666',
+        fontSize: '14px',
+        lineHeight: '1.7',
+        margin: '0 0 28px',
+        maxWidth: '480px',
+    },
 
-    section: { padding: '40px', maxWidth: '1100px', margin: '0 auto' },
-    sectionTitle: { fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '24px', borderLeft: '4px solid #38bdf8', paddingLeft: '14px' },
+    // How to Perform
+    sectionLabel: {
+        fontSize: '11px',
+        fontWeight: 700,
+        letterSpacing: '1.5px',
+        textTransform: 'uppercase',
+        color: '#999',
+        margin: '0 0 20px',
+    },
+    stepsList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+    },
+    stepRow: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '14px',
+    },
+    stepCircle: {
+        flexShrink: 0,
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        border: '2px solid #F15025',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: 700,
+        color: '#F15025',
+        background: 'transparent',
+    },
+    stepText: {
+        color: '#444',
+        fontSize: '14px',
+        lineHeight: '1.6',
+        margin: 0,
+        paddingTop: '4px',
+    },
 
-    stepsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' },
-    stepCard: { background: '#1e293b', borderRadius: '14px', padding: '24px', border: '1px solid #334155' },
-    stepNum: { fontSize: '2rem', fontWeight: 800, color: '#38bdf8', opacity: 0.5, marginBottom: '10px' },
-    stepTitle: { fontSize: '1rem', fontWeight: 700, color: '#f1f5f9', marginBottom: '8px' },
-    stepDesc: { color: '#94a3b8', fontSize: '13px', lineHeight: '1.7' },
 
-    benefitsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' },
-    benefitCard: { background: '#1e293b', borderRadius: '14px', padding: '20px', display: 'flex', gap: '16px', alignItems: 'flex-start', border: '1px solid #334155' },
-    benefitIcon: { fontSize: '1.8rem' },
-    benefitTitle: { fontSize: '14px', fontWeight: 700, color: '#f1f5f9', marginBottom: '4px' },
-    benefitDesc: { color: '#94a3b8', fontSize: '12px', lineHeight: '1.6' },
 
-    tipsBox: { background: '#1e293b', borderRadius: '14px', padding: '28px', border: '1px solid #334155' },
-    tip: { color: '#cbd5e1', fontSize: '14px', marginBottom: '12px', lineHeight: '1.7' },
+    // Right Column
+    rightCol: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        position: 'sticky',
+        top: '80px',
+    },
 
-    bottomCTA: { textAlign: 'center', padding: '60px 40px' },
-    ctaText: { color: '#64748b', fontSize: '15px', marginBottom: '16px' },
+    // Stat Cards
+    statCard: {
+        borderRadius: '16px',
+        background: '#FFFFFF',
+        border: '1px solid #E6E8E6',
+        padding: '18px 22px',
+        cursor: 'default',
+        transition: 'box-shadow 0.2s',
+    },
+    statLabel: {
+        fontSize: '12px',
+        fontWeight: 600,
+        color: '#999',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        margin: '0 0 4px',
+        textAlign: 'center',
+    },
+    statValue: {
+        fontSize: '1.8rem',
+        fontWeight: 800,
+        color: '#F15025',
+        margin: 0,
+        lineHeight: 1.2,
+    },
+
+    // Option pills
+    optionsRow: {
+        display: 'flex',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
+        marginTop: '8px',
+    },
+    optionActive: {
+        padding: '8px 20px',
+        borderRadius: '999px',
+        border: '2px solid #F15025',
+        background: '#F15025',
+        color: '#fff',
+        fontSize: '15px',
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'all 0.2s',
+    },
+    optionInactive: {
+        padding: '8px 20px',
+        borderRadius: '999px',
+        border: '2px solid #E6E8E6',
+        background: '#fff',
+        color: '#444',
+        fontSize: '15px',
+        fontWeight: 600,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'all 0.2s',
+    },
+
+    // Tips Card
+    tipsCard: {
+        borderRadius: '16px',
+        background: '#FFF5F2',
+        border: '1px solid rgba(241,80,37,0.15)',
+        padding: '20px 22px',
+    },
+    tipsHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '14px',
+    },
+    tipsTitle: {
+        fontSize: '14px',
+        fontWeight: 700,
+        color: '#222',
+    },
+    tipRow: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px',
+        marginBottom: '8px',
+    },
+    tipCheck: {
+        color: '#22c55e',
+        fontWeight: 700,
+        fontSize: '15px',
+        lineHeight: '1.4',
+    },
+    tipText: {
+        fontSize: '13px',
+        color: '#444',
+        lineHeight: '1.5',
+    },
+
+    // Start Now Button
+    startBtn: {
+        width: '100%',
+        padding: '16px 24px',
+        borderRadius: '999px',
+        background: '#F15025',
+        color: '#FFFFFF',
+        fontSize: '15px',
+        fontWeight: 700,
+        border: 'none',
+        cursor: 'pointer',
+        boxShadow: '0 4px 16px rgba(241,80,37,0.25)',
+        fontFamily: 'inherit',
+        letterSpacing: '0.3px',
+        transition: 'background 0.2s',
+    },
 };

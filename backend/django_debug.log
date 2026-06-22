@@ -27,3 +27,26 @@
 [2026-06-21T21:42:47.009822] Login attempt: username=edsel
 [2026-06-21T21:42:47.762563] Authentication result for edsel: SUCCESS
 [2026-06-21T21:42:47.790625] Login session started for edsel
+[2026-06-21T21:55:07.320991] Login attempt: username=edsel
+[2026-06-21T21:55:08.508033] Authentication result for edsel: SUCCESS
+[2026-06-21T21:55:08.560696] Login session started for edsel
+[2026-06-22T14:36:51.597346] Login attempt: username=edsel
+[2026-06-22T14:36:54.161988] Authentication result for edsel: SUCCESS
+[2026-06-22T14:36:54.243026] Login session started for edsel
+[2026-06-22T15:28:08.762994] Login attempt: username=edsel
+[2026-06-22T15:28:10.337330] Authentication result for edsel: SUCCESS
+[2026-06-22T15:28:10.393197] Login session started for edsel
+[2026-06-22T15:40:38.483811] Login attempt: username=edsel
+[2026-06-22T15:40:39.997670] Authentication result for edsel: SUCCESS
+[2026-06-22T15:40:40.044917] Login session started for edsel
+[2026-06-22T16:06:38.942114] Login attempt: username=test
+[2026-06-22T16:06:40.447886] Authentication result for test: FAILED
+[2026-06-22T16:10:02.199322] Register attempt: username=testuser, first_name=Test, last_name=User, age=25
+[2026-06-22T16:10:03.119922] Register success: Created user testuser
+[2026-06-22T16:10:55.910999] Login attempt: username=testtestuser
+[2026-06-22T16:10:56.728024] Authentication result for testtestuser: FAILED
+[2026-06-22T16:20:35.728096] Login attempt: username=testuser
+[2026-06-22T16:20:36.540514] Authentication result for testuser: FAILED
+[2026-06-22T16:20:49.077249] Login attempt: username=edsel
+[2026-06-22T16:20:49.914706] Authentication result for edsel: SUCCESS
+[2026-06-22T16:20:49.942650] Login session started for edsel
