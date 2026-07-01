@@ -230,6 +230,9 @@ function determineIncorrectReason(deepestAngle, formIssues) {
 export default function SquatCameraPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const [viewportWidth, setViewportWidth] = useState(() =>
+        (typeof window !== 'undefined' ? window.innerWidth : 1280)
+    );
 
     // ── Workout Settings (from SquatPage URL params) ──────────────────────────
     const totalSets = parseInt(searchParams.get('sets')) || 3;
@@ -271,13 +274,13 @@ export default function SquatCameraPage() {
     // Guard: prevents onResults firing after session ends (fixes null canvas crash)
     const isMountedRef = useRef(false);
 
-    // ── Incorrect Rep Tracking ────────────────────────────────────────────────
+    // ── Incorrect Rep Tracking ───────────────────────────────────────────────
     const badRepsRef = useRef([]);          // { angle, reasons[], classification }
     const deepestAngleRef = useRef(180);    // deepest angle in current squat cycle
     const hadAttemptRef = useRef(false);    // did the user descend enough to count?
     const formIssuesRef = useRef({});       // form issues detected during cycle
 
-    // ── Workout Set/Rep/Rest Tracking ─────────────────────────────────────────
+    // ── Workout Set/Rep/Rest Tracking ────────────────────────────────────────
     const [currentSet, setCurrentSet] = useState(1);
     const [repsInSet, setRepsInSet] = useState(0);
     const [isResting, setIsResting] = useState(false);
@@ -289,7 +292,91 @@ export default function SquatCameraPage() {
     const setResultsRef = useRef([]);
     const setStartTimeRef = useRef(null);
     const badRepsInSetRef = useRef(0);
+    const poseProcessingPausedRef = useRef(true);
+    const completionTimeoutRef = useRef(null);
+    const lastLiveUpdateRef = useRef(0);
+    const liveSnapshotRef = useRef({
+        classification: 'bad',
+        feedback: '',
+        feedbackDetail: '',
+        phase: 'standing',
+        leftAngle: 0,
+        rightAngle: 0,
+        isBilateralMode: true,
+        activeSide: 'both',
+    });
 
+    useEffect(() => {
+        const handleResize = () => setViewportWidth(window.innerWidth);
+        const prevBodyOverflow = document.body.style.overflow;
+        const prevHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => {
+            document.body.style.overflow = prevBodyOverflow;
+            document.documentElement.style.overflow = prevHtmlOverflow;
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    const isWideLayout = viewportWidth >= 1280;
+    const isMediumLayout = viewportWidth < 1280 && viewportWidth >= 1024;
+    const isCompactLayout = viewportWidth < 1024;
+
+    const clearOverlayCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }, []);
+
+    const resetSquatCycleTracking = useCallback(() => {
+        phaseRef.current = 'standing';
+        repWasGoodRef.current = false;
+        deepestAngleRef.current = 180;
+        hadAttemptRef.current = false;
+        formIssuesRef.current = {};
+    }, []);
+
+    const syncLiveState = useCallback((analysis) => {
+        const nextSnapshot = {
+            classification: analysis.overallClass,
+            feedback: analysis.feedback,
+            feedbackDetail: analysis.feedbackDetail,
+            phase: analysis.phase,
+            leftAngle: Math.round(analysis.leftAngle),
+            rightAngle: Math.round(analysis.rightAngle),
+            isBilateralMode: analysis.isBilateral,
+            activeSide: analysis.activeSide,
+        };
+        const prevSnapshot = liveSnapshotRef.current;
+        const now = performance.now();
+        const snapshotChanged =
+            prevSnapshot.classification !== nextSnapshot.classification ||
+            prevSnapshot.feedback !== nextSnapshot.feedback ||
+            prevSnapshot.feedbackDetail !== nextSnapshot.feedbackDetail ||
+            prevSnapshot.phase !== nextSnapshot.phase ||
+            prevSnapshot.leftAngle !== nextSnapshot.leftAngle ||
+            prevSnapshot.rightAngle !== nextSnapshot.rightAngle ||
+            prevSnapshot.isBilateralMode !== nextSnapshot.isBilateralMode ||
+            prevSnapshot.activeSide !== nextSnapshot.activeSide;
+
+        liveSnapshotRef.current = nextSnapshot;
+        if (!snapshotChanged && now - lastLiveUpdateRef.current < 120) return;
+        lastLiveUpdateRef.current = now;
+
+        if (prevSnapshot.classification !== nextSnapshot.classification) setSqClassification(nextSnapshot.classification);
+        if (prevSnapshot.feedback !== nextSnapshot.feedback) setFeedback(nextSnapshot.feedback);
+        if (prevSnapshot.feedbackDetail !== nextSnapshot.feedbackDetail) setFeedbackDetail(nextSnapshot.feedbackDetail);
+        if (prevSnapshot.phase !== nextSnapshot.phase) setPhase(nextSnapshot.phase);
+        if (prevSnapshot.leftAngle !== nextSnapshot.leftAngle) setLeftAngle(nextSnapshot.leftAngle);
+        if (prevSnapshot.rightAngle !== nextSnapshot.rightAngle) setRightAngle(nextSnapshot.rightAngle);
+        if (prevSnapshot.isBilateralMode !== nextSnapshot.isBilateralMode) setIsBilateralMode(nextSnapshot.isBilateralMode);
+        if (prevSnapshot.activeSide !== nextSnapshot.activeSide) setActiveSide(nextSnapshot.activeSide);
+    }, []);
     // ── Timer ──────────────────────────────────────────────────────────────────
     useEffect(() => {
         if (isStarted && !showSummary) {
@@ -305,10 +392,14 @@ export default function SquatCameraPage() {
     // ── Rest Countdown Timer ──────────────────────────────────────────────────
     useEffect(() => {
         if (!isResting) return;
+        poseProcessingPausedRef.current = true;
         const intervalId = setInterval(() => {
             setRestCountdown(prev => {
                 if (prev <= 1) {
                     clearInterval(intervalId);
+                    poseProcessingPausedRef.current = false;
+                    resetSquatCycleTracking();
+                    clearOverlayCanvas();
                     isRestingRef.current = false;
                     setIsResting(false);
                     currentSetRef.current += 1;
@@ -329,13 +420,16 @@ export default function SquatCameraPage() {
             });
         }, 1000);
         return () => clearInterval(intervalId);
-    }, [isResting]);
-
+    }, [isResting, clearOverlayCanvas, resetSquatCycleTracking]);
     const formatTime = (s) =>
         `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
     // ── Complete Current Set ──────────────────────────────────────────────────
     const completeCurrentSet = useCallback(() => {
+        if (completionTimeoutRef.current) {
+            clearTimeout(completionTimeoutRef.current);
+            completionTimeoutRef.current = null;
+        }
         const setDuration = setStartTimeRef.current
             ? Math.floor((Date.now() - setStartTimeRef.current) / 1000)
             : 0;
@@ -347,11 +441,13 @@ export default function SquatCameraPage() {
         });
 
         if (currentSetRef.current >= totalSets) {
+            poseProcessingPausedRef.current = true;
+            clearOverlayCanvas();
             setWorkoutComplete(true);
             if (!voiceMutedRef.current) {
                 speak('Workout complete! Great job!', true);
             }
-            setTimeout(() => {
+            completionTimeoutRef.current = setTimeout(() => {
                 isMountedRef.current = false;
                 if (cameraRef.current) {
                     cameraRef.current.stop();
@@ -369,8 +465,13 @@ export default function SquatCameraPage() {
                 setIsStarted(false);
                 setShowSummary(true);
                 setWorkoutComplete(false);
+                poseProcessingPausedRef.current = true;
+                completionTimeoutRef.current = null;
             }, 2500);
         } else {
+            poseProcessingPausedRef.current = true;
+            clearOverlayCanvas();
+            wasReadyAnnouncedRef.current = false;
             if (!voiceMutedRef.current) {
                 speak(`Set ${currentSetRef.current} complete! Rest for ${restTimeSetting} seconds.`, true);
             }
@@ -378,13 +479,15 @@ export default function SquatCameraPage() {
             setIsResting(true);
             setRestCountdown(restTimeSetting);
         }
-    }, [totalSets, restTimeSetting]);
-
+    }, [totalSets, restTimeSetting, clearOverlayCanvas]);
     // ── Skip Rest ─────────────────────────────────────────────────────────────
     const skipRest = useCallback(() => {
         isRestingRef.current = false;
         setIsResting(false);
         setRestCountdown(0);
+        poseProcessingPausedRef.current = false;
+        resetSquatCycleTracking();
+        clearOverlayCanvas();
         currentSetRef.current += 1;
         setCurrentSet(currentSetRef.current);
         repsInSetRef.current = 0;
@@ -394,7 +497,7 @@ export default function SquatCameraPage() {
         if (!voiceMutedRef.current) {
             speak(`Starting set ${currentSetRef.current}.`, true);
         }
-    }, []);
+    }, [clearOverlayCanvas, resetSquatCycleTracking]);
 
     // ── Rep Counter (Kumaresan et al. 2026 logic) ──────────────────────────────
     // Tracks both GOOD reps (counted live) and INCORRECT reps (stored with reasons).
@@ -402,7 +505,7 @@ export default function SquatCameraPage() {
     const processRep = useCallback((analysis) => {
         if (!analysis) return;
         // Pause rep counting during rest periods and after workout completion
-        if (isRestingRef.current) return;
+        if (isRestingRef.current || poseProcessingPausedRef.current) return;
 
         const prevPhase = phaseRef.current;
         const newPhase = analysis.phase;
@@ -505,6 +608,10 @@ export default function SquatCameraPage() {
     const onResults = useCallback((results) => {
         // Guard: if session was stopped, ignore any stale frames still in flight
         if (!isMountedRef.current) return;
+        if (poseProcessingPausedRef.current) {
+            clearOverlayCanvas();
+            return;
+        }
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -517,8 +624,10 @@ export default function SquatCameraPage() {
 
         // ── Body Readiness Detection ──────────────────────────────────────────
         const readiness = checkBodyReadiness(results.poseLandmarks);
-        bodyReadinessRef.current = readiness;
-        setBodyReadiness(readiness);
+        if (bodyReadinessRef.current !== readiness) {
+            bodyReadinessRef.current = readiness;
+            setBodyReadiness(readiness);
+        }
 
         if (readiness === 'no_person') {
             if (!voiceMutedRef.current) {
@@ -553,7 +662,7 @@ export default function SquatCameraPage() {
         const analysis = analyzeSquatBilateral(results.poseLandmarks);
 
         // ── Voice Feedback (skip during rest) ─────────────────────────────────
-        if (analysis && !voiceMutedRef.current && !isRestingRef.current) {
+        if (analysis && !voiceMutedRef.current && !poseProcessingPausedRef.current) {
             const cue = getVoiceCue(analysis);
             if (cue) speak(cue);
         }
@@ -597,19 +706,19 @@ export default function SquatCameraPage() {
         }
 
         processRep(analysis);
-        setSqClassification(analysis.overallClass);
-        setFeedback(analysis.feedback);
-        setFeedbackDetail(analysis.feedbackDetail);
-        setLeftAngle(Math.round(analysis.leftAngle));
-        setRightAngle(Math.round(analysis.rightAngle));
-        setIsBilateralMode(analysis.isBilateral);
-        setActiveSide(analysis.activeSide);
-    }, [processRep]);
-
+        syncLiveState(analysis);
+    }, [clearOverlayCanvas, processRep, syncLiveState]);
     // ── Start Camera ───────────────────────────────────────────────────────────
     const startCamera = useCallback(async () => {
         setIsLoading(true);
         setCameraError('');
+        poseProcessingPausedRef.current = false;
+        resetSquatCycleTracking();
+        clearOverlayCanvas();
+        if (completionTimeoutRef.current) {
+            clearTimeout(completionTimeoutRef.current);
+            completionTimeoutRef.current = null;
+        }
         try {
             const pose = new Pose({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
@@ -626,7 +735,7 @@ export default function SquatCameraPage() {
 
             const camera = new Camera(videoRef.current, {
                 onFrame: async () => {
-                    if (poseRef.current && videoRef.current && isMountedRef.current) {
+                    if (poseRef.current && videoRef.current && isMountedRef.current && !poseProcessingPausedRef.current) {
                         await poseRef.current.send({ image: videoRef.current });
                     }
                 },
@@ -639,13 +748,17 @@ export default function SquatCameraPage() {
             setIsLoading(false);
             setIsStarted(true);
         } catch (err) {
+            poseProcessingPausedRef.current = true;
             setIsLoading(false);
             setCameraError('Could not access camera. Please allow camera permission and try again.');
         }
-    }, [onResults]);
-
+    }, [clearOverlayCanvas, onResults, resetSquatCycleTracking]);
     // ── Stop Session ───────────────────────────────────────────────────────────
     const stopSession = useCallback(() => {
+        if (completionTimeoutRef.current) {
+            clearTimeout(completionTimeoutRef.current);
+            completionTimeoutRef.current = null;
+        }
         // Save partial set results if any reps were attempted
         if (repsInSetRef.current > 0 || badRepsInSetRef.current > 0) {
             const setDuration = setStartTimeRef.current
@@ -661,9 +774,11 @@ export default function SquatCameraPage() {
 
         isMountedRef.current = false;
         isRestingRef.current = false;
+        poseProcessingPausedRef.current = true;
         setIsResting(false);
         setRestCountdown(0);
         setWorkoutComplete(false);
+        clearOverlayCanvas();
         if (cameraRef.current) {
             cameraRef.current.stop();
             cameraRef.current = null;
@@ -679,11 +794,15 @@ export default function SquatCameraPage() {
         wasReadyAnnouncedRef.current = false;
         setIsStarted(false);
         setShowSummary(true);
-    }, []);
-
+    }, [clearOverlayCanvas]);
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
+            poseProcessingPausedRef.current = true;
+            if (completionTimeoutRef.current) {
+                clearTimeout(completionTimeoutRef.current);
+                completionTimeoutRef.current = null;
+            }
             if (cameraRef.current) {
                 cameraRef.current.stop();
                 cameraRef.current = null;
@@ -695,9 +814,30 @@ export default function SquatCameraPage() {
             clearInterval(timerRef.current);
         };
     }, []);
-
-    const classColor = (cls) => CLASS_COLORS[cls]?.hex ?? '#94a3b8';
-
+    const workoutLayoutStyle = {
+        ...styles.cameraWrapper,
+        gridTemplateColumns: isCompactLayout
+            ? 'minmax(140px, 0.8fr) minmax(0, 2.8fr) minmax(170px, 0.9fr)'
+            : isWideLayout
+                ? 'minmax(180px, 0.95fr) minmax(0, 3.2fr) minmax(220px, 1.05fr)'
+                : isMediumLayout
+                    ? 'minmax(160px, 0.9fr) minmax(0, 3fr) minmax(200px, 1fr)'
+                    : 'minmax(140px, 0.8fr) minmax(0, 2.8fr) minmax(170px, 0.9fr)',
+        padding: isCompactLayout ? '10px 14px' : '14px 18px',
+        gap: isCompactLayout ? '10px' : '16px',
+    };
+    const summaryLayoutStyle = {
+        ...styles.summaryWrapper,
+        padding: isCompactLayout ? '16px 16px 12px' : '20px 20px 16px',
+    };
+    const leftPanelStyle = {
+        ...styles.leftPanel,
+        gap: isCompactLayout ? '8px' : '10px',
+    };
+    const rightPanelStyle = {
+        ...styles.rightPanel,
+        gap: isCompactLayout ? '8px' : '10px',
+    };
     // ─────────────────────────────────────────────────────────────────────────
     // SUMMARY SCREEN
     // ─────────────────────────────────────────────────────────────────────────
@@ -750,6 +890,7 @@ export default function SquatCameraPage() {
 
         const chartOptions = (title, minY, maxY) => ({
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: { labels: { color: '#666' } },
                 title: { display: true, text: title, color: '#222', font: { size: 14 } },
@@ -793,7 +934,7 @@ export default function SquatCameraPage() {
                     <h1 style={styles.logo}>PoseFit</h1>
                     <div style={{ width: 120 }} />
                 </div>
-                <div style={styles.summaryWrapper}>
+                <div style={summaryLayoutStyle}>
                     <h2 style={styles.summaryTitle}>Session Summary 🎉</h2>
                     <p style={styles.summarySubtitle}>Detailed breakdown of your squat performance</p>
 
@@ -1033,10 +1174,10 @@ export default function SquatCameraPage() {
                 </div>
             </div>
 
-            <div style={styles.cameraWrapper}>
+            <div style={workoutLayoutStyle}>
 
                 {/* Left Panel */}
-                <div style={styles.leftPanel}>
+                <div style={leftPanelStyle}>
                     <div style={styles.panelCard}>
                         <p style={styles.panelLabel}>SET</p>
                         <p style={styles.panelBigValue}>{currentSet}</p>
@@ -1179,7 +1320,7 @@ export default function SquatCameraPage() {
                 </div>
 
                 {/* Right Panel */}
-                <div style={styles.rightPanel}>
+                <div style={rightPanelStyle}>
                     <div style={styles.warningsPanel}>
                         <p style={styles.panelLabel}>LIVE FEEDBACK</p>
                         {isStarted ? (
@@ -1269,25 +1410,25 @@ export default function SquatCameraPage() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
-    container: { minHeight: '100vh', background: '#F7F7F7', color: '#222', fontFamily: "'Poppins', 'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 32px', borderBottom: '1px solid #E6E8E6', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)' },
+    container: { height: '100vh', overflow: 'hidden', background: '#F7F7F7', color: '#222', fontFamily: "'Poppins', 'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 24px', borderBottom: '1px solid #E6E8E6', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', flexShrink: 0 },
     logo: { color: '#F15025', margin: 0, fontSize: '1.4rem', fontWeight: 800 },
     backBtn: { background: 'none', border: 'none', color: '#888', fontSize: '14px', cursor: 'pointer', fontWeight: 500, fontFamily: 'inherit', padding: 0, transition: 'color 0.2s' },
     headerRight: { display: 'flex', alignItems: 'center', gap: '10px' },
     timerBadge: { background: '#FFF5F2', border: '1px solid rgba(241,80,37,0.15)', color: '#F15025', padding: '6px 18px', borderRadius: '999px', fontWeight: 700, fontSize: '16px' },
     voiceToggleBtn: { background: '#ffffff', border: '1px solid #E6E8E6', color: '#888', padding: '6px 14px', borderRadius: '999px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s ease', whiteSpace: 'nowrap' },
 
-    cameraWrapper: { display: 'flex', flex: 1, gap: '20px', padding: '20px 24px', alignItems: 'flex-start' },
+    cameraWrapper: { display: 'grid', gridTemplateColumns: 'minmax(180px, 0.95fr) minmax(0, 3.2fr) minmax(220px, 1.05fr)', gap: '16px', padding: '14px 18px', alignItems: 'stretch', flex: 1, minHeight: 0, overflow: 'hidden' },
 
-    leftPanel: { display: 'flex', flexDirection: 'column', gap: '12px', width: '150px', flexShrink: 0 },
-    panelCard: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6', textAlign: 'center' },
-    panelLabel: { color: '#999', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px', fontWeight: 700 },
-    panelBigValue: { color: '#F15025', fontSize: '2rem', fontWeight: 800, margin: 0 },
-    panelSmallValue: { color: '#666', fontSize: '12px', fontWeight: 600, margin: '4px 0 0' },
-    statusValue: { fontSize: '13px', fontWeight: 700, margin: 0, lineHeight: 1.3 },
-    phaseValue: { color: '#F15025', fontSize: '12px', fontWeight: 700, margin: 0 },
+    leftPanel: { display: 'flex', flexDirection: 'column', gap: '10px', width: 'auto', minWidth: 0, height: '100%', overflow: 'hidden' },
+    panelCard: { background: '#FFFFFF', borderRadius: '16px', padding: '12px', border: '1px solid #E6E8E6', textAlign: 'center' },
+    panelLabel: { color: '#999', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 4px', fontWeight: 700 },
+    panelBigValue: { color: '#F15025', fontSize: '1.7rem', fontWeight: 800, margin: 0 },
+    panelSmallValue: { color: '#666', fontSize: '11px', fontWeight: 600, margin: '3px 0 0' },
+    statusValue: { fontSize: '12px', fontWeight: 700, margin: 0, lineHeight: 1.25 },
+    phaseValue: { color: '#F15025', fontSize: '11px', fontWeight: 700, margin: 0 },
 
-    cameraBox: { flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#000', minHeight: '480px', border: '1px solid #E6E8E6' },
+    cameraBox: { flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#000', minHeight: 0, height: '100%', border: '1px solid #E6E8E6' },
     video: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     canvas: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
 
@@ -1310,62 +1451,62 @@ const styles = {
     cameraError: { color: '#ef4444', fontSize: '13px', marginBottom: '16px' },
     startBtn: { width: '100%', padding: '16px 24px', background: '#F15025', color: '#FFFFFF', fontWeight: 700, fontSize: '15px', border: 'none', borderRadius: '999px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(241,80,37,0.25)', fontFamily: 'inherit', letterSpacing: '0.3px', transition: 'background 0.2s' },
 
-    rightPanel: { display: 'flex', flexDirection: 'column', gap: '12px', width: '210px', flexShrink: 0 },
-    warningsPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
-    feedbackBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 10px 12px', border: '2px solid', borderRadius: '10px', marginTop: '8px', gap: '6px' },
-    feedbackIcon: { fontSize: '2rem', lineHeight: 1 },
-    feedbackTitle: { fontSize: '16px', fontWeight: 800, margin: 0, textAlign: 'center', letterSpacing: '0.3px' },
-    feedbackDetail: { color: '#666', fontSize: '12px', lineHeight: 1.6, textAlign: 'center', margin: 0 },
-    inactiveText: { color: '#999', fontSize: '12px', fontStyle: 'italic', marginTop: '8px' },
+    rightPanel: { display: 'flex', flexDirection: 'column', gap: '10px', width: 'auto', minWidth: 0, height: '100%', overflow: 'hidden' },
+    warningsPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '12px', border: '1px solid #E6E8E6' },
+    feedbackBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 10px 10px', border: '2px solid', borderRadius: '10px', marginTop: '8px', gap: '4px' },
+    feedbackIcon: { fontSize: '1.7rem', lineHeight: 1 },
+    feedbackTitle: { fontSize: '14px', fontWeight: 800, margin: 0, textAlign: 'center', letterSpacing: '0.3px' },
+    feedbackDetail: { color: '#666', fontSize: '11px', lineHeight: 1.4, textAlign: 'center', margin: 0 },
+    inactiveText: { color: '#999', fontSize: '11px', fontStyle: 'italic', marginTop: '8px' },
 
-    anglesPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
-    angleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
-    angleLabel: { color: '#666', fontSize: '12px' },
-    angleValue: { fontSize: '13px', fontWeight: 700 },
+    anglesPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '12px', border: '1px solid #E6E8E6' },
+    angleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
+    angleLabel: { color: '#666', fontSize: '11px' },
+    angleValue: { fontSize: '12px', fontWeight: 700 },
 
-    classLegend: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
-    classRow: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' },
+    classLegend: { background: '#FFFFFF', borderRadius: '16px', padding: '12px', border: '1px solid #E6E8E6' },
+    classRow: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' },
     classDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
-    classLabel: { color: '#222', fontSize: '11px', fontWeight: 600, minWidth: '40px' },
-    classRange: { color: '#888', fontSize: '11px' },
+    classLabel: { color: '#222', fontSize: '10px', fontWeight: 600, minWidth: '40px' },
+    classRange: { color: '#888', fontSize: '10px' },
 
-    stopBtn: { width: '100%', padding: '12px', background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', borderRadius: '999px', cursor: 'pointer', transition: 'background 0.2s' },
+    stopBtn: { width: '100%', padding: '10px', background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: '13px', border: 'none', borderRadius: '999px', cursor: 'pointer', transition: 'background 0.2s' },
 
-    summaryWrapper: { maxWidth: '900px', margin: '0 auto', padding: '50px 24px' },
-    summaryTitle: { fontSize: '2.2rem', fontWeight: 800, color: '#222', textAlign: 'center', margin: '0 0 8px' },
-    summarySubtitle: { color: '#666', textAlign: 'center', marginBottom: '36px' },
-    statCards: { display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '24px', flexWrap: 'wrap' },
-    summaryStatCard: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '22px 28px', textAlign: 'center', minWidth: '120px' },
-    summaryStatValue: { display: 'block', fontSize: '2.2rem', fontWeight: 800, marginBottom: '6px' },
-    summaryStatLabel: { color: '#999', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' },
+    summaryWrapper: { maxWidth: 'min(1200px, 100%)', margin: '0 auto', padding: '20px 20px 16px', height: 'calc(100vh - 68px)', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' },
+    summaryTitle: { fontSize: '1.9rem', fontWeight: 800, color: '#222', textAlign: 'center', margin: '0 0 4px' },
+    summarySubtitle: { color: '#666', textAlign: 'center', marginBottom: '4px' },
+    statCards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', justifyContent: 'center', marginBottom: '0' },
+    summaryStatCard: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '16px 18px', textAlign: 'center', minWidth: 0 },
+    summaryStatValue: { display: 'block', fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px' },
+    summaryStatLabel: { color: '#999', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' },
 
-    accuracyBarWrapper: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '20px 28px', marginBottom: '28px' },
-    accuracyBarLabels: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
-    accuracyBarTrack: { width: '100%', height: '12px', background: '#E6E8E6', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' },
+    accuracyBarWrapper: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '14px 18px', marginBottom: '0' },
+    accuracyBarLabels: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
+    accuracyBarTrack: { width: '100%', height: '10px', background: '#E6E8E6', borderRadius: '999px', overflow: 'hidden', marginBottom: '6px' },
     accuracyBarFill: { height: '100%', borderRadius: '999px', transition: 'width 0.6s ease' },
 
-    legendRow: { display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '28px', flexWrap: 'wrap' },
+    legendRow: { display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '0', flexWrap: 'wrap' },
     legendItem: { display: 'flex', alignItems: 'center', gap: '6px' },
     legendDot: { width: '10px', height: '10px', borderRadius: '50%' },
     legendText: { color: '#666', fontSize: '12px' },
 
-    breakdownSection: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '24px', marginBottom: '28px' },
-    breakdownTitle: { color: '#222', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' },
-    breakdownSubtitle: { color: '#666', fontSize: '12px', margin: '0 0 16px' },
-    reasonsList: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    reasonCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFF5F2', border: '1px solid rgba(241,80,37,0.15)', borderRadius: '12px', padding: '14px 18px' },
+    breakdownSection: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '16px', marginBottom: '0' },
+    breakdownTitle: { color: '#222', fontSize: '15px', fontWeight: 700, margin: '0 0 2px' },
+    breakdownSubtitle: { color: '#666', fontSize: '11px', margin: '0 0 10px' },
+    reasonsList: { display: 'flex', flexDirection: 'column', gap: '8px' },
+    reasonCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFF5F2', border: '1px solid rgba(241,80,37,0.15)', borderRadius: '12px', padding: '10px 14px' },
     reasonLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
     reasonIcon: { fontSize: '1.4rem' },
-    reasonText: { color: '#444', fontSize: '14px', fontWeight: 500 },
+    reasonText: { color: '#444', fontSize: '13px', fontWeight: 500 },
     reasonRight: { display: 'flex', alignItems: 'baseline', gap: '4px' },
-    reasonCount: { color: '#ef4444', fontSize: '1.4rem', fontWeight: 800 },
-    reasonCountLabel: { color: '#888', fontSize: '11px' },
+    reasonCount: { color: '#ef4444', fontSize: '1.2rem', fontWeight: 800 },
+    reasonCountLabel: { color: '#888', fontSize: '10px' },
 
-    chartsRow: { display: 'flex', gap: '24px', marginBottom: '40px', flexWrap: 'wrap' },
-    chartBox: { flex: 1, minWidth: '280px', background: '#FFFFFF', borderRadius: '16px', padding: '24px', border: '1px solid #E6E8E6' },
-    noDataBox: { background: '#FFFFFF', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '40px', border: '1px solid #E6E8E6' },
-    summaryActions: { display: 'flex', gap: '16px', justifyContent: 'center' },
-    outlineBtn: { padding: '14px 36px', background: 'transparent', border: '1px solid #F15025', color: '#F15025', fontWeight: 700, fontSize: '15px', borderRadius: '999px', cursor: 'pointer', transition: 'all 0.2s' },
+    chartsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '0' },
+    chartBox: { minWidth: 0, height: '220px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #E6E8E6' },
+    noDataBox: { background: '#FFFFFF', borderRadius: '16px', padding: '20px', textAlign: 'center', marginBottom: '0', border: '1px solid #E6E8E6' },
+    summaryActions: { display: 'flex', gap: '12px', justifyContent: 'center', marginTop: 'auto' },
+    outlineBtn: { padding: '12px 28px', background: 'transparent', border: '1px solid #F15025', color: '#F15025', fontWeight: 700, fontSize: '14px', borderRadius: '999px', cursor: 'pointer', transition: 'all 0.2s' },
 
     restOverlay: { position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 15 },
     restTitle: { color: '#F15025', fontSize: '1.4rem', fontWeight: 800, margin: '0 0 10px', letterSpacing: '1px' },
@@ -1378,7 +1519,7 @@ const styles = {
     completeTitle: { color: '#22c55e', fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px' },
     completeSubtitle: { color: '#666', fontSize: '14px', margin: 0 },
 
-    setGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginTop: '12px' },
+    setGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginTop: '8px' },
     setCard: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '12px', padding: '16px' },
     setCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #E6E8E6', paddingBottom: '8px' },
     setNumLabel: { color: '#222', fontWeight: 700, fontSize: '14px' },
