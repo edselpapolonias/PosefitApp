@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Pose } from '@mediapipe/pose';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -35,18 +35,22 @@ function speak(text, force = false) {
 // ─── Body Readiness Check ─────────────────────────────────────────────────────
 // Checks if the 6 key squat landmarks (hips, knees, ankles) are visible.
 // Returns: 'no_person' | 'too_close' | 'ready'
-const REQUIRED_LANDMARK_IDS = [23, 24, 25, 26, 27, 28]; // hips, knees, ankles
+const LEFT_LEG_IDS = [23, 25, 27]; // left hip, knee, ankle
+const RIGHT_LEG_IDS = [24, 26, 28]; // right hip, knee, ankle
 const VISIBILITY_THRESHOLD = 0.5;
 
 function checkBodyReadiness(poseLandmarks) {
     if (!poseLandmarks || poseLandmarks.length < 33) return 'no_person';
 
-    // Check if ALL 6 required landmarks have good visibility
-    const allVisible = REQUIRED_LANDMARK_IDS.every(
+    // Check if at least ONE entire leg is visible (supports both front and profile views)
+    const leftVisible = LEFT_LEG_IDS.every(
+        (id) => (poseLandmarks[id]?.visibility ?? 0) >= VISIBILITY_THRESHOLD
+    );
+    const rightVisible = RIGHT_LEG_IDS.every(
         (id) => (poseLandmarks[id]?.visibility ?? 0) >= VISIBILITY_THRESHOLD
     );
 
-    if (!allVisible) return 'too_close';
+    if (!leftVisible && !rightVisible) return 'too_close';
     return 'ready';
 }
 
@@ -106,39 +110,44 @@ function analyzeSquatBilateral(landmarks) {
 
     const lm = landmarks;
 
-    // Left leg: hip(23) → knee(25) → ankle(27)
+    // Check visibility to determine if we are in profile or bilateral mode
+    const leftVis = (lm[23].visibility + lm[25].visibility + lm[27].visibility) / 3;
+    const rightVis = (lm[24].visibility + lm[26].visibility + lm[28].visibility) / 3;
+    const isBilateral = leftVis >= 0.55 && rightVis >= 0.55;
+
+    // Calculate angles for both legs
     const leftAngle = calculateAngle(lm[23], lm[25], lm[27]);
-    // Right leg: hip(24) → knee(26) → ankle(28)
     const rightAngle = calculateAngle(lm[24], lm[26], lm[28]);
 
     const leftClass = classifyKneeAngle(leftAngle);
     const rightClass = classifyKneeAngle(rightAngle);
 
-    // Use the worse of the two legs as the overall classification
-    // Priority: bad > adjust > good
-    const classRank = { bad: 2, adjust: 1, good: 0 };
-    const overallClass = classRank[leftClass] >= classRank[rightClass] ? leftClass : rightClass;
+    let overallClass;
+    let avgAngle;
+    let activeSide = 'both';
 
-    // Average angle for display and phase detection
-    const avgAngle = (leftAngle + rightAngle) / 2;
+    if (isBilateral) {
+        // Front-facing: use the worse of the two legs
+        const classRank = { bad: 2, adjust: 1, good: 0 };
+        overallClass = classRank[leftClass] >= classRank[rightClass] ? leftClass : rightClass;
+        avgAngle = (leftAngle + rightAngle) / 2;
+    } else {
+        // Profile view: use the leg with better visibility
+        const useLeft = leftVis >= rightVis;
+        activeSide = useLeft ? 'left' : 'right';
+        overallClass = useLeft ? leftClass : rightClass;
+        avgAngle = useLeft ? leftAngle : rightAngle;
+    }
 
     // ── Phase Detection ───────────────────────────────────────────────────────
-    // 'bottom' only when angle is in or below the good zone (≤100°)
-    // 'descending' when in adjust/bad zone but still bent (101°–150°)
-    // 'standing' when near straight (>150°)
     let phase = 'standing';
     if (avgAngle <= 100) phase = 'bottom';
     else if (avgAngle <= 150) phase = 'descending';
 
-    // ── Depth % ───────────────────────────────────────────────────────────────
-    // 160° = 0%, 80° = 100% (good zone centre)
-    const depth = avgAngle < 160
-        ? Math.min(100, Math.round(((160 - avgAngle) / 80) * 100))
-        : 0;
-
-    // ── Feedback messages (specific per zone and per leg) ────────────────────
+    // ── Feedback messages ─────────────────────────────────────────────────────
     let feedback = '';
     let feedbackDetail = '';
+
     if (overallClass === 'good') {
         feedback = 'Good Squat!';
         feedbackDetail = 'Knee angle 80°–100° — perfect depth. Keep your weight in your heels and chest up.';
@@ -150,13 +159,11 @@ function analyzeSquatBilateral(landmarks) {
             feedback = 'Go a Little Deeper';
             feedbackDetail = `Knee angle ${Math.round(avgAngle)}° — almost there! Bend your knees a bit more until thighs are parallel to the floor.`;
         }
-        // Add per-leg note if they differ significantly
-        if (Math.abs(leftAngle - rightAngle) > 10) {
+        if (isBilateral && Math.abs(leftAngle - rightAngle) > 10) {
             const lagging = leftAngle > rightAngle ? 'left' : 'right';
             feedbackDetail += ` Your ${lagging} leg is lagging — try to keep both knees bending equally.`;
         }
     } else {
-        // bad
         if (avgAngle < 60) {
             feedback = 'Too Deep — Risk of Injury';
             feedbackDetail = `Knee angle ${Math.round(avgAngle)}° — over-flexion detected. Rise up to keep your knees safe. Target: 80°–100°.`;
@@ -164,7 +171,7 @@ function analyzeSquatBilateral(landmarks) {
             feedback = 'Not Deep Enough';
             feedbackDetail = `Knee angle ${Math.round(avgAngle)}° — squat deeper to activate your glutes, quads, and hamstrings. Target: 80°–100°.`;
         }
-        if (Math.abs(leftAngle - rightAngle) > 10) {
+        if (isBilateral && Math.abs(leftAngle - rightAngle) > 10) {
             const lagging = leftAngle > rightAngle ? 'left' : 'right';
             feedbackDetail += ` Your ${lagging} knee is not bending as much — check for equal weight distribution.`;
         }
@@ -180,7 +187,8 @@ function analyzeSquatBilateral(landmarks) {
         phase,
         feedback,
         feedbackDetail,
-        // Key landmarks for drawing
+        isBilateral,
+        activeSide,
         landmarks: {
             leftHip: lm[23], leftKnee: lm[25], leftAnkle: lm[27],
             rightHip: lm[24], rightKnee: lm[26], rightAnkle: lm[28],
@@ -221,6 +229,13 @@ function determineIncorrectReason(deepestAngle, formIssues) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SquatCameraPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // ── Workout Settings (from SquatPage URL params) ──────────────────────────
+    const totalSets = parseInt(searchParams.get('sets')) || 3;
+    const totalReps = parseInt(searchParams.get('reps')) || 12;
+    const restTimeSetting = parseInt(searchParams.get('rest')) || 60;
+
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const poseRef = useRef(null);
@@ -238,6 +253,8 @@ export default function SquatCameraPage() {
     const [phase, setPhase] = useState('standing');
     const [leftAngle, setLeftAngle] = useState(0);
     const [rightAngle, setRightAngle] = useState(0);
+    const [isBilateralMode, setIsBilateralMode] = useState(true);
+    const [activeSide, setActiveSide] = useState('both');
     const [sessionTime, setSessionTime] = useState(0);
     const [cameraError, setCameraError] = useState('');
     const [bodyReadiness, setBodyReadiness] = useState('no_person'); // 'no_person' | 'too_close' | 'ready'
@@ -260,10 +277,24 @@ export default function SquatCameraPage() {
     const hadAttemptRef = useRef(false);    // did the user descend enough to count?
     const formIssuesRef = useRef({});       // form issues detected during cycle
 
+    // ── Workout Set/Rep/Rest Tracking ─────────────────────────────────────────
+    const [currentSet, setCurrentSet] = useState(1);
+    const [repsInSet, setRepsInSet] = useState(0);
+    const [isResting, setIsResting] = useState(false);
+    const [restCountdown, setRestCountdown] = useState(0);
+    const [workoutComplete, setWorkoutComplete] = useState(false);
+    const currentSetRef = useRef(1);
+    const repsInSetRef = useRef(0);
+    const isRestingRef = useRef(false);
+    const setResultsRef = useRef([]);
+    const setStartTimeRef = useRef(null);
+    const badRepsInSetRef = useRef(0);
+
     // ── Timer ──────────────────────────────────────────────────────────────────
     useEffect(() => {
         if (isStarted && !showSummary) {
             sessionStartRef.current = Date.now();
+            setStartTimeRef.current = Date.now();
             timerRef.current = setInterval(() => {
                 setSessionTime(Math.floor((Date.now() - sessionStartRef.current) / 1000));
             }, 1000);
@@ -271,14 +302,108 @@ export default function SquatCameraPage() {
         return () => clearInterval(timerRef.current);
     }, [isStarted, showSummary]);
 
+    // ── Rest Countdown Timer ──────────────────────────────────────────────────
+    useEffect(() => {
+        if (!isResting) return;
+        const intervalId = setInterval(() => {
+            setRestCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(intervalId);
+                    isRestingRef.current = false;
+                    setIsResting(false);
+                    currentSetRef.current += 1;
+                    setCurrentSet(currentSetRef.current);
+                    repsInSetRef.current = 0;
+                    setRepsInSet(0);
+                    badRepsInSetRef.current = 0;
+                    setStartTimeRef.current = Date.now();
+                    if (!voiceMutedRef.current) {
+                        speak(`Rest over! Starting set ${currentSetRef.current}.`, true);
+                    }
+                    return 0;
+                }
+                if (prev === 4 && !voiceMutedRef.current) {
+                    speak('Get ready! 3, 2, 1.', true);
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(intervalId);
+    }, [isResting]);
+
     const formatTime = (s) =>
         `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+    // ── Complete Current Set ──────────────────────────────────────────────────
+    const completeCurrentSet = useCallback(() => {
+        const setDuration = setStartTimeRef.current
+            ? Math.floor((Date.now() - setStartTimeRef.current) / 1000)
+            : 0;
+        setResultsRef.current.push({
+            setNum: currentSetRef.current,
+            goodReps: repsInSetRef.current,
+            badReps: badRepsInSetRef.current,
+            duration: setDuration,
+        });
+
+        if (currentSetRef.current >= totalSets) {
+            setWorkoutComplete(true);
+            if (!voiceMutedRef.current) {
+                speak('Workout complete! Great job!', true);
+            }
+            setTimeout(() => {
+                isMountedRef.current = false;
+                if (cameraRef.current) {
+                    cameraRef.current.stop();
+                    cameraRef.current = null;
+                }
+                if (poseRef.current) {
+                    poseRef.current.close();
+                    poseRef.current = null;
+                }
+                clearInterval(timerRef.current);
+                window.speechSynthesis.cancel();
+                setBodyReadiness('no_person');
+                bodyReadinessRef.current = 'no_person';
+                wasReadyAnnouncedRef.current = false;
+                setIsStarted(false);
+                setShowSummary(true);
+                setWorkoutComplete(false);
+            }, 2500);
+        } else {
+            if (!voiceMutedRef.current) {
+                speak(`Set ${currentSetRef.current} complete! Rest for ${restTimeSetting} seconds.`, true);
+            }
+            isRestingRef.current = true;
+            setIsResting(true);
+            setRestCountdown(restTimeSetting);
+        }
+    }, [totalSets, restTimeSetting]);
+
+    // ── Skip Rest ─────────────────────────────────────────────────────────────
+    const skipRest = useCallback(() => {
+        isRestingRef.current = false;
+        setIsResting(false);
+        setRestCountdown(0);
+        currentSetRef.current += 1;
+        setCurrentSet(currentSetRef.current);
+        repsInSetRef.current = 0;
+        setRepsInSet(0);
+        badRepsInSetRef.current = 0;
+        setStartTimeRef.current = Date.now();
+        if (!voiceMutedRef.current) {
+            speak(`Starting set ${currentSetRef.current}.`, true);
+        }
+    }, []);
 
     // ── Rep Counter (Kumaresan et al. 2026 logic) ──────────────────────────────
     // Tracks both GOOD reps (counted live) and INCORRECT reps (stored with reasons).
     // A rep cycle: standing → descending → bottom → descending → standing
     const processRep = useCallback((analysis) => {
         if (!analysis) return;
+        // Pause rep counting during rest periods and after workout completion
+        if (isRestingRef.current) return;
+
         const prevPhase = phaseRef.current;
         const newPhase = analysis.phase;
 
@@ -299,8 +424,8 @@ export default function SquatCameraPage() {
 
         // Detect form issues continuously during the squat
         if (newPhase === 'bottom' || newPhase === 'descending') {
-            // Uneven legs: >10° difference between left and right knee angles
-            if (Math.abs(analysis.leftAngle - analysis.rightAngle) > 10) {
+            // Uneven legs: >10° difference between left and right knee angles (only in bilateral mode)
+            if (analysis.isBilateral && Math.abs(analysis.leftAngle - analysis.rightAngle) > 10) {
                 formIssuesRef.current.unevenLegs = true;
             }
         }
@@ -312,10 +437,17 @@ export default function SquatCameraPage() {
                 // ✓ GOOD REP — count it
                 repCountRef.current += 1;
                 setRepCount(repCountRef.current);
+                repsInSetRef.current += 1;
+                setRepsInSet(repsInSetRef.current);
                 repAnglesRef.current.push(Math.round(deepestAngleRef.current));
                 // Voice: announce rep counted
                 if (!voiceMutedRef.current) {
-                    speak(`Rep ${repCountRef.current} counted. Good job!`, true);
+                    speak(`Rep ${repsInSetRef.current} of ${totalReps}. Good job!`, true);
+                }
+
+                // Check if set is complete
+                if (repsInSetRef.current >= totalReps) {
+                    completeCurrentSet();
                 }
             } else {
                 // ✕ INCORRECT REP — store with reasons
@@ -327,7 +459,9 @@ export default function SquatCameraPage() {
                     angle: Math.round(deepestAngleRef.current),
                     reasons,
                     classification: deepestAngleRef.current >= 80 && deepestAngleRef.current <= 100 ? 'adjust' : 'bad',
+                    set: currentSetRef.current,
                 });
+                badRepsInSetRef.current += 1;
             }
 
             // Reset cycle tracking for next rep
@@ -347,7 +481,7 @@ export default function SquatCameraPage() {
 
         phaseRef.current = newPhase;
         setPhase(newPhase);
-    }, []);
+    }, [totalReps, completeCurrentSet]);
 
     // ── Draw Knee Angle Label on Canvas ───────────────────────────────────────
     const drawKneeLabel = (ctx, knee, angle, classification, canvasW, canvasH) => {
@@ -418,8 +552,8 @@ export default function SquatCameraPage() {
 
         const analysis = analyzeSquatBilateral(results.poseLandmarks);
 
-        // ── Voice Feedback ────────────────────────────────────────────────────
-        if (analysis && !voiceMutedRef.current) {
+        // ── Voice Feedback (skip during rest) ─────────────────────────────────
+        if (analysis && !voiceMutedRef.current && !isRestingRef.current) {
             const cue = getVoiceCue(analysis);
             if (cue) speak(cue);
         }
@@ -450,9 +584,17 @@ export default function SquatCameraPage() {
             ctx.stroke();
         });
 
-        // Draw knee angle labels on both knees
-        drawKneeLabel(ctx, leftKnee, analysis.leftAngle, analysis.leftClass, canvas.width, canvas.height);
-        drawKneeLabel(ctx, rightKnee, analysis.rightAngle, analysis.rightClass, canvas.width, canvas.height);
+        // Draw knee angle labels
+        if (analysis.isBilateral) {
+            drawKneeLabel(ctx, leftKnee, analysis.leftAngle, analysis.leftClass, canvas.width, canvas.height);
+            drawKneeLabel(ctx, rightKnee, analysis.rightAngle, analysis.rightClass, canvas.width, canvas.height);
+        } else {
+            if (analysis.activeSide === 'left') {
+                drawKneeLabel(ctx, leftKnee, analysis.leftAngle, analysis.leftClass, canvas.width, canvas.height);
+            } else {
+                drawKneeLabel(ctx, rightKnee, analysis.rightAngle, analysis.rightClass, canvas.width, canvas.height);
+            }
+        }
 
         processRep(analysis);
         setSqClassification(analysis.overallClass);
@@ -460,6 +602,8 @@ export default function SquatCameraPage() {
         setFeedbackDetail(analysis.feedbackDetail);
         setLeftAngle(Math.round(analysis.leftAngle));
         setRightAngle(Math.round(analysis.rightAngle));
+        setIsBilateralMode(analysis.isBilateral);
+        setActiveSide(analysis.activeSide);
     }, [processRep]);
 
     // ── Start Camera ───────────────────────────────────────────────────────────
@@ -502,7 +646,24 @@ export default function SquatCameraPage() {
 
     // ── Stop Session ───────────────────────────────────────────────────────────
     const stopSession = useCallback(() => {
+        // Save partial set results if any reps were attempted
+        if (repsInSetRef.current > 0 || badRepsInSetRef.current > 0) {
+            const setDuration = setStartTimeRef.current
+                ? Math.floor((Date.now() - setStartTimeRef.current) / 1000)
+                : 0;
+            setResultsRef.current.push({
+                setNum: currentSetRef.current,
+                goodReps: repsInSetRef.current,
+                badReps: badRepsInSetRef.current,
+                duration: setDuration,
+            });
+        }
+
         isMountedRef.current = false;
+        isRestingRef.current = false;
+        setIsResting(false);
+        setRestCountdown(0);
+        setWorkoutComplete(false);
         if (cameraRef.current) {
             cameraRef.current.stop();
             cameraRef.current = null;
@@ -560,8 +721,8 @@ export default function SquatCameraPage() {
             datasets: [{
                 label: 'Deepest Knee Angle (°)',
                 data: allReps.map(r => r.angle),
-                borderColor: '#38bdf8',
-                backgroundColor: 'rgba(56,189,248,0.15)',
+                borderColor: '#F15025',
+                backgroundColor: 'rgba(241,80,37,0.15)',
                 tension: 0.4,
                 fill: true,
                 pointBackgroundColor: allReps.map(r =>
@@ -590,12 +751,12 @@ export default function SquatCameraPage() {
         const chartOptions = (title, minY, maxY) => ({
             responsive: true,
             plugins: {
-                legend: { labels: { color: '#94a3b8' } },
-                title: { display: true, text: title, color: '#f1f5f9', font: { size: 14 } },
+                legend: { labels: { color: '#666' } },
+                title: { display: true, text: title, color: '#222', font: { size: 14 } },
             },
             scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, min: minY, max: maxY },
+                x: { ticks: { color: '#666' }, grid: { color: '#E6E8E6' } },
+                y: { ticks: { color: '#666' }, grid: { color: '#E6E8E6' }, min: minY, max: maxY },
             },
         });
 
@@ -621,7 +782,14 @@ export default function SquatCameraPage() {
         return (
             <div style={styles.container}>
                 <div style={styles.header}>
-                    <button style={styles.backBtn} onClick={() => navigate('/exercises/squat')}>← Back to Squat</button>
+                    <button
+                        style={styles.backBtn}
+                        onClick={() => navigate('/exercises/squat')}
+                        onMouseEnter={e => e.currentTarget.style.color = '#F15025'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#888'}
+                    >
+                        ← Back to Squat
+                    </button>
                     <h1 style={styles.logo}>PoseFit</h1>
                     <div style={{ width: 120 }} />
                 </div>
@@ -648,7 +816,7 @@ export default function SquatCameraPage() {
                     {totalAttempts > 0 && (
                         <div style={styles.accuracyBarWrapper}>
                             <div style={styles.accuracyBarLabels}>
-                                <span style={{ color: '#94a3b8', fontSize: '12px' }}>Accuracy</span>
+                                <span style={{ color: '#666', fontSize: '12px' }}>Accuracy</span>
                                 <span style={{ color: accuracy >= 70 ? '#22c55e' : accuracy >= 40 ? '#f59e0b' : '#ef4444', fontSize: '14px', fontWeight: 700 }}>{accuracy}%</span>
                             </div>
                             <div style={styles.accuracyBarTrack}>
@@ -664,8 +832,48 @@ export default function SquatCameraPage() {
                             </div>
                             <div style={styles.accuracyBarLabels}>
                                 <span style={{ color: '#22c55e', fontSize: '11px' }}>{totalGood} valid</span>
-                                <span style={{ color: '#64748b', fontSize: '11px' }}>{totalAttempts} total attempts</span>
+                                <span style={{ color: '#888', fontSize: '11px' }}>{totalAttempts} total attempts</span>
                                 <span style={{ color: '#ef4444', fontSize: '11px' }}>{totalBad} incorrect</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Per-Set Breakdown ─────────────────────────────── */}
+                    {setResultsRef.current.length > 0 && (
+                        <div style={styles.breakdownSection}>
+                            <h3 style={styles.breakdownTitle}>📋 Set-by-Set Breakdown</h3>
+                            <p style={styles.breakdownSubtitle}>Your performance across all sets</p>
+                            <div style={styles.setGrid}>
+                                {setResultsRef.current.map((res, i) => {
+                                    const setAttempts = res.goodReps + res.badReps;
+                                    const setAcc = setAttempts > 0 ? Math.round((res.goodReps / setAttempts) * 100) : 0;
+                                    return (
+                                        <div key={i} style={styles.setCard}>
+                                            <div style={styles.setCardHeader}>
+                                                <span style={styles.setNumLabel}>Set {res.setNum}</span>
+                                                <span style={{
+                                                    ...styles.setAccBadge,
+                                                    color: setAcc >= 70 ? '#22c55e' : setAcc >= 40 ? '#f59e0b' : '#ef4444',
+                                                    background: setAcc >= 70 ? '#22c55e15' : setAcc >= 40 ? '#f59e0b15' : '#ef444415',
+                                                }}>{setAcc}% Acc</span>
+                                            </div>
+                                            <div style={styles.setStatsRow}>
+                                                <div style={styles.setStatItem}>
+                                                    <span style={styles.setStatVal}>{res.goodReps}</span>
+                                                    <span style={styles.setStatLbl}>Good</span>
+                                                </div>
+                                                <div style={styles.setStatItem}>
+                                                    <span style={{ ...styles.setStatVal, color: '#ef4444' }}>{res.badReps}</span>
+                                                    <span style={styles.setStatLbl}>Bad</span>
+                                                </div>
+                                                <div style={styles.setStatItem}>
+                                                    <span style={styles.setStatVal}>{formatTime(res.duration)}</span>
+                                                    <span style={styles.setStatLbl}>Time</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -724,24 +932,56 @@ export default function SquatCameraPage() {
 
                     {/* ── Actions ───────────────────────────────────────── */}
                     <div style={styles.summaryActions}>
-                        <button style={styles.startBtn} onClick={() => {
-                            repCountRef.current = 0;
-                            repAnglesRef.current = [];
-                            badRepsRef.current = [];
-                            repWasGoodRef.current = false;
-                            deepestAngleRef.current = 180;
-                            hadAttemptRef.current = false;
-                            formIssuesRef.current = {};
-                            phaseRef.current = 'standing';
-                            setBodyReadiness('no_person');
-                            bodyReadinessRef.current = 'no_person';
-                            wasReadyAnnouncedRef.current = false;
-                            setRepCount(0);
-                            setSessionTime(0);
-                            setShowSummary(false);
-                            setIsStarted(false);
-                        }}>Try Again</button>
-                        <button style={styles.outlineBtn} onClick={() => navigate('/exercises')}>
+                        <button
+                            style={styles.startBtn}
+                            onClick={() => {
+                                repCountRef.current = 0;
+                                repAnglesRef.current = [];
+                                badRepsRef.current = [];
+                                repWasGoodRef.current = false;
+                                deepestAngleRef.current = 180;
+                                hadAttemptRef.current = false;
+                                formIssuesRef.current = {};
+                                phaseRef.current = 'standing';
+                                setBodyReadiness('no_person');
+                                bodyReadinessRef.current = 'no_person';
+                                wasReadyAnnouncedRef.current = false;
+                                setRepCount(0);
+                                setSessionTime(0);
+                                setShowSummary(false);
+                                setIsStarted(false);
+
+                                // Workout states reset
+                                currentSetRef.current = 1;
+                                setCurrentSet(1);
+                                repsInSetRef.current = 0;
+                                setRepsInSet(0);
+                                isRestingRef.current = false;
+                                setIsResting(false);
+                                setRestCountdown(0);
+                                setWorkoutComplete(false);
+                                setResultsRef.current = [];
+                                badRepsInSetRef.current = 0;
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#d9441c'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#F15025'}
+                        >
+                            Try Again
+                        </button>
+                        <button
+                            style={styles.outlineBtn}
+                            onClick={() => navigate('/exercises')}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = '#FFF5F2';
+                                e.currentTarget.style.borderColor = '#d9441c';
+                                e.currentTarget.style.color = '#d9441c';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.borderColor = '#F15025';
+                                e.currentTarget.style.color = '#F15025';
+                            }}
+                        >
                             Back to Exercises
                         </button>
                     </div>
@@ -758,16 +998,23 @@ export default function SquatCameraPage() {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <button style={styles.backBtn} onClick={() => navigate('/exercises/squat')}>← Back</button>
+                <button
+                    style={styles.backBtn}
+                    onClick={() => navigate('/exercises/squat')}
+                    onMouseEnter={e => e.currentTarget.style.color = '#F15025'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#888'}
+                >
+                    ← Back
+                </button>
                 <h1 style={styles.logo}>PoseFit</h1>
                 <div style={styles.headerRight}>
                     {isStarted && (
                         <button
                             style={{
                                 ...styles.voiceToggleBtn,
-                                background: voiceMuted ? '#334155' : '#1e293b',
-                                borderColor: voiceMuted ? '#64748b' : '#38bdf8',
-                                color: voiceMuted ? '#64748b' : '#38bdf8',
+                                background: voiceMuted ? '#ffffff' : '#FFF5F2',
+                                borderColor: voiceMuted ? '#E6E8E6' : 'rgba(241,80,37,0.15)',
+                                color: voiceMuted ? '#888' : '#F15025',
                             }}
                             onClick={() => {
                                 setVoiceMuted(prev => {
@@ -791,18 +1038,28 @@ export default function SquatCameraPage() {
                 {/* Left Panel */}
                 <div style={styles.leftPanel}>
                     <div style={styles.panelCard}>
-                        <p style={styles.panelLabel}>GOOD REPS</p>
+                        <p style={styles.panelLabel}>SET</p>
+                        <p style={styles.panelBigValue}>{currentSet}</p>
+                        <p style={styles.panelSmallValue}>OF {totalSets}</p>
+                    </div>
+                    <div style={styles.panelCard}>
+                        <p style={styles.panelLabel}>REPS</p>
+                        <p style={styles.panelBigValue}>{repsInSet}</p>
+                        <p style={styles.panelSmallValue}>OF {totalReps}</p>
+                    </div>
+                    <div style={styles.panelCard}>
+                        <p style={styles.panelLabel}>TOTAL REPS</p>
                         <p style={styles.panelBigValue}>{repCount}</p>
                     </div>
                     <div style={styles.panelCard}>
                         <p style={styles.panelLabel}>STATUS</p>
                         <p style={{ ...styles.statusValue, color: isStarted ? currentColor.hex : '#94a3b8' }}>
-                            {isStarted ? currentColor.label : '—'}
+                            {isStarted ? (isResting ? 'RESTING' : currentColor.label) : '—'}
                         </p>
                     </div>
                     <div style={styles.panelCard}>
                         <p style={styles.panelLabel}>PHASE</p>
-                        <p style={styles.phaseValue}>{phase.toUpperCase()}</p>
+                        <p style={styles.phaseValue}>{isResting ? 'REST' : phase.toUpperCase()}</p>
                     </div>
                 </div>
 
@@ -810,6 +1067,40 @@ export default function SquatCameraPage() {
                 <div style={styles.cameraBox}>
                     <video ref={videoRef} style={styles.video} playsInline muted />
                     <canvas ref={canvasRef} style={styles.canvas} />
+
+                    {/* Rest Overlay */}
+                    {isResting && (
+                        <div style={styles.restOverlay}>
+                            <h2 style={styles.restTitle}>REST PERIOD</h2>
+                            <p style={styles.restCountdown}>{restCountdown}s</p>
+                            <p style={styles.restSubtitle}>Next: Set {currentSet + 1} of {totalSets}</p>
+                            <button
+                                style={styles.skipRestBtn}
+                                onClick={skipRest}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.background = '#FFF5F2';
+                                    e.currentTarget.style.borderColor = '#d9441c';
+                                    e.currentTarget.style.color = '#d9441c';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.borderColor = '#F15025';
+                                    e.currentTarget.style.color = '#F15025';
+                                }}
+                            >
+                                Skip Rest ➔
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Workout Complete Overlay */}
+                    {workoutComplete && (
+                        <div style={styles.completeOverlay}>
+                            <div style={styles.completeIcon}>🎉</div>
+                            <h2 style={styles.completeTitle}>WORKOUT COMPLETE!</h2>
+                            <p style={styles.completeSubtitle}>Preparing your summary...</p>
+                        </div>
+                    )}
 
                     {/* Readiness / Feedback badge */}
                     {isStarted && bodyReadiness !== 'ready' && (
@@ -853,7 +1144,7 @@ export default function SquatCameraPage() {
                                     <div style={styles.positionGuide}>
                                         <div style={styles.guideRow}>
                                             <span style={styles.guideIcon}>📷</span>
-                                            <p style={styles.guideText}>Face the camera <strong>directly</strong></p>
+                                            <p style={styles.guideText}>Face the camera <strong>directly or sideways</strong></p>
                                         </div>
                                         <div style={styles.guideRow}>
                                             <span style={styles.guideIcon}>📏</span>
@@ -873,7 +1164,12 @@ export default function SquatCameraPage() {
                                         </div>
                                     </div>
                                     {cameraError && <p style={styles.cameraError}>{cameraError}</p>}
-                                    <button style={styles.startBtn} onClick={startCamera}>
+                                    <button
+                                        style={styles.startBtn}
+                                        onClick={startCamera}
+                                        onMouseEnter={e => e.currentTarget.style.background = '#d9441c'}
+                                        onMouseLeave={e => e.currentTarget.style.background = '#F15025'}
+                                    >
                                         Start Session
                                     </button>
                                 </div>
@@ -908,14 +1204,14 @@ export default function SquatCameraPage() {
                     </div>
 
                     <div style={styles.anglesPanel}>
-                        <p style={styles.panelLabel}>LIVE ANGLES</p>
+                        <p style={styles.panelLabel}>LIVE ANGLES {isStarted && !isBilateralMode && '(PROFILE)'}</p>
                         {[
-                            {
+                            (isBilateralMode || activeSide === 'left') && {
                                 label: 'Left knee',
                                 value: isStarted ? `${leftAngle}°` : '—',
                                 color: isStarted ? CLASS_COLORS[classifyKneeAngle(leftAngle)].hex : '#94a3b8',
                             },
-                            {
+                            (isBilateralMode || activeSide === 'right') && {
                                 label: 'Right knee',
                                 value: isStarted ? `${rightAngle}°` : '—',
                                 color: isStarted ? CLASS_COLORS[classifyKneeAngle(rightAngle)].hex : '#94a3b8',
@@ -930,7 +1226,7 @@ export default function SquatCameraPage() {
                                 value: phase,
                                 color: '#a78bfa',
                             },
-                        ].map((item, i) => (
+                        ].filter(Boolean).map((item, i) => (
                             <div key={i} style={styles.angleRow}>
                                 <span style={styles.angleLabel}>{item.label}</span>
                                 <span style={{ ...styles.angleValue, color: item.color }}>{item.value}</span>
@@ -955,7 +1251,14 @@ export default function SquatCameraPage() {
                     </div>
 
                     {isStarted && (
-                        <button style={styles.stopBtn} onClick={stopSession}>End Session</button>
+                        <button
+                            style={styles.stopBtn}
+                            onClick={stopSession}
+                            onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}
+                        >
+                            End Session
+                        </button>
                     )}
                 </div>
 
@@ -966,101 +1269,122 @@ export default function SquatCameraPage() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
-    container: { minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: 'Segoe UI, sans-serif', display: 'flex', flexDirection: 'column' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', borderBottom: '1px solid #1e293b', background: '#0f172a' },
-    logo: { color: '#38bdf8', margin: 0, fontSize: '1.4rem' },
-    backBtn: { background: 'transparent', border: '1px solid #334155', color: '#94a3b8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+    container: { minHeight: '100vh', background: '#F7F7F7', color: '#222', fontFamily: "'Poppins', 'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 32px', borderBottom: '1px solid #E6E8E6', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)' },
+    logo: { color: '#F15025', margin: 0, fontSize: '1.4rem', fontWeight: 800 },
+    backBtn: { background: 'none', border: 'none', color: '#888', fontSize: '14px', cursor: 'pointer', fontWeight: 500, fontFamily: 'inherit', padding: 0, transition: 'color 0.2s' },
     headerRight: { display: 'flex', alignItems: 'center', gap: '10px' },
-    timerBadge: { background: '#1e293b', border: '1px solid #334155', color: '#38bdf8', padding: '6px 18px', borderRadius: '999px', fontWeight: 700, fontSize: '16px' },
-    voiceToggleBtn: { background: '#1e293b', border: '1px solid #38bdf8', color: '#38bdf8', padding: '6px 14px', borderRadius: '999px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s ease', whiteSpace: 'nowrap' },
+    timerBadge: { background: '#FFF5F2', border: '1px solid rgba(241,80,37,0.15)', color: '#F15025', padding: '6px 18px', borderRadius: '999px', fontWeight: 700, fontSize: '16px' },
+    voiceToggleBtn: { background: '#ffffff', border: '1px solid #E6E8E6', color: '#888', padding: '6px 14px', borderRadius: '999px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all 0.2s ease', whiteSpace: 'nowrap' },
 
     cameraWrapper: { display: 'flex', flex: 1, gap: '20px', padding: '20px 24px', alignItems: 'flex-start' },
 
     leftPanel: { display: 'flex', flexDirection: 'column', gap: '12px', width: '150px', flexShrink: 0 },
-    panelCard: { background: '#1e293b', borderRadius: '12px', padding: '14px', border: '1px solid #334155', textAlign: 'center' },
-    panelLabel: { color: '#64748b', fontSize: '10px', letterSpacing: '1px', margin: '0 0 6px', fontWeight: 600 },
-    panelBigValue: { color: '#f1f5f9', fontSize: '2rem', fontWeight: 800, margin: 0 },
-    panelSmallValue: { color: '#f1f5f9', fontSize: '1rem', fontWeight: 700, margin: '4px 0 0' },
-    statusValue: { fontSize: '12px', fontWeight: 700, margin: 0, lineHeight: 1.3 },
-    phaseValue: { color: '#38bdf8', fontSize: '11px', fontWeight: 700, margin: 0 },
+    panelCard: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6', textAlign: 'center' },
+    panelLabel: { color: '#999', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px', fontWeight: 700 },
+    panelBigValue: { color: '#F15025', fontSize: '2rem', fontWeight: 800, margin: 0 },
+    panelSmallValue: { color: '#666', fontSize: '12px', fontWeight: 600, margin: '4px 0 0' },
+    statusValue: { fontSize: '13px', fontWeight: 700, margin: 0, lineHeight: 1.3 },
+    phaseValue: { color: '#F15025', fontSize: '12px', fontWeight: 700, margin: 0 },
 
-    cameraBox: { flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#000', minHeight: '480px' },
+    cameraBox: { flex: 1, position: 'relative', borderRadius: '16px', overflow: 'hidden', background: '#000', minHeight: '480px', border: '1px solid #E6E8E6' },
     video: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     canvas: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
 
     feedbackBadge: { position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', color: '#fff', padding: '8px 20px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' },
-    readinessBanner: { position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', color: '#fff', padding: '10px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', zIndex: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' },
+    readinessBanner: { position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', color: '#fff', padding: '10px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap', zIndex: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' },
     readinessIcon: { fontSize: '1.3rem' },
 
-    preStartOverlay: { position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.93)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 },
+    preStartOverlay: { position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 },
     loadingBox: { textAlign: 'center' },
-    spinner: { width: '48px', height: '48px', border: '4px solid #1e293b', borderTop: '4px solid #38bdf8', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' },
-    loadingText: { color: '#f1f5f9', fontSize: '16px', fontWeight: 600 },
-    loadingSubText: { color: '#64748b', fontSize: '13px' },
+    spinner: { width: '48px', height: '48px', border: '4px solid #E6E8E6', borderTop: '4px solid #F15025', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' },
+    loadingText: { color: '#222', fontSize: '16px', fontWeight: 600 },
+    loadingSubText: { color: '#888', fontSize: '13px' },
     startOverlayBox: { textAlign: 'center', padding: '40px', maxWidth: '360px' },
     overlayEmoji: { fontSize: '3.5rem', marginBottom: '12px' },
-    overlayTitle: { color: '#f1f5f9', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 20px' },
-    positionGuide: { background: '#1e293b', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'left', border: '1px solid #334155' },
-    guideRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' },
+    overlayTitle: { color: '#222', fontSize: '1.8rem', fontWeight: 800, margin: '0 0 20px' },
+    positionGuide: { background: '#FFF5F2', borderRadius: '16px', padding: '20px', marginBottom: '24px', textAlign: 'left', border: '1px solid rgba(241,80,37,0.15)' },
+    guideRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' },
     guideIcon: { fontSize: '1.2rem', flexShrink: 0 },
-    guideText: { color: '#94a3b8', fontSize: '13px', margin: 0, lineHeight: '1.5' },
-    cameraError: { color: '#f87171', fontSize: '13px', marginBottom: '16px' },
-    startBtn: { padding: '14px 36px', background: '#38bdf8', color: '#0f172a', fontWeight: 800, fontSize: '15px', border: 'none', borderRadius: '12px', cursor: 'pointer' },
+    guideText: { color: '#444', fontSize: '13px', margin: 0, lineHeight: '1.5' },
+    cameraError: { color: '#ef4444', fontSize: '13px', marginBottom: '16px' },
+    startBtn: { width: '100%', padding: '16px 24px', background: '#F15025', color: '#FFFFFF', fontWeight: 700, fontSize: '15px', border: 'none', borderRadius: '999px', cursor: 'pointer', boxShadow: '0 4px 16px rgba(241,80,37,0.25)', fontFamily: 'inherit', letterSpacing: '0.3px', transition: 'background 0.2s' },
 
     rightPanel: { display: 'flex', flexDirection: 'column', gap: '12px', width: '210px', flexShrink: 0 },
-    warningsPanel: { background: '#1e293b', borderRadius: '12px', padding: '14px', border: '1px solid #334155' },
+    warningsPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
     feedbackBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 10px 12px', border: '2px solid', borderRadius: '10px', marginTop: '8px', gap: '6px' },
     feedbackIcon: { fontSize: '2rem', lineHeight: 1 },
     feedbackTitle: { fontSize: '16px', fontWeight: 800, margin: 0, textAlign: 'center', letterSpacing: '0.3px' },
-    feedbackDetail: { color: '#cbd5e1', fontSize: '12px', lineHeight: 1.6, textAlign: 'center', margin: 0 },
-    inactiveText: { color: '#334155', fontSize: '12px', fontStyle: 'italic', marginTop: '8px' },
+    feedbackDetail: { color: '#666', fontSize: '12px', lineHeight: 1.6, textAlign: 'center', margin: 0 },
+    inactiveText: { color: '#999', fontSize: '12px', fontStyle: 'italic', marginTop: '8px' },
 
-    anglesPanel: { background: '#1e293b', borderRadius: '12px', padding: '14px', border: '1px solid #334155' },
+    anglesPanel: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
     angleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
-    angleLabel: { color: '#64748b', fontSize: '12px' },
+    angleLabel: { color: '#666', fontSize: '12px' },
     angleValue: { fontSize: '13px', fontWeight: 700 },
 
-    classLegend: { background: '#1e293b', borderRadius: '12px', padding: '14px', border: '1px solid #334155' },
+    classLegend: { background: '#FFFFFF', borderRadius: '16px', padding: '14px', border: '1px solid #E6E8E6' },
     classRow: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' },
     classDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
-    classLabel: { color: '#e2e8f0', fontSize: '11px', fontWeight: 600, minWidth: '40px' },
-    classRange: { color: '#64748b', fontSize: '11px' },
+    classLabel: { color: '#222', fontSize: '11px', fontWeight: 600, minWidth: '40px' },
+    classRange: { color: '#888', fontSize: '11px' },
 
-    stopBtn: { padding: '13px', background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', borderRadius: '12px', cursor: 'pointer' },
+    stopBtn: { width: '100%', padding: '12px', background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: '14px', border: 'none', borderRadius: '999px', cursor: 'pointer', transition: 'background 0.2s' },
 
     summaryWrapper: { maxWidth: '900px', margin: '0 auto', padding: '50px 24px' },
-    summaryTitle: { fontSize: '2rem', fontWeight: 800, color: '#f1f5f9', textAlign: 'center', margin: '0 0 8px' },
-    summarySubtitle: { color: '#64748b', textAlign: 'center', marginBottom: '36px' },
+    summaryTitle: { fontSize: '2.2rem', fontWeight: 800, color: '#222', textAlign: 'center', margin: '0 0 8px' },
+    summarySubtitle: { color: '#666', textAlign: 'center', marginBottom: '36px' },
     statCards: { display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '24px', flexWrap: 'wrap' },
-    summaryStatCard: { background: '#1e293b', border: '1px solid #334155', borderRadius: '16px', padding: '22px 28px', textAlign: 'center', minWidth: '120px' },
+    summaryStatCard: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '22px 28px', textAlign: 'center', minWidth: '120px' },
     summaryStatValue: { display: 'block', fontSize: '2.2rem', fontWeight: 800, marginBottom: '6px' },
-    summaryStatLabel: { color: '#64748b', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' },
+    summaryStatLabel: { color: '#999', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' },
 
-    accuracyBarWrapper: { background: '#1e293b', border: '1px solid #334155', borderRadius: '16px', padding: '20px 28px', marginBottom: '28px' },
+    accuracyBarWrapper: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '20px 28px', marginBottom: '28px' },
     accuracyBarLabels: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
-    accuracyBarTrack: { width: '100%', height: '12px', background: '#334155', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' },
+    accuracyBarTrack: { width: '100%', height: '12px', background: '#E6E8E6', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' },
     accuracyBarFill: { height: '100%', borderRadius: '999px', transition: 'width 0.6s ease' },
 
     legendRow: { display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '28px', flexWrap: 'wrap' },
     legendItem: { display: 'flex', alignItems: 'center', gap: '6px' },
     legendDot: { width: '10px', height: '10px', borderRadius: '50%' },
-    legendText: { color: '#94a3b8', fontSize: '12px' },
+    legendText: { color: '#666', fontSize: '12px' },
 
-    breakdownSection: { background: '#1e293b', border: '1px solid #334155', borderRadius: '16px', padding: '24px', marginBottom: '28px' },
-    breakdownTitle: { color: '#f1f5f9', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' },
-    breakdownSubtitle: { color: '#64748b', fontSize: '12px', margin: '0 0 16px' },
+    breakdownSection: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '16px', padding: '24px', marginBottom: '28px' },
+    breakdownTitle: { color: '#222', fontSize: '16px', fontWeight: 700, margin: '0 0 4px' },
+    breakdownSubtitle: { color: '#666', fontSize: '12px', margin: '0 0 16px' },
     reasonsList: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    reasonCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0f172a', border: '1px solid #334155', borderRadius: '12px', padding: '14px 18px' },
+    reasonCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFF5F2', border: '1px solid rgba(241,80,37,0.15)', borderRadius: '12px', padding: '14px 18px' },
     reasonLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
     reasonIcon: { fontSize: '1.4rem' },
-    reasonText: { color: '#e2e8f0', fontSize: '14px', fontWeight: 500 },
+    reasonText: { color: '#444', fontSize: '14px', fontWeight: 500 },
     reasonRight: { display: 'flex', alignItems: 'baseline', gap: '4px' },
     reasonCount: { color: '#ef4444', fontSize: '1.4rem', fontWeight: 800 },
-    reasonCountLabel: { color: '#64748b', fontSize: '11px' },
+    reasonCountLabel: { color: '#888', fontSize: '11px' },
 
     chartsRow: { display: 'flex', gap: '24px', marginBottom: '40px', flexWrap: 'wrap' },
-    chartBox: { flex: 1, minWidth: '280px', background: '#1e293b', borderRadius: '16px', padding: '24px', border: '1px solid #334155' },
-    noDataBox: { background: '#1e293b', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '40px', border: '1px solid #334155' },
+    chartBox: { flex: 1, minWidth: '280px', background: '#FFFFFF', borderRadius: '16px', padding: '24px', border: '1px solid #E6E8E6' },
+    noDataBox: { background: '#FFFFFF', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '40px', border: '1px solid #E6E8E6' },
     summaryActions: { display: 'flex', gap: '16px', justifyContent: 'center' },
-    outlineBtn: { padding: '14px 36px', background: 'transparent', border: '1px solid #38bdf8', color: '#38bdf8', fontWeight: 700, fontSize: '15px', borderRadius: '12px', cursor: 'pointer' },
+    outlineBtn: { padding: '14px 36px', background: 'transparent', border: '1px solid #F15025', color: '#F15025', fontWeight: 700, fontSize: '15px', borderRadius: '999px', cursor: 'pointer', transition: 'all 0.2s' },
+
+    restOverlay: { position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 15 },
+    restTitle: { color: '#F15025', fontSize: '1.4rem', fontWeight: 800, margin: '0 0 10px', letterSpacing: '1px' },
+    restCountdown: { color: '#222', fontSize: '4.5rem', fontWeight: 900, margin: '0 0 8px' },
+    restSubtitle: { color: '#666', fontSize: '14px', margin: '0 0 24px' },
+    skipRestBtn: { padding: '10px 24px', background: 'transparent', border: '1px solid #F15025', color: '#F15025', fontWeight: 700, fontSize: '13px', borderRadius: '999px', cursor: 'pointer', transition: 'all 0.2s' },
+
+    completeOverlay: { position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 15 },
+    completeIcon: { fontSize: '4rem', marginBottom: '16px' },
+    completeTitle: { color: '#22c55e', fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px' },
+    completeSubtitle: { color: '#666', fontSize: '14px', margin: 0 },
+
+    setGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginTop: '12px' },
+    setCard: { background: '#FFFFFF', border: '1px solid #E6E8E6', borderRadius: '12px', padding: '16px' },
+    setCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #E6E8E6', paddingBottom: '8px' },
+    setNumLabel: { color: '#222', fontWeight: 700, fontSize: '14px' },
+    setAccBadge: { padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700 },
+    setStatsRow: { display: 'flex', justifyContent: 'space-between' },
+    setStatItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 },
+    setStatVal: { color: '#444', fontWeight: 700, fontSize: '16px' },
+    setStatLbl: { color: '#999', fontSize: '10px', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' },
 };
