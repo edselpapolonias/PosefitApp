@@ -62,3 +62,158 @@
 [2026-07-01T16:36:28.096161] Login attempt: username=edsel
 [2026-07-01T16:36:29.449402] Authentication result for edsel: SUCCESS
 [2026-07-01T16:36:29.508751] Login session started for edsel
+[2026-07-01T19:51:13.183199] Login attempt: username=edsel
+[2026-07-01T19:51:17.207369] Authentication result for edsel: SUCCESS
+[2026-07-01T19:51:17.640090] Login session started for edsel
+[2026-07-01T21:14:40.260214] Login attempt: username=edsel
+[2026-07-01T21:14:42.263157] Authentication result for edsel: SUCCESS
+[2026-07-01T21:14:42.339461] Login session started for edsel
+[2026-07-01T22:04:41.726083] Login attempt: username=edsel
+[2026-07-01T22:04:42.792670] Authentication result for edsel: SUCCESS
+[2026-07-01T22:04:42.817335] Login session started for edsel
+[2026-07-01T22:11:18.828272] Gemini coach feedback failed: GEMINI_API_KEY is not configured.
+[2026-07-01T22:12:33.026124] Gemini coach feedback failed: Gemini request failed with HTTP 404: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+[2026-07-01T22:19:46.489078] Login attempt: username=edsel
+[2026-07-01T22:19:47.595666] Authentication result for edsel: SUCCESS
+[2026-07-01T22:19:47.618305] Login session started for edsel
+[2026-07-01T22:27:20.576407] Login attempt: username=edsel
+[2026-07-01T22:27:21.763976] Authentication result for edsel: FAILED
+[2026-07-01T22:27:24.875846] Login attempt: username=edsel
+[2026-07-01T22:27:26.024314] Authentication result for edsel: FAILED
+[2026-07-01T22:27:33.320795] Login attempt: username=edsel
+[2026-07-01T22:27:34.486709] Authentication result for edsel: SUCCESS
+[2026-07-01T22:27:34.533248] Login session started for edsel
+[2026-07-01T22:33:37.707644] Gemini coach feedback failed [rate_limited]: Gemini request failed with HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 22.128604454s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count",
+            "quotaId": "GenerateContentInputTokensPerModelPerMinute-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "22s"
+      }
+    ]
+  }
+}
+
+[2026-07-01T22:35:19.771575] Gemini coach feedback failed [rate_limited]: Gemini request failed with HTTP 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 40.05595886s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count",
+            "quotaId": "GenerateContentInputTokensPerModelPerMinute-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "40s"
+      }
+    ]
+  }
+}
+
+[2026-07-01T22:37:05.177890] Login attempt: username=edsel
+[2026-07-01T22:37:06.313470] Authentication result for edsel: SUCCESS
+[2026-07-01T22:37:06.338235] Login session started for edsel
+[2026-07-01T22:39:29.078965] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 2 column 26 (char 27)
+[2026-07-01T22:43:19.550586] Login attempt: username=edsel
+[2026-07-01T22:43:20.649098] Authentication result for edsel: SUCCESS
+[2026-07-01T22:43:20.681492] Login session started for edsel
+[2026-07-16T20:54:49.488163] Login attempt: username=edsel
+[2026-07-16T20:54:51.297331] Authentication result for edsel: SUCCESS
+[2026-07-16T20:54:51.389595] Login session started for edsel
+[2026-07-28T13:29:25.734169] Login attempt: username=edsel
+[2026-07-28T13:29:27.641100] Authentication result for edsel: SUCCESS
+[2026-07-28T13:29:27.769251] Login session started for edsel
+[2026-07-28T13:30:34.067338] Gemini coach feedback failed [dns_error]: Gemini request failed: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-07-28T13:34:43.159187] Login attempt: username=edsel
+[2026-07-28T13:34:45.875418] Authentication result for edsel: SUCCESS
+[2026-07-28T13:34:45.911191] Login session started for edsel
+[2026-07-29T20:43:21.011747] Login attempt: username=edsel
+[2026-07-29T20:43:23.261358] Authentication result for edsel: SUCCESS
+[2026-07-29T20:43:23.365052] Login session started for edsel
+[2026-07-30T22:52:46.500927] Login attempt: username=edsel
+[2026-07-30T22:52:48.817159] Authentication result for edsel: SUCCESS
+[2026-07-30T22:52:48.939455] Login session started for edsel
