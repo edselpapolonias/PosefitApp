@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import backgroundImage from './background.png';
+import frameImg from '../images/frame.png';
+import dashboardImg from '../images/dashboard.png';
+import systemImg from '../images/system.png';
 
 const ORANGE = '#F97316';
 const TEXT = '#111827';
@@ -143,7 +146,7 @@ export default function AuthPage() {
       )}
 
       <div style={{ marginBottom: 18 }}>
-        <label htmlFor="login-username" style={labelStyle}>Email</label>
+        <label htmlFor="login-username" style={labelStyle}>Username</label>
         <input
           id="login-username"
           name="username"
@@ -154,7 +157,7 @@ export default function AuthPage() {
           style={inputStyle}
           onFocus={(e) => { e.currentTarget.style.borderColor = ORANGE; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(249, 115, 22, 0.14)'; }}
           onBlur={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none'; }}
-          placeholder="Enter your email"
+          placeholder="Enter your username"
         />
       </div>
 
@@ -225,8 +228,8 @@ export default function AuthPage() {
       )}
 
       <div style={{ marginBottom: 16 }}>
-        <label htmlFor="register-username" style={labelStyle}>Email</label>
-        <input id="register-username" name="username" type="text" value={registerForm.username} onChange={handleRegisterChange} required style={inputStyle} placeholder="Enter your email" />
+        <label htmlFor="register-username" style={labelStyle}>Username</label>
+        <input id="register-username" name="username" type="text" value={registerForm.username} onChange={handleRegisterChange} required style={inputStyle} placeholder="Enter your username" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, marginBottom: 16 }}>
@@ -286,9 +289,6 @@ export default function AuthPage() {
           alt="Woman training at home"
           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
-        <div style={{ position: 'absolute', top: 24, left: 24, color: '#fff', fontSize: 24, fontWeight: 900, letterSpacing: 0.2 }}>
-          PoseFit
-        </div>
       </section>
 
         <section
@@ -303,9 +303,9 @@ export default function AuthPage() {
           }}
         >
           <div style={{ width: '100%', maxWidth: 430 }}>
-          <AnimatePresence mode="wait">
-            {activeTab === 'login' ? renderLoginForm() : renderRegisterForm()}
-          </AnimatePresence>
+            <AnimatePresence mode="wait">
+              {activeTab === 'login' ? renderLoginForm() : renderRegisterForm()}
+            </AnimatePresence>
           </div>
         </section>
       </section>
@@ -427,7 +427,174 @@ export default function AuthPage() {
         </div>
       </section>
 
+      <section style={{ background: '#ffffff', padding: '64px 32px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2
+            style={{
+              margin: '0 0 28px',
+              color: TEXT,
+              fontFamily: 'Impact, Anton, "Archivo Black", "Oswald", sans-serif',
+              fontSize: 'clamp(36px, 5vw, 56px)',
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+            }}
+          >
+            FORM MEETS <span style={{ color: ORANGE }}>FEEDBACK.</span>
+          </h2>
+
+          <div
+            className="feedback-features-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 32,
+              alignItems: 'stretch',
+            }}
+          >
+            {/* Column 1: Real-Time Feedback */}
+            <div
+              className="feature-card"
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                padding: '32px 24px',
+                border: '2px solid rgba(229, 231, 235, 0.8)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 16,
+                  background: '#ffffff',
+                  padding: 16,
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={frameImg}
+                  alt="Real-Time Feedback"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
+              <h3 style={{ margin: '16px 0 0', color: TEXT, fontSize: 20, fontWeight: 800, textAlign: 'center' }}>
+                Real-Time Feedback
+              </h3>
+              <p style={{ margin: '12px 0 0', color: MUTED, fontSize: 14, lineHeight: 1.65, maxWidth: 300, textAlign: 'center' }}>
+                Use your webcam to get instant form corrections as you move. PoseFit tracks your squats, push-ups, and planks rep-by-rep — no wearables, no gym trainer, just your camera and AI-powered pose analysis.
+              </p>
+            </div>
+
+            {/* Column 2: Session Summary */}
+            <div
+              className="feature-card"
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                padding: '32px 24px',
+                border: '2px solid rgba(229, 231, 235, 0.8)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 16,
+                  background: '#ffffff',
+                  padding: 16,
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={dashboardImg}
+                  alt="Session Summary"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
+              <h3 style={{ margin: '16px 0 0', color: TEXT, fontSize: 20, fontWeight: 800, textAlign: 'center' }}>
+                Session Summary
+              </h3>
+              <p style={{ margin: '12px 0 0', color: MUTED, fontSize: 14, lineHeight: 1.65, maxWidth: 300, textAlign: 'center' }}>
+                After each workout, PoseFit generates a summary based on your rep count, form accuracy, and the specific errors detected during your session — so you can track your progress and know exactly what to work on next time.
+              </p>
+            </div>
+
+            {/* Column 3: Grow Smarter */}
+            <div
+              className="feature-card"
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                padding: '32px 24px',
+                border: '2px solid rgba(229, 231, 235, 0.8)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 16,
+                  background: '#ffffff',
+                  padding: 16,
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <img
+                  src={systemImg}
+                  alt="Grow Smarter"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              </div>
+              <h3 style={{ margin: '16px 0 0', color: TEXT, fontSize: 20, fontWeight: 800, textAlign: 'center' }}>
+                Grow Smarter
+              </h3>
+              <p style={{ margin: '12px 0 0', color: MUTED, fontSize: 14, lineHeight: 1.65, maxWidth: 300, textAlign: 'center' }}>
+                Fix your form with personalized feedback that adapts to your movement — helping you build strength safely and see real progress, rep after rep.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <style>{`
+        .feature-card:hover {
+          border-color: #F97316 !important;
+          transform: translateY(-4px) !important;
+          box-shadow: 0 12px 28px rgba(249, 115, 22, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+        }
         @media (max-width: 1023px) {
           .auth-split {
             grid-template-columns: 1fr !important;
@@ -439,6 +606,12 @@ export default function AuthPage() {
           .auth-split > section:last-of-type {
             min-height: auto !important;
             padding: 40px 24px 48px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .feedback-features-grid {
+            grid-template-columns: 1fr !important;
+            gap: 48px !important;
           }
         }
         @media (max-width: 560px) {
