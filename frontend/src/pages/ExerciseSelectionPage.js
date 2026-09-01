@@ -1,320 +1,230 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import squatPhoto from '../images/exercise-squat.png';
+import pushUpPhoto from '../images/exercise-push-up.png';
+import plankPhoto from '../images/exercise-plank.png';
+import lungePhoto from '../images/exercise-lunge.png';
+import sitUpPhoto from '../images/exercise-sit-up.png';
+import './ExerciseSelectionPage.css';
 
 const exercises = [
-    {
-        id: 'squat',
-        name: 'Squat',
-        category: 'Lower body',
-        duration: '3 sets • 12 reps',
-        tags: ['Glutes', 'Quads', 'Core'],
-        emoji: '🏋️',
-        enabled: true,
-    },
-    {
-        id: 'plank',
-        name: 'Plank',
-        category: 'Core',
-        duration: '3 sets • 30 sec hold',
-        tags: ['Core', 'Shoulders', 'Stability'],
-        emoji: '🧘',
-        enabled: false,
-    },
-    {
-        id: 'pushups',
-        name: 'Push-ups',
-        category: 'Upper body',
-        duration: '3 sets • 15 reps',
-        tags: ['Chest', 'Triceps', 'Core'],
-        emoji: '💪',
-        enabled: false,
-    },
+  {
+    id: 'squat',
+    name: 'Squat',
+    category: 'Lower Body',
+    tone: 'orange',
+    description: 'Build lower body strength and improve balance and mobility.',
+    muscles: 'Quadriceps, Hamstrings, Glutes',
+    image: squatPhoto,
+    route: '/exercises/squat',
+  },
+  {
+    id: 'push-up',
+    name: 'Push Up',
+    category: 'Upper Body',
+    tone: 'blue',
+    description: 'Strengthen your chest, shoulders, arms, and core.',
+    muscles: 'Chest, Shoulders, Triceps, Core',
+    image: pushUpPhoto,
+  },
+  {
+    id: 'plank',
+    name: 'Plank',
+    category: 'Core',
+    tone: 'purple',
+    description: 'Improve core stability and overall body control.',
+    muscles: 'Core, Shoulders, Lower Back',
+    image: plankPhoto,
+  },
+  {
+    id: 'lunge',
+    name: 'Lunge',
+    category: 'Lower Body',
+    tone: 'orange',
+    description: 'Improve leg strength, balance, and coordination.',
+    muscles: 'Quadriceps, Hamstrings, Glutes',
+    image: lungePhoto,
+  },
+  {
+    id: 'sit-up',
+    name: 'Sit Up',
+    category: 'Core',
+    tone: 'purple',
+    description: 'Strengthen your core and improve posture.',
+    muscles: 'Abs, Hip Flexors',
+    image: sitUpPhoto,
+  },
+];
+
+const filters = ['All Exercises (5)', 'Lower Body', 'Upper Body', 'Core', 'Full Body'];
+
+const steps = [
+  { icon: 'fa-clipboard-list', title: '1. Choose Exercise', text: 'Select an exercise from the list above.' },
+  { icon: 'fa-sliders', title: '2. Set Your Goals', text: 'Set your reps, sets, and rest time.' },
+  { icon: 'fa-circle-play', title: '3. Start Workout', text: 'Follow the real-time feedback and do your best.' },
+  { icon: 'fa-chart-simple', title: '4. See Results', text: 'Review your performance and track your progress.' },
+];
+
+const tips = [
+  'Ensure good lighting and a clear view of your body.',
+  'Keep your device steady during exercises.',
+  'Focus on form, not just speed.',
+  'Take rest when needed and stay hydrated.',
 ];
 
 export default function ExerciseSelectionPage() {
-    const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user'));
-    
-    const initials = user
-        ? `${(user.first_name || '')[0] || ''}${(user.last_name || '')[0] || ''}`.toUpperCase()
-        : 'U';
+  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState(filters[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('prototype');
+  const [selectedExercise, setSelectedExercise] = useState(null);
 
-    const handleLogout = () => {
-        localStorage.removeItem('user');
-        navigate('/login');
-    };
+  const visibleExercises = useMemo(() => {
+    const category = activeFilter.replace(' (5)', '');
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    const handleCardClick = (ex) => {
-        if (ex.enabled) {
-            navigate(`/exercises/${ex.id}`);
-        }
-    };
+    return exercises
+      .filter((exercise) => category === 'All Exercises' || exercise.category === category)
+      .filter((exercise) => !normalizedSearch || exercise.name.toLowerCase().includes(normalizedSearch))
+      .sort((a, b) => {
+        if (sortOrder === 'az') return a.name.localeCompare(b.name);
+        if (sortOrder === 'za') return b.name.localeCompare(a.name);
+        return 0;
+      });
+  }, [activeFilter, searchTerm, sortOrder]);
 
-    return (
-        <div style={styles.container}>
-            {/* Header / Nav */}
-            <div style={styles.nav}>
-                <div style={styles.breadcrumb}>
-                    <span style={styles.breadcrumbCurrent}>Exercises</span>
+  const selectExercise = (exercise) => {
+    setSelectedExercise(exercise.id);
+
+    if (exercise.route) {
+      navigate(exercise.route);
+    }
+  };
+
+  return (
+    <div className="exercise-page">
+      <Navbar />
+
+      <main className="exercise-page__main">
+        <section className="exercise-toolbar" aria-label="Exercise filters">
+          <div className="exercise-toolbar__filters">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={`exercise-filter${activeFilter === filter ? ' exercise-filter--active' : ''}`}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+
+          <div className="exercise-toolbar__tools">
+            <label className="exercise-search">
+              <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+              <span className="sr-only">Search exercises</span>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search exercises..."
+              />
+            </label>
+
+            <label className="exercise-sort">
+              <span className="sr-only">Sort exercises</span>
+              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+                <option value="prototype">Sort: A - Z</option>
+                <option value="za">Sort: Z - A</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section className="exercise-grid" aria-label="Available exercises">
+          {visibleExercises.map((exercise) => (
+            <article
+              key={exercise.id}
+              className={`exercise-card exercise-card--${exercise.tone}${selectedExercise === exercise.id ? ' exercise-card--selected' : ''}`}
+              onClick={() => selectExercise(exercise)}
+            >
+              <div className="exercise-card__photo">
+                <img
+                  className="exercise-card__photo-image"
+                  src={exercise.image}
+                  alt={`${exercise.name} exercise demonstration`}
+                />
+                <span className="exercise-card__mini-photo" aria-hidden="true">
+                  <img src={exercise.image} alt="" />
+                </span>
+              </div>
+
+              <div className="exercise-card__content">
+                <h2>{exercise.name}</h2>
+                <span className="exercise-card__category">{exercise.category}</span>
+                <p>{exercise.description}</p>
+
+                <div className="exercise-card__muscles">
+                  <strong>Primary Muscles</strong>
+                  <span>{exercise.muscles}</span>
                 </div>
-                <div style={styles.navRight}>
-                    <span style={styles.welcome}>Hi, {user?.first_name || 'User'}!</span>
-                    <button 
-                        style={styles.logoutBtn} 
-                        onClick={handleLogout}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.borderColor = '#F15025';
-                            e.currentTarget.style.color = '#F15025';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = '#E6E8E6';
-                            e.currentTarget.style.color = '#666';
-                        }}
-                    >
-                        Logout
-                    </button>
-                    <div id="user-avatar" style={styles.avatar}>{initials}</div>
-                </div>
+
+                <button
+                  className="exercise-card__start"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    selectExercise(exercise);
+                  }}
+                >
+                  <i className="fa-solid fa-play" aria-hidden="true" />
+                  Start Exercise
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        {visibleExercises.length === 0 && (
+          <p className="exercise-page__empty">No exercises match your search.</p>
+        )}
+
+        <section className="exercise-guidance">
+          <div className="exercise-guidance__steps">
+            <h2>How It Works</h2>
+            <div className="exercise-steps">
+              {steps.map((step, index) => (
+                <React.Fragment key={step.title}>
+                  <div className="exercise-step">
+                    <span className="exercise-step__icon" aria-hidden="true">
+                      <i className={`fa-solid ${step.icon}`} />
+                    </span>
+                    <span>
+                      <strong>{step.title}</strong>
+                      <small>{step.text}</small>
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && <i className="fa-solid fa-arrow-right exercise-step__arrow" aria-hidden="true" />}
+                </React.Fragment>
+              ))}
             </div>
+          </div>
 
-            {/* Main body */}
-            <div style={styles.body}>
-                <h1 style={styles.pageTitle}>Choose an exercise</h1>
-                <p style={styles.pageSub}>Select one to get started. Your form will be tracked in real time.</p>
-
-                <div style={styles.grid}>
-                    {exercises.map((ex) => (
-                        <div
-                            key={ex.id}
-                            style={{
-                                ...styles.card,
-                                opacity: ex.enabled ? 1 : 0.75,
-                                cursor: ex.enabled ? 'pointer' : 'default',
-                            }}
-                            onClick={() => handleCardClick(ex)}
-                            onMouseEnter={e => {
-                                if (ex.enabled) {
-                                    e.currentTarget.style.transform = 'translateY(-6px)';
-                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(241,80,37,0.08)';
-                                }
-                            }}
-                            onMouseLeave={e => {
-                                if (ex.enabled) {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }
-                            }}
-                        >
-                            {/* Top box: Preview illustration */}
-                            <div style={{
-                                ...styles.cardTop,
-                                background: ex.enabled ? '#FFF5F2' : '#F1F1F1'
-                            }}>
-                                {ex.emoji}
-                            </div>
-
-                            {/* Bottom box: Info */}
-                            <div style={styles.cardBottom}>
-                                <h3 style={styles.cardName}>{ex.name}</h3>
-                                <p style={styles.cardSub}>
-                                    {ex.category} • {ex.duration}
-                                </p>
-                                
-                                <div style={styles.tagsRow}>
-                                    {ex.tags.map((tag, idx) => (
-                                        <span key={idx} style={styles.tagPill}>{tag}</span>
-                                    ))}
-                                </div>
-
-                                <div style={styles.btnRow}>
-                                    <button
-                                        style={{
-                                            ...styles.selectBtn,
-                                            opacity: ex.enabled ? 1 : 0.5,
-                                            cursor: ex.enabled ? 'pointer' : 'not-allowed',
-                                        }}
-                                        disabled={!ex.enabled}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleCardClick(ex);
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (ex.enabled) {
-                                                e.currentTarget.style.background = '#F15025';
-                                                e.currentTarget.style.color = '#fff';
-                                                e.currentTarget.style.borderColor = '#F15025';
-                                            }
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (ex.enabled) {
-                                                e.currentTarget.style.background = '#fff';
-                                                e.currentTarget.style.color = '#222';
-                                                e.currentTarget.style.borderColor = '#E6E8E6';
-                                            }
-                                        }}
-                                    >
-                                        {ex.enabled ? 'Select ➔' : 'Locked 🔒'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
+          <aside className="exercise-guidance__tips">
+            <h2>Tips for Best Results</h2>
+            <ul>
+              {tips.map((tip) => (
+                <li key={tip}>
+                  <i className="fa-solid fa-check" aria-hidden="true" />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </section>
+      </main>
+    </div>
+  );
 }
-
-const styles = {
-    container: {
-        minHeight: '100vh',
-        background: '#F7F7F7',
-        color: '#222',
-        fontFamily: "'Poppins', 'Segoe UI', sans-serif",
-    },
-    nav: {
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 32px',
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E6E8E6',
-    },
-    breadcrumb: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        fontSize: '14px',
-    },
-    breadcrumbCurrent: {
-        fontWeight: 700,
-        color: '#222',
-    },
-    navRight: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-    },
-    welcome: {
-        color: '#666',
-        fontSize: '14px',
-        fontWeight: 500,
-    },
-    logoutBtn: {
-        padding: '8px 18px',
-        background: 'transparent',
-        border: '1px solid #E6E8E6',
-        color: '#666',
-        borderRadius: '999px',
-        cursor: 'pointer',
-        fontSize: '13px',
-        fontWeight: '600',
-        fontFamily: 'inherit',
-        transition: 'all 0.2s',
-    },
-    avatar: {
-        height: '36px',
-        width: '36px',
-        borderRadius: '50%',
-        background: '#F15025',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '13px',
-        fontWeight: 700,
-        boxShadow: '0 2px 8px rgba(241,80,37,0.25)',
-    },
-    body: {
-        padding: '48px 32px 60px',
-        maxWidth: '1100px',
-        margin: '0 auto',
-    },
-    pageTitle: {
-        fontSize: '2.2rem',
-        fontWeight: 800,
-        color: '#222',
-        margin: '0 0 8px',
-    },
-    pageSub: {
-        color: '#666',
-        fontSize: '1rem',
-        marginBottom: '40px',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: '32px',
-        alignItems: 'start',
-    },
-    card: {
-        background: '#FFFFFF',
-        border: '1px solid #E6E8E6',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    },
-    cardTop: {
-        height: '180px',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderBottom: '1px solid #E6E8E6',
-        fontSize: '3.5rem',
-    },
-    cardBottom: {
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-    },
-    cardName: {
-        fontSize: '1.4rem',
-        fontWeight: 800,
-        color: '#222',
-        margin: '0 0 4px',
-    },
-    cardSub: {
-        color: '#666',
-        fontSize: '13px',
-        margin: '0 0 16px',
-    },
-    tagsRow: {
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-        marginBottom: '24px',
-    },
-    tagPill: {
-        background: '#FFFFFF',
-        border: '1px solid #E6E8E6',
-        color: '#444',
-        padding: '4px 12px',
-        borderRadius: '999px',
-        fontSize: '11px',
-        fontWeight: '600',
-    },
-    btnRow: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginTop: 'auto',
-    },
-    selectBtn: {
-        background: '#FFFFFF',
-        border: '1px solid #E6E8E6',
-        color: '#222',
-        padding: '10px 24px',
-        borderRadius: '12px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        fontFamily: 'inherit',
-    },
-};

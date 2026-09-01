@@ -1,0 +1,252 @@
+.top-navbar,
+.top-navbar * {
+  box-sizing: border-box;
+}
+
+.top-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #e9edf2;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.03);
+  font-family: 'Poppins', sans-serif;
+}
+
+.top-navbar__inner {
+  width: 100%;
+  min-height: 62px;
+  padding: 0 30px;
+  display: grid;
+  grid-template-columns: minmax(185px, 1fr) auto minmax(185px, 1fr);
+  align-items: stretch;
+  column-gap: 24px;
+}
+
+.top-navbar__brand {
+  align-self: center;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #171b26;
+  text-decoration: none;
+}
+
+.top-navbar__brand-icon {
+  width: 28px;
+  color: #ff5a0a;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.top-navbar__brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.top-navbar__brand-name {
+  color: #171b26;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.55px;
+}
+
+.top-navbar__brand-name span {
+  color: #ff5a0a;
+}
+
+.top-navbar__tagline {
+  margin-top: 4px;
+  color: #303642;
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+
+.top-navbar__links {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(22px, 3.2vw, 44px);
+  white-space: nowrap;
+}
+
+.top-navbar__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: #202431;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: default;
+}
+
+a.top-navbar__link {
+  cursor: pointer;
+}
+
+.top-navbar__link::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: transparent;
+}
+
+.top-navbar__link--active {
+  color: #ff5a0a;
+  font-weight: 600;
+}
+
+.top-navbar__link--active::after {
+  background: #ff5a0a;
+}
+
+.top-navbar__actions {
+  align-self: center;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.top-navbar__icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: #181c26;
+  font-size: 17px;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.top-navbar__icon-button:hover,
+.top-navbar__icon-button:focus-visible {
+  background: #f7f8fa;
+}
+
+.top-navbar__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #171b26;
+}
+
+.top-navbar__avatar {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: #6a3b27;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(145deg, #f7d8c6, #e7edf1);
+  border: 3px solid #edf1f4;
+  border-radius: 50%;
+}
+
+.top-navbar__user-name {
+  max-width: 110px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-navbar__chevron {
+  margin-left: 2px;
+  font-size: 8px;
+}
+
+@media (max-width: 980px) {
+  .top-navbar__inner {
+    padding: 0 20px;
+    grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr);
+    column-gap: 16px;
+  }
+
+  .top-navbar__links {
+    gap: 20px;
+  }
+
+  .top-navbar__actions {
+    gap: 13px;
+  }
+}
+
+@media (max-width: 760px) {
+  .top-navbar__inner {
+    min-height: 102px;
+    padding: 0 16px;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 60px 42px;
+    column-gap: 12px;
+  }
+
+  .top-navbar__links {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    padding: 0 16px;
+    justify-content: flex-start;
+    gap: 28px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .top-navbar__links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-navbar__brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .top-navbar__actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 460px) {
+  .top-navbar__brand-icon {
+    width: 23px;
+    font-size: 29px;
+  }
+
+  .top-navbar__brand-name {
+    font-size: 18px;
+  }
+
+  .top-navbar__tagline,
+  .top-navbar__user-name,
+  .top-navbar__chevron {
+    display: none;
+  }
+
+  .top-navbar__actions {
+    gap: 8px;
+  }
+
+  .top-navbar__links {
+    gap: 24px;
+  }
+}

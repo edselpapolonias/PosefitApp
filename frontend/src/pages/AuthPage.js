@@ -99,7 +99,7 @@ export default function AuthPage() {
         { withCredentials: true }
       );
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      navigate('/exercises');
+      navigate('/dashboard');
     } catch (err) {
       setLoginError(err.response?.data?.error || 'Login failed');
     } finally {

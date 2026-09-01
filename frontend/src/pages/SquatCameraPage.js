@@ -36,7 +36,7 @@ export default function SquatCameraPage() {
         (typeof window !== 'undefined' ? window.innerWidth : 1280)
     );
 
-    // â”€â”€ Workout Settings (from SquatPage URL params) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Workout Settings (from SquatPage URL params)
     const totalSets = parseInt(searchParams.get('sets')) || 3;
     const totalReps = parseInt(searchParams.get('reps')) || 12;
     const restTimeSetting = parseInt(searchParams.get('rest')) || 60;
@@ -80,13 +80,13 @@ export default function SquatCameraPage() {
     // Guard: prevents onResults firing after session ends (fixes null canvas crash)
     const isMountedRef = useRef(false);
 
-    // â”€â”€ Incorrect Rep Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Incorrect Rep Tracking
     const badRepsRef = useRef([]);          // { angle, reasons[], classification }
     const deepestAngleRef = useRef(180);    // deepest angle in current squat cycle
     const hadAttemptRef = useRef(false);    // did the user descend enough to count?
     const formIssuesRef = useRef({});       // form issues detected during cycle
 
-    // â”€â”€ Workout Set/Rep/Rest Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Workout Set/Rep/Rest Tracking
     const [currentSet, setCurrentSet] = useState(1);
     const [repsInSet, setRepsInSet] = useState(0);
     const [isResting, setIsResting] = useState(false);
@@ -183,7 +183,7 @@ export default function SquatCameraPage() {
         if (prevSnapshot.isBilateralMode !== nextSnapshot.isBilateralMode) setIsBilateralMode(nextSnapshot.isBilateralMode);
         if (prevSnapshot.activeSide !== nextSnapshot.activeSide) setActiveSide(nextSnapshot.activeSide);
     }, []);
-    // â”€â”€ Timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Timer
     useEffect(() => {
         if (isStarted && !showSummary) {
             sessionStartRef.current = Date.now();
@@ -195,7 +195,7 @@ export default function SquatCameraPage() {
         return () => clearInterval(timerRef.current);
     }, [isStarted, showSummary]);
 
-    // â”€â”€ Rest Countdown Timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Rest Countdown Timer
     useEffect(() => {
         if (!isResting) return;
         poseProcessingPausedRef.current = true;
@@ -227,7 +227,7 @@ export default function SquatCameraPage() {
         }, 1000);
         return () => clearInterval(intervalId);
     }, [isResting, clearOverlayCanvas, resetSquatCycleTracking]);
-    // â”€â”€ Complete Current Set â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Complete Current Set
     const completeCurrentSet = useCallback(() => {
         if (completionTimeoutRef.current) {
             clearTimeout(completionTimeoutRef.current);
@@ -283,7 +283,7 @@ export default function SquatCameraPage() {
             setRestCountdown(restTimeSetting);
         }
     }, [totalSets, restTimeSetting, clearOverlayCanvas]);
-    // â”€â”€ Skip Rest â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Skip Rest
     const skipRest = useCallback(() => {
         isRestingRef.current = false;
         setIsResting(false);
@@ -302,7 +302,7 @@ export default function SquatCameraPage() {
         }
     }, [clearOverlayCanvas, resetSquatCycleTracking]);
 
-    // â”€â”€ Rep Counter (Kumaresan et al. 2026 logic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Rep Counter (Kumaresan et al. 2026 logic)
     // Tracks both GOOD reps (counted live) and INCORRECT reps (stored with reasons).    // A rep cycle: standing -> descending -> bottom -> descending -> standing
     const processRep = useCallback((analysis) => {
         if (!analysis) return;
@@ -388,7 +388,7 @@ export default function SquatCameraPage() {
         setPhase(newPhase);
     }, [totalReps, completeCurrentSet]);
 
-    // â”€â”€ Draw Knee Angle Label on Canvas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Draw Knee Angle Label on Canvas
     const drawKneeLabel = (ctx, knee, angle, classification, canvasW, canvasH) => {
         const x = knee.x * canvasW;
         const y = knee.y * canvasH;
@@ -406,7 +406,7 @@ export default function SquatCameraPage() {
         ctx.fillText(`${Math.round(angle)}°`, x, y);
     };
 
-    // â”€â”€ MediaPipe Results Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // MediaPipe Results Handler
     const onResults = useCallback((results) => {
         // Guard: if session was stopped, ignore any stale frames still in flight
         if (!isMountedRef.current) return;
@@ -424,7 +424,7 @@ export default function SquatCameraPage() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-        // â”€â”€ Body Readiness Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Body Readiness Detection
         const readiness = checkBodyReadiness(results.poseLandmarks);
         if (bodyReadinessRef.current !== readiness) {
             bodyReadinessRef.current = readiness;
@@ -463,7 +463,7 @@ export default function SquatCameraPage() {
 
         const analysis = analyzeSquatBilateral(results.poseLandmarks);
 
-        // â”€â”€ Voice Feedback (skip during rest) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Voice Feedback (skip during rest)
         if (analysis && !voiceMutedRef.current && !poseProcessingPausedRef.current) {
             const cue = getVoiceCue(analysis);
             if (cue) speak(cue);
@@ -510,7 +510,7 @@ export default function SquatCameraPage() {
         processRep(analysis);
         syncLiveState(analysis);
     }, [clearOverlayCanvas, processRep, syncLiveState]);
-    // â”€â”€ Start Camera â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Start Camera
     const startCamera = useCallback(async () => {
         setIsLoading(true);
         setCameraError('');
@@ -555,7 +555,7 @@ export default function SquatCameraPage() {
             setCameraError('Could not access camera. Please allow camera permission and try again.');
         }
     }, [clearOverlayCanvas, onResults, resetSquatCycleTracking]);
-    // â”€â”€ Stop Session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Stop Session
     const stopSession = useCallback(() => {
         if (completionTimeoutRef.current) {
             clearTimeout(completionTimeoutRef.current);
@@ -699,9 +699,9 @@ export default function SquatCameraPage() {
         ...styles.rightPanel,
         gap: isCompactLayout ? '8px' : '10px',
     };
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
     // SUMMARY SCREEN
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
     if (showSummary) {
         const sessionSummary = buildSessionSummary({
             goodAngles: repAnglesRef.current,
@@ -740,7 +740,7 @@ export default function SquatCameraPage() {
                     <h2 style={styles.summaryTitle}>Session Summary 🎉</h2>
                     <p style={styles.summarySubtitle}>Detailed breakdown of your squat performance</p>
 
-                    {/* â”€â”€ Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Stat Cards */}
                     <div style={styles.statCards}>
                         {[
                             { label: 'Valid Reps', value: totalGood, color: '#22c55e' },
@@ -755,7 +755,7 @@ export default function SquatCameraPage() {
                         ))}
                     </div>
 
-                    {/* â”€â”€ Accuracy Progress Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Accuracy Progress Bar */}
                     {totalAttempts > 0 && (
                         <div style={styles.accuracyBarWrapper}>
                             <div style={styles.accuracyBarLabels}>
@@ -781,7 +781,7 @@ export default function SquatCameraPage() {
                         </div>
                     )}
 
-                    {/* â”€â”€ Per-Set Breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Per-Set Breakdown */}
                     {setResultsRef.current.length > 0 && (
                         <div style={styles.breakdownSection}>
                             <h3 style={styles.breakdownTitle}>Set-by-Set Breakdown</h3>
@@ -821,7 +821,7 @@ export default function SquatCameraPage() {
                         </div>
                     )}
 
-                    {/* â”€â”€ Classification Legend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Classification Legend */}
                     <div style={styles.legendRow}>
                         {[
                             { color: '#22c55e', label: 'Good (80°–100°)' },
@@ -835,7 +835,7 @@ export default function SquatCameraPage() {
                         ))}
                     </div>
 
-                    {/* â”€â”€ Incorrect Reps Breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Incorrect Reps Breakdown */}
                     {totalBad > 0 && (
                         <div style={styles.breakdownSection}>
                             <h3 style={styles.breakdownTitle}>❌ Incorrect Reps Breakdown</h3>
@@ -857,7 +857,7 @@ export default function SquatCameraPage() {
                         </div>
                     )}
 
-                    {/* â”€â”€ Charts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Charts */}
                     {allReps.length > 0 ? (
                         <div style={styles.chartsRow}>
                             <div style={styles.chartBox}>
@@ -873,7 +873,7 @@ export default function SquatCameraPage() {
                         </div>
                     )}
 
-                    {/* â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                    {/* Actions */}
                     <div style={styles.aiCoachCard}>
                         <div style={styles.aiCoachHeader}>
                             <div>
@@ -998,9 +998,9 @@ export default function SquatCameraPage() {
         );
     }
 
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
     // CAMERA SCREEN
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
     const currentColor = CLASS_COLORS[sqClassification];
 
     return (
@@ -1096,7 +1096,7 @@ export default function SquatCameraPage() {
                                     e.currentTarget.style.color = '#F15025';
                                 }}
                             >
-                                Skip Rest âž”
+                                Skip Rest ➔
                             </button>
                         </div>
                     )}
@@ -1275,7 +1275,7 @@ export default function SquatCameraPage() {
     );
 }
 
-// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Styles
 const styles = {
     container: { height: '100vh', overflow: 'hidden', background: '#F7F7F7', color: '#222', fontFamily: "'Poppins', 'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 24px', borderBottom: '1px solid #E6E8E6', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', flexShrink: 0 },
