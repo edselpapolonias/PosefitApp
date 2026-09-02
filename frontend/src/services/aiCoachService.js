@@ -1,19 +1,13 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
-const AI_FEEDBACK_URL = `${API_BASE_URL}/api/users/squat-coach-feedback/`;
+const AI_FEEDBACK_URL = `${API_BASE_URL}/api/users/exercise-coach-feedback/`;
 
-function normalizeList(value) {
+function normalizeText(value) {
     if (Array.isArray(value)) {
-        return value.map((item) => String(item).trim()).filter(Boolean);
+        return value.map((item) => String(item).trim()).filter(Boolean).join(' ');
     }
-    if (typeof value === 'string') {
-        return value
-            .split('\n')
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-    return [];
+    return typeof value === 'string' ? value.trim() : '';
 }
 
 function normalizeFeedback(feedback) {
@@ -21,13 +15,15 @@ function normalizeFeedback(feedback) {
         return null;
     }
 
-    return {
-        overallPerformance: String(feedback.overallPerformance || '').trim(),
-        strengths: normalizeList(feedback.strengths),
-        areasForImprovement: normalizeList(feedback.areasForImprovement),
-        recommendations: normalizeList(feedback.recommendations),
-        encouragement: String(feedback.encouragement || '').trim(),
+    const normalized = {
+        overallPerformance: normalizeText(feedback.overallPerformance),
+        whatYouDidWell: normalizeText(feedback.whatYouDidWell || feedback.strengths),
+        whatToImprove: normalizeText(
+            feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations
+        ),
     };
+
+    return Object.values(normalized).every(Boolean) ? normalized : null;
 }
 
 function buildAngleStats(repAngles = []) {
@@ -87,6 +83,54 @@ export function buildSquatCoachStats({
 }
 
 export async function fetchSquatCoachFeedback(stats) {
-    const response = await axios.post(AI_FEEDBACK_URL, { stats }, { timeout: 25000 });
+    const response = await axios.post(
+        AI_FEEDBACK_URL,
+        { exercise: 'squat', summary: stats },
+        { timeout: 25000 }
+    );
     return normalizeFeedback(response.data?.feedback);
+}
+
+export async function fetchSessionCoachFeedback(sessionResult) {
+    if (sessionResult?.feedback) return sessionResult.feedback;
+
+    const formIssues = sessionResult.formIssues || [];
+    const mistakes = Object.fromEntries(
+        formIssues
+            .filter((issue) => issue?.type && Number(issue.count) > 0)
+            .map((issue) => [issue.type, Number(issue.count)])
+    );
+    const totalAttempts = sessionResult.metricType === 'time'
+        ? 0
+        : (sessionResult.correctReps || 0) + (sessionResult.incorrectReps || 0);
+    const summary = {
+        metricType: sessionResult.metricType,
+        totalReps: sessionResult.totalReps,
+        correctReps: sessionResult.correctReps,
+        incorrectReps: sessionResult.incorrectReps,
+        totalAttempts,
+        totalHoldTime: sessionResult.totalHoldTime,
+        setsCompleted: sessionResult.setsCompleted,
+        accuracy: sessionResult.accuracy,
+        duration: sessionResult.duration,
+        setResults: sessionResult.setResults || [],
+        mistakes,
+        angleStats: buildAngleStats(sessionResult.analysis?.repAngles || []),
+        totalSets: sessionResult.config?.totalSets || 0,
+        totalRepsPerSet: sessionResult.config?.repsPerSet || 0,
+        restTimeSetting: sessionResult.config?.restSeconds || 0,
+    };
+
+    const response = await axios.post(
+        AI_FEEDBACK_URL,
+        {
+            sessionId: sessionResult.id,
+            exercise: sessionResult.exercise?.id || sessionResult.exercise?.name,
+            summary,
+        },
+        { timeout: 25000 }
+    );
+    const feedback = normalizeFeedback(response.data?.feedback);
+    if (!feedback) throw new Error('AI feedback returned an invalid response.');
+    return feedback;
 }

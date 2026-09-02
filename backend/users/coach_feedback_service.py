@@ -34,15 +34,19 @@ def _safe_int(value, default=0):
 
 def _normalize_reason_counts(raw_counts):
     if isinstance(raw_counts, dict):
-        return {str(key): _safe_int(value, 0) for key, value in raw_counts.items()}
+        return {
+            str(key).strip()[:120]: _safe_int(value, 0)
+            for key, value in raw_counts.items()
+            if str(key).strip() and _safe_int(value, 0) > 0
+        }
     if isinstance(raw_counts, list):
         normalized = {}
         for item in raw_counts:
             if isinstance(item, dict):
                 reason = item.get('reason')
                 count = _safe_int(item.get('count'), 0)
-                if reason:
-                    normalized[str(reason)] = count
+                if reason and count > 0:
+                    normalized[str(reason).strip()[:120]] = count
         return normalized
     return {}
 
@@ -100,14 +104,22 @@ def normalize_exercise_request(data):
     accuracy = _safe_int(summary.get('accuracy', round((valid_reps / total_attempts) * 100) if total_attempts else 0), 0)
     duration = _safe_int(summary.get('duration', summary.get('sessionDuration', 0)), 0)
 
+    mistakes = _normalize_reason_counts(summary.get('mistakes') or summary.get('incorrectReasonCounts') or summary.get('incorrectReasons') or {})
+    most_frequent_issue = max(mistakes, key=mistakes.get) if mistakes else None
+
     normalized_summary = {
+        'metricType': 'time' if summary.get('metricType') == 'time' else 'reps',
+        'totalReps': _safe_int(summary.get('totalReps', total_attempts), total_attempts),
         'correctReps': valid_reps,
         'incorrectReps': incorrect_reps,
         'totalAttempts': total_attempts,
-        'accuracy': accuracy,
+        'setsCompleted': _safe_int(summary.get('setsCompleted', 0), 0),
+        'accuracy': max(0, min(100, accuracy)),
         'duration': duration,
+        'totalHoldTime': _safe_int(summary.get('totalHoldTime', 0), 0),
         'setResults': _normalize_set_results(summary.get('setResults') or summary.get('setSummaries') or []),
-        'mistakes': _normalize_reason_counts(summary.get('mistakes') or summary.get('incorrectReasonCounts') or summary.get('incorrectReasons') or {}),
+        'mistakes': mistakes,
+        'mostFrequentFormIssue': most_frequent_issue,
         'angleStats': _normalize_angle_stats(summary),
         'sessionMeta': {
             'totalSets': _safe_int(summary.get('totalSets', 0), 0),
@@ -124,19 +136,16 @@ def normalize_exercise_request(data):
 
 def _build_system_instruction():
     return (
-        'You are an AI fitness coach. '
-        'The user\'s exercise has already been analyzed by a biomechanics-based computer vision system. '
-        'Do NOT determine whether repetitions are correct or incorrect. '
-        'Do NOT analyze movement. '
-        'Do NOT invent mistakes. '
-        'Only interpret the workout statistics provided. '
-        'Generate the following sections: Overall Performance, Strengths, Areas for Improvement, Personalized Recommendations, and Encouraging Closing Message. '
-        'Maximum 150 words. '
-        'Friendly and encouraging. '
-        'Professional tone. '
-        'Base every recommendation only on the detected mistakes. '
-        'If accuracy is high, acknowledge good performance. '
-        'If multiple mistakes exist, prioritize the most frequent ones.'
+        'You are the feedback-writing layer for PoseFit. PoseFit has already analyzed the exercise '
+        'using MediaPipe and fixed joint-angle rules. Treat every supplied statistic as final and do '
+        'not recalculate, override, or reinterpret whether a repetition was correct. Use only facts in '
+        'the supplied JSON. Never invent form issues, injuries, pain, medical conditions, joint problems, '
+        'or measurements. Mention a form issue only when it appears in summary.mistakes with a count '
+        'greater than zero. If mistakes is empty, explicitly say that no significant form issue was '
+        'detected and recommend only controlled, consistent movement. Return exactly three short fields: '
+        'overallPerformance, whatYouDidWell, and whatToImprove. Each field must be one or two simple '
+        'sentences suitable for a beginner. Keep the complete response under 100 words. Prioritize the '
+        'mostFrequentFormIssue when one exists. Do not provide medical advice.'
     )
 
 
@@ -160,28 +169,17 @@ def _build_request_body(payload):
             }
         ],
         'generationConfig': {
-            'temperature': 0.6,
-            'maxOutputTokens': 2048,
+            'temperature': 0.2,
+            'maxOutputTokens': 512,
             'responseMimeType': 'application/json',
             'responseSchema': {
                 'type': 'OBJECT',
                 'properties': {
                     'overallPerformance': {'type': 'STRING'},
-                    'strengths': {
-                        'type': 'ARRAY',
-                        'items': {'type': 'STRING'}
-                    },
-                    'areasForImprovement': {
-                        'type': 'ARRAY',
-                        'items': {'type': 'STRING'}
-                    },
-                    'recommendations': {
-                        'type': 'ARRAY',
-                        'items': {'type': 'STRING'}
-                    },
-                    'encouragement': {'type': 'STRING'}
+                    'whatYouDidWell': {'type': 'STRING'},
+                    'whatToImprove': {'type': 'STRING'}
                 },
-                'required': ['overallPerformance', 'strengths', 'areasForImprovement', 'recommendations', 'encouragement']
+                'required': ['overallPerformance', 'whatYouDidWell', 'whatToImprove']
             }
         },
     }
@@ -253,23 +251,61 @@ def _strip_code_fences(text):
     return cleaned
 
 
-def _normalize_feedback(feedback):
+def _shorten_feedback_text(value, max_sentences=2, max_chars=240, max_words=32):
+    text = ' '.join(str(value or '').split()).strip()
+    if not text:
+        return ''
+
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    shortened = ' '.join(sentences[:max_sentences]).strip()
+    words = shortened.split()
+    if len(words) > max_words:
+        shortened = ' '.join(words[:max_words]).rstrip(' ,;:') + '.'
+    if len(shortened) <= max_chars:
+        return shortened
+
+    clipped = shortened[:max_chars].rsplit(' ', 1)[0].rstrip(' ,;:')
+    return f'{clipped}.' if clipped else ''
+
+
+def _normalize_feedback(feedback, payload):
     if not isinstance(feedback, dict):
         raise GeminiServiceError('Gemini feedback was not returned as JSON.')
 
-    def _normalize_list(value):
+    def _legacy_text(value):
         if isinstance(value, list):
-            return [str(item).strip() for item in value if str(item).strip()]
+            return ' '.join(str(item).strip() for item in value if str(item).strip())
         if isinstance(value, str):
-            return [line.strip() for line in value.split('\n') if line.strip()]
-        return []
+            return value
+        return ''
+
+    overall = _shorten_feedback_text(feedback.get('overallPerformance'))
+    did_well = _shorten_feedback_text(
+        feedback.get('whatYouDidWell') or _legacy_text(feedback.get('strengths'))
+    )
+    improve = _shorten_feedback_text(
+        feedback.get('whatToImprove')
+        or _legacy_text(feedback.get('areasForImprovement'))
+        or _legacy_text(feedback.get('recommendations'))
+    )
+
+    if not overall or not did_well:
+        raise GeminiServiceError('Gemini feedback was missing a required section.', error_type='invalid_response')
+
+    mistakes = payload.get('summary', {}).get('mistakes', {})
+    if not mistakes:
+        improve = (
+            'No significant form issue was detected during this session. '
+            'Continue using controlled and consistent movement.'
+        )
+    elif not improve:
+        main_issue = payload['summary'].get('mostFrequentFormIssue')
+        improve = f'Focus on correcting the detected issue: {main_issue}.'
 
     return {
-        'overallPerformance': str(feedback.get('overallPerformance', '')).strip(),
-        'strengths': _normalize_list(feedback.get('strengths')),
-        'areasForImprovement': _normalize_list(feedback.get('areasForImprovement')),
-        'recommendations': _normalize_list(feedback.get('recommendations')),
-        'encouragement': str(feedback.get('encouragement', '')).strip(),
+        'overallPerformance': overall,
+        'whatYouDidWell': did_well,
+        'whatToImprove': improve,
     }
 
 
@@ -305,6 +341,6 @@ def generate_exercise_coach_feedback(data):
     try:
         response_data = json.loads(raw)
         feedback_text = _extract_feedback_text(response_data)
-        return _normalize_feedback(json.loads(_strip_code_fences(feedback_text)))
+        return _normalize_feedback(json.loads(_strip_code_fences(feedback_text)), payload)
     except (json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError) as exc:
         raise GeminiServiceError(f'Failed to parse Gemini response: {exc}', error_type='parse_error') from exc

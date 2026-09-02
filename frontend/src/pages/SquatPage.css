@@ -1,0 +1,570 @@
+.squat-page,
+.squat-page * {
+  box-sizing: border-box;
+}
+
+.squat-page {
+  min-height: 100vh;
+  color: #171b26;
+  background: #ffffff;
+  font-family: 'Poppins', sans-serif;
+}
+
+.squat-page button {
+  font: inherit;
+}
+
+.squat-page__main {
+  width: 100%;
+  max-width: 1450px;
+  margin: 0 auto;
+  padding: 19px 30px 32px;
+}
+
+.squat-breadcrumb {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #556070;
+  font-size: 11px;
+}
+
+.squat-breadcrumb button {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #ff5a0a;
+  font-size: 11px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.squat-breadcrumb button:hover,
+.squat-breadcrumb button:focus-visible {
+  color: #df4800;
+}
+
+.squat-breadcrumb > i {
+  color: #a5acb5;
+  font-size: 7px;
+}
+
+.squat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+
+.squat-layout__primary,
+.squat-layout__sidebar {
+  min-width: 0;
+}
+
+.squat-overview {
+  min-height: 175px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.squat-overview__image-wrap {
+  width: 209px;
+  height: 174px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: #fff5ed;
+  border-radius: 15px;
+}
+
+.squat-overview__image-wrap img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 56% center;
+}
+
+.squat-overview__details {
+  min-width: 0;
+}
+
+.squat-overview__details h1 {
+  margin: 0 0 6px;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.55px;
+}
+
+.squat-overview__details > p {
+  margin: 0 0 16px;
+  color: #586171;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.squat-overview__facts {
+  margin-bottom: 14px;
+  display: grid;
+  gap: 11px;
+}
+
+.squat-overview__facts > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #313b4c;
+  font-size: 10.5px;
+}
+
+.squat-overview__facts i {
+  width: 18px;
+  color: #ff5a0a;
+  font-size: 15px;
+  text-align: center;
+}
+
+.squat-overview__facts strong {
+  font-weight: 600;
+}
+
+.squat-overview__guide-button {
+  height: 30px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff5a0a;
+  font-size: 10px;
+  font-weight: 500;
+  background: #ffffff;
+  border: 1px solid #ff8b52;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.squat-overview__guide-button:hover,
+.squat-overview__guide-button:focus-visible {
+  color: #ffffff;
+  background: #ff5a0a;
+  border-color: #ff5a0a;
+}
+
+.squat-workout {
+  margin-top: 21px;
+}
+
+.squat-workout > h2 {
+  margin: 0 0 9px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.squat-config {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dfe4e9;
+  border-radius: 9px;
+}
+
+.squat-config__row {
+  min-height: 57px;
+  margin: 0 18px;
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) 127px;
+  align-items: center;
+  gap: 10px;
+}
+
+.squat-config__row + .squat-config__row {
+  border-top: 1px solid #e8ebef;
+}
+
+.squat-config__icon {
+  color: #ff5a0a;
+  font-size: 21px;
+  text-align: center;
+}
+
+.squat-config__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.squat-config__copy strong {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.squat-config__copy small {
+  color: #606978;
+  font-size: 9px;
+}
+
+.squat-stepper {
+  width: 127px;
+  height: 34px;
+  display: grid;
+  grid-template-columns: 35px 1fr 35px;
+  align-items: center;
+  border: 1px solid #e1e5ea;
+  border-radius: 9px;
+  box-shadow: 0 1px 3px rgba(25, 31, 42, 0.02);
+}
+
+.squat-stepper button {
+  height: 100%;
+  padding: 0;
+  color: #242b36;
+  font-size: 9px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.squat-stepper button:hover:not(:disabled),
+.squat-stepper button:focus-visible {
+  color: #ff5a0a;
+  background: #fff7f2;
+}
+
+.squat-stepper button:disabled {
+  color: #c2c7ce;
+  cursor: not-allowed;
+}
+
+.squat-stepper output {
+  color: #202631;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.squat-reminders {
+  min-height: 57px;
+  margin-top: 11px;
+  padding: 0 17px;
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  background: #ffffff;
+  border: 1px solid #dfe4e9;
+  border-radius: 9px;
+}
+
+.squat-reminders > i {
+  color: #ff5a0a;
+  font-size: 20px;
+  text-align: center;
+}
+
+.squat-reminders > span,
+.squat-tip > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.squat-reminders strong,
+.squat-tip strong {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.squat-reminders small,
+.squat-tip small {
+  color: #606978;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.squat-toggle {
+  position: relative;
+  width: 39px;
+  height: 22px;
+  padding: 0;
+  background: #d7dce2;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.squat-toggle span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(20, 27, 37, 0.22);
+  transition: transform 150ms ease;
+}
+
+.squat-toggle--enabled {
+  background: #ff5a0a;
+}
+
+.squat-toggle--enabled span {
+  transform: translateX(17px);
+}
+
+.squat-tip {
+  min-height: 58px;
+  margin-top: 11px;
+  padding: 0 17px;
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  background: linear-gradient(90deg, #fffdfb, #fff4e9);
+  border: 1px solid #fae8da;
+  border-radius: 9px;
+}
+
+.squat-tip > i {
+  color: #ff6b19;
+  font-size: 20px;
+  text-align: center;
+}
+
+.squat-layout__sidebar {
+  display: grid;
+  gap: 11px;
+}
+
+.squat-guide,
+.squat-equipment {
+  background: #ffffff;
+  border: 1px solid #dfe4e9;
+  border-radius: 10px;
+}
+
+.squat-guide {
+  padding: 16px 17px 14px;
+  scroll-margin-top: 80px;
+}
+
+.squat-guide > h2,
+.squat-equipment > h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.squat-guide__list {
+  margin-top: 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.squat-guide__item {
+  min-height: 60px;
+  display: grid;
+  grid-template-columns: 22px 47px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.squat-guide__status {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: #21ae29;
+  font-size: 9px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.squat-guide__status--incorrect {
+  color: #ff1726;
+}
+
+.squat-guide__pose {
+  width: 47px;
+  height: 59px;
+  background-image: var(--guide-image);
+  background-repeat: no-repeat;
+  background-position: var(--guide-position) center;
+  background-size: 500% 100%;
+}
+
+.squat-guide__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.squat-guide__copy strong {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.squat-guide__copy small {
+  color: #4f5968;
+  font-size: 8.5px;
+  line-height: 1.55;
+}
+
+.squat-equipment {
+  padding: 14px 16px 13px;
+}
+
+.squat-equipment__grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.squat-equipment__grid > div {
+  min-width: 0;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.squat-equipment__grid > div + div {
+  border-left: 1px solid #e7eaee;
+}
+
+.squat-equipment__grid i {
+  margin-bottom: 6px;
+  color: #ff5a0a;
+  font-size: 26px;
+}
+
+.squat-equipment__grid strong {
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.squat-equipment__grid small {
+  color: #525c6b;
+  font-size: 7.5px;
+  line-height: 1.55;
+}
+
+.squat-start {
+  width: 100%;
+  height: 46px;
+  padding: 0 25px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #ff5a0a, #ff6714);
+  border: 0;
+  border-radius: 7px;
+  box-shadow: 0 5px 14px rgba(255, 90, 10, 0.18);
+  cursor: pointer;
+}
+
+.squat-start span {
+  grid-column: 2;
+}
+
+.squat-start i {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.squat-start:hover,
+.squat-start:focus-visible {
+  background: linear-gradient(90deg, #ed4f00, #f45b0a);
+}
+
+@media (max-width: 1050px) {
+  .squat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .squat-layout__sidebar {
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
+    align-items: start;
+  }
+
+  .squat-start {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .squat-page__main {
+    padding: 18px 16px 26px;
+  }
+
+  .squat-overview {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .squat-overview__image-wrap {
+    width: 100%;
+    height: 250px;
+  }
+
+  .squat-layout__sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .squat-start {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .squat-config__row {
+    min-height: 78px;
+    margin: 0 12px;
+    grid-template-columns: 30px minmax(0, 1fr) 112px;
+    gap: 8px;
+  }
+
+  .squat-config__copy small {
+    max-width: 145px;
+  }
+
+  .squat-stepper {
+    width: 112px;
+    grid-template-columns: 30px 1fr 30px;
+  }
+
+  .squat-equipment__grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .squat-equipment__grid > div {
+    padding: 0;
+  }
+
+  .squat-equipment__grid > div + div {
+    padding-top: 14px;
+    border-top: 1px solid #e7eaee;
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squat-toggle,
+  .squat-toggle span {
+    transition: none;
+  }
+}

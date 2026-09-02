@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ExerciseSelectionPage from './pages/ExerciseSelectionPage';
 import SquatPage from './pages/SquatPage';
 import SquatCameraPage from './pages/SquatCameraPage';
+import SessionSummaryPage from './pages/SessionSummaryPage';
 
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
@@ -22,6 +23,7 @@ function App() {
         <Route path="/exercises" element={<PrivateRoute><ExerciseSelectionPage /></PrivateRoute>} />
         <Route path="/exercises/squat" element={<PrivateRoute><SquatPage /></PrivateRoute>} />
         <Route path="/exercises/squat/start" element={<PrivateRoute><SquatCameraPage /></PrivateRoute>} />
+        <Route path="/session-summary" element={<PrivateRoute><SessionSummaryPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );

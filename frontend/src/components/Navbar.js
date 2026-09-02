@@ -18,7 +18,7 @@ function getStoredUser() {
   }
 }
 
-export default function Navbar() {
+export default function Navbar({ activeItem }) {
   const user = getStoredUser();
   const displayName = user.first_name || user.username || 'User';
   const initials = `${user.first_name?.[0] || user.username?.[0] || 'U'}${user.last_name?.[0] || ''}`.toUpperCase();
@@ -44,12 +44,12 @@ export default function Navbar() {
               <NavLink
                 key={item.label}
                 to={item.path}
-                className={({ isActive }) => `top-navbar__link${isActive ? ' top-navbar__link--active' : ''}`}
+                className={({ isActive }) => `top-navbar__link${isActive || activeItem === item.label ? ' top-navbar__link--active' : ''}`}
               >
                 {item.label}
               </NavLink>
             ) : (
-              <span key={item.label} className="top-navbar__link" aria-disabled="true">
+              <span key={item.label} className={`top-navbar__link${activeItem === item.label ? ' top-navbar__link--active' : ''}`} aria-disabled="true">
                 {item.label}
               </span>
             )

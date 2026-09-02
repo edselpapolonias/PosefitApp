@@ -1,486 +1,261 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import Navbar from '../components/Navbar';
+import squatPhoto from '../images/exercise-squat.png';
+import squatFormGuide from '../images/squat-form-guide.png';
+import './SquatPage.css';
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const steps = [
-    { num: 1, text: 'Stand with feet shoulder-width apart, toes slightly turned out.' },
-    { num: 2, text: 'Brace your core and keep your chest tall as you begin to lower.' },
-    { num: 3, text: 'Push knees out in line with your toes as you descend.' },
-    { num: 4, text: 'Lower until thighs are at least parallel to the floor.' },
-    { num: 5, text: 'Drive through your heels to return to standing.' },
+const formGuide = [
+  {
+    title: 'Keep Your Chest Up',
+    description: 'Keep your back straight and chest lifted.',
+    position: '0%',
+    correct: true,
+  },
+  {
+    title: 'Knees Behind Toes',
+    description: 'Your knees should track in line with your toes.',
+    position: '25%',
+    correct: true,
+  },
+  {
+    title: 'Go to Parallel',
+    description: 'Lower your hips until your thighs are parallel to the floor or lower.',
+    position: '50%',
+    correct: true,
+  },
+  {
+    title: 'Drive Through Heels',
+    description: 'Push through your heels to stand up.',
+    position: '75%',
+    correct: true,
+  },
+  {
+    title: 'Avoid Knee Cave',
+    description: 'Keep your knees aligned with your toes.',
+    position: '100%',
+    correct: false,
+  },
 ];
 
-const tips = [
-    'Keep your weight in your heels',
-    "Don't let knees cave inward",
-    'Look straight ahead throughout',
+const equipment = [
+  { icon: 'fa-camera', title: 'Webcam', description: 'For real-time pose detection' },
+  { icon: 'fa-person', title: 'Space', description: 'Enough room to move' },
+  { icon: 'fa-bottle-water', title: 'Hydration', description: 'Stay hydrated and perform best' },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
-// ─── Options ──────────────────────────────────────────────────────────────────
-const setsOptions = [2, 3, 4, 5, 6];
-const repsOptions = [8, 10, 12, 15, 18];
-const restOptions = [10, 20, 30, 60];
+function ConfigRow({ icon, label, description, value, suffix = '', min, max, step, onChange }) {
+  const updateValue = (direction) => {
+    const nextValue = Math.min(max, Math.max(min, value + (step * direction)));
+    onChange(nextValue);
+  };
 
-export default function SquatPage() {
-    const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user'));
-    const initials = user
-        ? `${(user.first_name || '')[0] || ''}${(user.last_name || '')[0] || ''}`.toUpperCase()
-        : 'U';
-
-    const [sets, setSets] = useState(3);
-    const [reps, setReps] = useState(12);
-    const [rest, setRest] = useState(60);
-
-    return (
-        <div style={s.page}>
-
-            {/* ─── Top Nav / Breadcrumb ─────────────────────────────── */}
-            <motion.nav
-                initial={{ opacity: 0, y: -12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
-                style={s.nav}
-            >
-                <div style={s.breadcrumb}>
-                    <button
-                        id="back-to-exercises"
-                        onClick={() => navigate('/exercises')}
-                        style={s.breadcrumbLink}
-                        onMouseEnter={e => e.currentTarget.style.color = '#F15025'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#888'}
-                    >
-                        ← Exercises
-                    </button>
-                    <span style={s.breadcrumbSep}>/</span>
-                    <span style={s.breadcrumbCurrent}>Squat</span>
-                </div>
-
-                <div id="user-avatar" style={s.avatar}>{initials}</div>
-            </motion.nav>
-
-            {/* ─── Main Content ─────────────────────────────────────── */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.1 }}
-                style={s.main}
-            >
-                <div style={s.grid}>
-
-                    {/* ═══════════ LEFT COLUMN ═══════════ */}
-                    <div style={s.leftCol}>
-
-                        {/* Illustration / Pose Guide Card */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.96 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.4, delay: 0.15 }}
-                            style={s.illustrationCard}
-                        >
-                            <span style={{ fontSize: '4rem' }}>🏋️</span>
-                            <p style={s.illustrationLabel}>Illustration / pose guide</p>
-                        </motion.div>
-
-                        {/* Title & Description */}
-                        <h1 style={s.title}>Squat</h1>
-                        <p style={s.description}>
-                            A compound lower-body movement targeting glutes, quads, and hamstrings
-                            while engaging your core for stability. Great for building strength and overall
-                            mobility.
-                        </p>
-
-                        {/* How to Perform */}
-                        <h2 style={s.sectionLabel}>HOW TO PERFORM</h2>
-
-                        <div style={s.stepsList}>
-                            {steps.map((step, i) => (
-                                <motion.div
-                                    key={step.num}
-                                    initial={{ opacity: 0, x: -16 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.35, delay: 0.2 + i * 0.07 }}
-                                    style={s.stepRow}
-                                >
-                                    <div style={s.stepCircle}>{step.num}</div>
-                                    <p style={s.stepText}>{step.text}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ═══════════ RIGHT COLUMN ═══════════ */}
-                    <div style={s.rightCol}>
-
-                        {/* Stat Card — Sets */}
-                        <motion.div
-                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
-                            style={s.statCard}
-                        >
-                            <p style={s.statLabel}>Sets</p>
-                            <div style={s.optionsRow}>
-                                {setsOptions.map(val => (
-                                    <button
-                                        key={val}
-                                        onClick={() => setSets(val)}
-                                        style={sets === val ? s.optionActive : s.optionInactive}
-                                        onMouseEnter={e => { if (sets !== val) e.currentTarget.style.borderColor = '#F15025'; }}
-                                        onMouseLeave={e => { if (sets !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
-                                    >
-                                        {val}
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Stat Card — Reps per set */}
-                        <motion.div
-                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
-                            style={s.statCard}
-                        >
-                            <p style={s.statLabel}>Reps per set</p>
-                            <div style={s.optionsRow}>
-                                {repsOptions.map(val => (
-                                    <button
-                                        key={val}
-                                        onClick={() => setReps(val)}
-                                        style={reps === val ? s.optionActive : s.optionInactive}
-                                        onMouseEnter={e => { if (reps !== val) e.currentTarget.style.borderColor = '#F15025'; }}
-                                        onMouseLeave={e => { if (reps !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
-                                    >
-                                        {val}
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Stat Card — Rest between sets */}
-                        <motion.div
-                            whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(241,80,37,0.1)' }}
-                            style={s.statCard}
-                        >
-                            <p style={s.statLabel}>Rest between sets</p>
-                            <div style={s.optionsRow}>
-                                {restOptions.map(val => (
-                                    <button
-                                        key={val}
-                                        onClick={() => setRest(val)}
-                                        style={rest === val ? s.optionActive : s.optionInactive}
-                                        onMouseEnter={e => { if (rest !== val) e.currentTarget.style.borderColor = '#F15025'; }}
-                                        onMouseLeave={e => { if (rest !== val) e.currentTarget.style.borderColor = '#E6E8E6'; }}
-                                    >
-                                        {val}s
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Tips Card */}
-                        <div style={s.tipsCard}>
-                            <div style={s.tipsHeader}>
-                                <span style={{ fontSize: '1rem' }}>✨</span>
-                                <span style={s.tipsTitle}>Tips</span>
-                            </div>
-                            {tips.map((tip, i) => (
-                                <div key={i} style={s.tipRow}>
-                                    <span style={s.tipCheck}>✓</span>
-                                    <span style={s.tipText}>{tip}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Start Now Button */}
-                        <motion.button
-                            id="start-now-btn"
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate(`/exercises/squat/start?sets=${sets}&reps=${reps}&rest=${rest}`)}
-                            style={s.startBtn}
-                            onMouseEnter={e => e.currentTarget.style.background = '#d9441c'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#F15025'}
-                        >
-                            Start Now ▶
-                        </motion.button>
-                    </div>
-                </div>
-            </motion.div>
-        </div>
-    );
+  return (
+    <div className="squat-config__row">
+      <span className="squat-config__icon" aria-hidden="true">
+        <i className={`fa-solid ${icon}`} />
+      </span>
+      <span className="squat-config__copy">
+        <strong>{label}</strong>
+        <small>{description}</small>
+      </span>
+      <div className="squat-stepper" aria-label={`${label}: ${value}${suffix}`}>
+        <button
+          type="button"
+          onClick={() => updateValue(-1)}
+          disabled={value <= min}
+          aria-label={`Decrease ${label}`}
+        >
+          <i className="fa-solid fa-minus" aria-hidden="true" />
+        </button>
+        <output aria-live="polite">{value}{suffix}</output>
+        <button
+          type="button"
+          onClick={() => updateValue(1)}
+          disabled={value >= max}
+          aria-label={`Increase ${label}`}
+        >
+          <i className="fa-solid fa-plus" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
-/* ═══════════════════════ STYLES ═══════════════════════ */
+export default function SquatPage() {
+  const navigate = useNavigate();
+  const formGuideRef = useRef(null);
+  const [reps, setReps] = useState(12);
+  const [sets, setSets] = useState(4);
+  const [rest, setRest] = useState(60);
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
 
-const s = {
-    // Page
-    page: {
-        minHeight: '100vh',
-        background: '#F7F7F7',
-        fontFamily: "'Poppins', 'Segoe UI', sans-serif",
-        color: '#222',
-    },
+  const startWorkout = () => {
+    const workoutConfig = { sets, reps, rest };
+    sessionStorage.setItem('posefitSquatWorkoutConfig', JSON.stringify(workoutConfig));
+    navigate(`/exercises/squat/start?sets=${sets}&reps=${reps}&rest=${rest}`, {
+      state: { workoutConfig },
+    });
+  };
 
-    // Nav
-    nav: {
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 32px',
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E6E8E6',
-    },
-    breadcrumb: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        fontSize: '14px',
-    },
-    breadcrumbLink: {
-        background: 'none',
-        border: 'none',
-        color: '#888',
-        fontSize: '14px',
-        cursor: 'pointer',
-        fontWeight: 500,
-        fontFamily: 'inherit',
-        padding: 0,
-        transition: 'color 0.2s',
-    },
-    breadcrumbSep: { color: '#CED0CE', fontWeight: 400 },
-    breadcrumbCurrent: { fontWeight: 700, color: '#222' },
-    avatar: {
-        height: '36px',
-        width: '36px',
-        borderRadius: '50%',
-        background: '#F15025',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '13px',
-        fontWeight: 700,
-        boxShadow: '0 2px 8px rgba(241,80,37,0.25)',
-    },
+  return (
+    <div className="squat-page">
+      <Navbar />
 
-    // Main
-    main: {
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '32px 28px 48px',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: '1.6fr 1fr',
-        gap: '32px',
-        alignItems: 'start',
-    },
+      <main className="squat-page__main">
+        <nav className="squat-breadcrumb" aria-label="Breadcrumb">
+          <button type="button" onClick={() => navigate('/exercises')}>
+            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+            Exercises
+          </button>
+          <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+          <span>Squat</span>
+        </nav>
 
-    // Left Column
-    leftCol: {},
+        <div className="squat-layout">
+          <div className="squat-layout__primary">
+            <section className="squat-overview" aria-labelledby="squat-title">
+              <div className="squat-overview__image-wrap">
+                <img src={squatPhoto} alt="Athlete demonstrating a squat" />
+              </div>
 
-    // Illustration Card
-    illustrationCard: {
-        borderRadius: '16px',
-        border: '2px dashed #CED0CE',
-        background: '#FFFFFF',
-        padding: '48px 32px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '200px',
-        marginBottom: '24px',
-    },
-    illustrationLabel: {
-        color: '#999',
-        fontSize: '13px',
-        fontWeight: 500,
-        marginTop: '12px',
-        letterSpacing: '0.3px',
-    },
+              <div className="squat-overview__details">
+                <h1 id="squat-title">Squat</h1>
+                <p>Strengthen your legs and glutes with proper squat form.</p>
 
-    // Title & Description
-    title: {
-        fontSize: '2rem',
-        fontWeight: 800,
-        color: '#222',
-        margin: '0 0 10px',
-        lineHeight: 1.2,
-    },
-    description: {
-        color: '#666',
-        fontSize: '14px',
-        lineHeight: '1.7',
-        margin: '0 0 28px',
-        maxWidth: '480px',
-    },
+                <div className="squat-overview__facts">
+                  <div>
+                    <i className="fa-solid fa-bullseye" aria-hidden="true" />
+                    <span><strong>Targets:</strong> Quadriceps, Glutes, Hamstrings</span>
+                  </div>
+                  <div>
+                    <i className="fa-solid fa-chart-simple" aria-hidden="true" />
+                    <span><strong>Difficulty:</strong> Beginner to Advanced</span>
+                  </div>
+                </div>
 
-    // How to Perform
-    sectionLabel: {
-        fontSize: '11px',
-        fontWeight: 700,
-        letterSpacing: '1.5px',
-        textTransform: 'uppercase',
-        color: '#999',
-        margin: '0 0 20px',
-    },
-    stepsList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-    },
-    stepRow: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '14px',
-    },
-    stepCircle: {
-        flexShrink: 0,
-        width: '32px',
-        height: '32px',
-        borderRadius: '50%',
-        border: '2px solid #F15025',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '13px',
-        fontWeight: 700,
-        color: '#F15025',
-        background: 'transparent',
-    },
-    stepText: {
-        color: '#444',
-        fontSize: '14px',
-        lineHeight: '1.6',
-        margin: 0,
-        paddingTop: '4px',
-    },
+                <button
+                  className="squat-overview__guide-button"
+                  type="button"
+                  onClick={() => formGuideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  <i className="fa-regular fa-circle-play" aria-hidden="true" />
+                  How to Perform
+                </button>
+              </div>
+            </section>
 
+            <section className="squat-workout" aria-labelledby="configure-workout-title">
+              <h2 id="configure-workout-title">Configure Your Workout</h2>
 
+              <div className="squat-config">
+                <ConfigRow
+                  icon="fa-rotate"
+                  label="Reps"
+                  description="Number of repetitions per set."
+                  value={reps}
+                  min={1}
+                  max={50}
+                  step={1}
+                  onChange={setReps}
+                />
+                <ConfigRow
+                  icon="fa-layer-group"
+                  label="Sets"
+                  description="Number of sets you want to perform."
+                  value={sets}
+                  min={1}
+                  max={10}
+                  step={1}
+                  onChange={setSets}
+                />
+                <ConfigRow
+                  icon="fa-clock"
+                  label="Rest Time"
+                  description="Rest time after each set."
+                  value={rest}
+                  suffix=" sec"
+                  min={15}
+                  max={180}
+                  step={15}
+                  onChange={setRest}
+                />
+              </div>
+            </section>
 
-    // Right Column
-    rightCol: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        position: 'sticky',
-        top: '80px',
-    },
+            <section className="squat-reminders">
+              <i className="fa-regular fa-bell" aria-hidden="true" />
+              <span>
+                <strong>Workout Reminders</strong>
+                <small>Get notified to stay consistent.</small>
+              </span>
+              <button
+                className={`squat-toggle${remindersEnabled ? ' squat-toggle--enabled' : ''}`}
+                type="button"
+                role="switch"
+                aria-checked={remindersEnabled}
+                aria-label="Workout reminders"
+                onClick={() => setRemindersEnabled((enabled) => !enabled)}
+              >
+                <span />
+              </button>
+            </section>
 
-    // Stat Cards
-    statCard: {
-        borderRadius: '16px',
-        background: '#FFFFFF',
-        border: '1px solid #E6E8E6',
-        padding: '18px 22px',
-        cursor: 'default',
-        transition: 'box-shadow 0.2s',
-    },
-    statLabel: {
-        fontSize: '12px',
-        fontWeight: 600,
-        color: '#999',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        margin: '0 0 4px',
-        textAlign: 'center',
-    },
-    statValue: {
-        fontSize: '1.8rem',
-        fontWeight: 800,
-        color: '#F15025',
-        margin: 0,
-        lineHeight: 1.2,
-    },
+            <aside className="squat-tip">
+              <i className="fa-regular fa-lightbulb" aria-hidden="true" />
+              <span>
+                <strong>Tip</strong>
+                <small>Ensure your full body is visible in the camera for accurate form detection.</small>
+              </span>
+            </aside>
+          </div>
 
-    // Option pills
-    optionsRow: {
-        display: 'flex',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: '10px',
-        marginTop: '8px',
-    },
-    optionActive: {
-        padding: '8px 20px',
-        borderRadius: '999px',
-        border: '2px solid #F15025',
-        background: '#F15025',
-        color: '#fff',
-        fontSize: '15px',
-        fontWeight: 700,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'all 0.2s',
-    },
-    optionInactive: {
-        padding: '8px 20px',
-        borderRadius: '999px',
-        border: '2px solid #E6E8E6',
-        background: '#fff',
-        color: '#444',
-        fontSize: '15px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'all 0.2s',
-    },
+          <aside className="squat-layout__sidebar">
+            <section className="squat-guide" ref={formGuideRef} aria-labelledby="squat-guide-title">
+              <h2 id="squat-guide-title">Squat Form Guide</h2>
+              <div className="squat-guide__list">
+                {formGuide.map((guide) => (
+                  <div className="squat-guide__item" key={guide.title}>
+                    <span className={`squat-guide__status${guide.correct ? '' : ' squat-guide__status--incorrect'}`} aria-hidden="true">
+                      <i className={`fa-solid ${guide.correct ? 'fa-check' : 'fa-xmark'}`} />
+                    </span>
+                    <span
+                      className="squat-guide__pose"
+                      style={{
+                        '--guide-image': `url(${squatFormGuide})`,
+                        '--guide-position': guide.position,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <span className="squat-guide__copy">
+                      <strong>{guide.title}</strong>
+                      <small>{guide.description}</small>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-    // Tips Card
-    tipsCard: {
-        borderRadius: '16px',
-        background: '#FFF5F2',
-        border: '1px solid rgba(241,80,37,0.15)',
-        padding: '20px 22px',
-    },
-    tipsHeader: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        marginBottom: '14px',
-    },
-    tipsTitle: {
-        fontSize: '14px',
-        fontWeight: 700,
-        color: '#222',
-    },
-    tipRow: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '10px',
-        marginBottom: '8px',
-    },
-    tipCheck: {
-        color: '#22c55e',
-        fontWeight: 700,
-        fontSize: '15px',
-        lineHeight: '1.4',
-    },
-    tipText: {
-        fontSize: '13px',
-        color: '#444',
-        lineHeight: '1.5',
-    },
+            <section className="squat-equipment" aria-labelledby="equipment-title">
+              <h2 id="equipment-title">You'll Need</h2>
+              <div className="squat-equipment__grid">
+                {equipment.map((item) => (
+                  <div key={item.title}>
+                    <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+                    <strong>{item.title}</strong>
+                    <small>{item.description}</small>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-    // Start Now Button
-    startBtn: {
-        width: '100%',
-        padding: '16px 24px',
-        borderRadius: '999px',
-        background: '#F15025',
-        color: '#FFFFFF',
-        fontSize: '15px',
-        fontWeight: 700,
-        border: 'none',
-        cursor: 'pointer',
-        boxShadow: '0 4px 16px rgba(241,80,37,0.25)',
-        fontFamily: 'inherit',
-        letterSpacing: '0.3px',
-        transition: 'background 0.2s',
-    },
-};
+            <button className="squat-start" id="start-now-btn" type="button" onClick={startWorkout}>
+              <span>Start Now</span>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            </button>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
