@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { fetchSessionCoachFeedback } from '../services/aiCoachService';
+import { saveSessionAndGetComparison } from '../services/sessionHistoryService';
 import {
   createSessionResult,
   readLatestSessionResult,
@@ -92,13 +93,77 @@ function SummaryMetric({ icon, value, label, detail, secondaryDetail, tone = '' 
   );
 }
 
+function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
+  const difference = Number(comparison?.differencePercentagePoints || 0);
+  const magnitude = Math.abs(difference);
+  const status = comparison?.status || '';
+  const differenceLabel = status === 'no_change'
+    ? 'No change'
+    : `${magnitude} percentage ${magnitude === 1 ? 'point' : 'points'}`;
+
+  return (
+    <section className="session-summary-card session-progress">
+      <h2><i className="fa-solid fa-chart-line" aria-hidden="true" />Progress Comparison</h2>
+
+      {loading ? (
+        <div className="session-progress__state session-progress__loading">
+          <span aria-hidden="true" />
+          <p>Comparing with your previous {exerciseName} session...</p>
+        </div>
+      ) : error || !comparison ? (
+        <div className="session-progress__state session-progress__error">
+          <i className="fa-solid fa-circle-info" aria-hidden="true" />
+          <p>{error || 'Progress comparison is currently unavailable.'}</p>
+        </div>
+      ) : !comparison.hasPrevious ? (
+        <div className="session-progress__first">
+          <span aria-hidden="true"><i className="fa-solid fa-flag-checkered" /></span>
+          <div>
+            <strong>{comparison.title}</strong>
+            <p>{comparison.message}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="session-progress__content">
+          <p className="session-progress__subtitle">{comparison.title}</p>
+          <div className="session-progress__accuracies">
+            <div>
+              <span>Current</span>
+              <strong>{comparison.current.accuracy}%</strong>
+            </div>
+            <span className="session-progress__versus">vs</span>
+            <div>
+              <span>Previous</span>
+              <strong>{comparison.previous.accuracy}%</strong>
+            </div>
+          </div>
+          <div
+            className={`session-progress__difference session-progress__difference--${status}`}
+            aria-label={status === 'no_change' ? 'No change' : `${status} by ${differenceLabel}`}
+          >
+            <span aria-hidden="true">
+              <i className={`fa-solid ${status === 'no_change' ? 'fa-minus' : difference > 0 ? 'fa-arrow-up' : 'fa-arrow-down'}`} />
+            </span>
+            <strong>{differenceLabel}</strong>
+          </div>
+          <p className="session-progress__message">{comparison.message}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SessionSummaryPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const incomingResult = location.state?.sessionResult;
+  const incomingComparison = location.state?.comparison;
   const [sessionResult, setSessionResult] = useState(() => resolveSessionResult(incomingResult));
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState('');
+  const [comparison, setComparison] = useState(() => incomingComparison || null);
+  const [comparisonLoading, setComparisonLoading] = useState(Boolean(sessionResult && !incomingComparison));
+  const [comparisonError, setComparisonError] = useState('');
 
   useEffect(() => {
     if (!incomingResult) return;
@@ -106,6 +171,31 @@ export default function SessionSummaryPage() {
     saveLatestSessionResult(resolvedResult);
     setSessionResult((current) => current?.id === resolvedResult.id ? current : resolvedResult);
   }, [incomingResult]);
+
+  useEffect(() => {
+    if (!sessionResult?.id || incomingComparison) return;
+
+    let active = true;
+    setComparisonLoading(true);
+    setComparisonError('');
+
+    saveSessionAndGetComparison(sessionResult)
+      .then((progressComparison) => {
+        if (active) setComparison(progressComparison);
+      })
+      .catch(() => {
+        if (active) {
+          setComparisonError('Your session was saved locally, but progress comparison is currently unavailable.');
+        }
+      })
+      .finally(() => {
+        if (active) setComparisonLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [sessionResult, incomingComparison]);
 
   useEffect(() => {
     if (!sessionResult || sessionResult.feedback) return;
@@ -197,7 +287,7 @@ export default function SessionSummaryPage() {
           value: sessionResult.totalReps,
           label: 'Total Reps',
           detail: repsGoal ? `Goal: ${repsGoal} reps` : null,
-          secondaryDetail: `${sessionResult.correctReps} correct · ${sessionResult.incorrectReps} incorrect`,
+          secondaryDetail: `${sessionResult.correctReps} correct / ${sessionResult.incorrectReps} incorrect`,
         },
         {
           icon: 'fa-clock',
@@ -269,43 +359,12 @@ export default function SessionSummaryPage() {
         </section>
 
         <div className="session-summary__grid">
-          <div className="session-summary__left">
-            <section className="session-summary-card session-overview">
-              <h2>Performance Overview</h2>
-              <div className="session-overview__metrics">
-                {metrics.map((metric) => <SummaryMetric key={metric.label} {...metric} />)}
-              </div>
-            </section>
-
-            <section className="session-summary-card session-feedback">
-              <h2><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Form Feedback</h2>
-              <div className="session-feedback__panel">
-                <span className="session-feedback__robot" aria-hidden="true"><i className="fa-solid fa-robot" /></span>
-                {feedbackLoading ? (
-                  <div className="session-feedback__loading">
-                    <span />
-                    <p>Generating your form feedback...</p>
-                  </div>
-                ) : sessionResult.feedback ? (
-                  <div className="session-feedback__content">
-                    <div><strong>Overall Performance</strong><p>{sessionResult.feedback.overallPerformance}</p></div>
-                    <div><strong>What You Did Well</strong><p>{sessionResult.feedback.whatYouDidWell}</p></div>
-                    <div><strong>What to Improve</strong><p>{sessionResult.feedback.whatToImprove}</p></div>
-                    {topIssue && (
-                      <small className="session-feedback__evidence">
-                        Most detected issue: {topIssue.type} ({topIssue.count} {topIssue.count === 1 ? 'time' : 'times'})
-                      </small>
-                    )}
-                  </div>
-                ) : (
-                  <div className="session-feedback__unavailable">
-                    <i className="fa-solid fa-circle-info" aria-hidden="true" />
-                    <p>{feedbackError || 'Your session was completed successfully. AI generated form feedback is currently unavailable.'}</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
+          <section className="session-summary-card session-overview">
+            <h2>Performance Overview</h2>
+            <div className="session-overview__metrics">
+              {metrics.map((metric) => <SummaryMetric key={metric.label} {...metric} />)}
+            </div>
+          </section>
 
           <section className="session-summary-card session-breakdown">
             <h2>Set Breakdown</h2>
@@ -349,6 +408,44 @@ export default function SessionSummaryPage() {
               <p className="session-breakdown__empty">No set data was recorded for this session.</p>
             )}
           </section>
+
+          <section className="session-summary-card session-feedback">
+            <h2><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Form Feedback</h2>
+            <div className="session-feedback__panel">
+              <span className="session-feedback__robot" aria-hidden="true"><i className="fa-solid fa-robot" /></span>
+              <div className="session-feedback__body">
+                {feedbackLoading ? (
+                  <div className="session-feedback__loading">
+                    <span />
+                    <p>Generating your form feedback...</p>
+                  </div>
+                ) : sessionResult.feedback ? (
+                  <p className="session-feedback__paragraph">{sessionResult.feedback.feedbackParagraph}</p>
+                ) : (
+                  <div className="session-feedback__unavailable">
+                    <i className="fa-solid fa-circle-info" aria-hidden="true" />
+                    <p>{feedbackError || 'Your session was completed successfully. AI generated form feedback is currently unavailable.'}</p>
+                  </div>
+                )}
+
+                <div className="session-feedback__issue">
+                  <strong>Most Detected Issue</strong>
+                  <p>
+                    {topIssue
+                      ? <>{topIssue.type} <span>· {topIssue.count} {topIssue.count === 1 ? 'occurrence' : 'occurrences'}</span></>
+                      : 'No significant form issues detected'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <ProgressComparisonCard
+            comparison={comparison}
+            loading={comparisonLoading}
+            error={comparisonError}
+            exerciseName={exerciseName}
+          />
         </div>
 
         <button className="session-summary__dashboard-button" type="button" onClick={() => navigate('/dashboard')}>

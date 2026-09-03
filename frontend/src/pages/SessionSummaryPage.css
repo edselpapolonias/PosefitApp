@@ -181,13 +181,11 @@
 .session-summary__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr);
+  grid-template-areas:
+    "overview breakdown"
+    "feedback progress";
   gap: 13px;
   align-items: stretch;
-}
-
-.session-summary__left {
-  display: grid;
-  gap: 10px;
 }
 
 .session-summary-card {
@@ -205,6 +203,7 @@
 }
 
 .session-overview {
+  grid-area: overview;
   min-height: 150px;
   padding: 17px 18px;
 }
@@ -292,6 +291,7 @@
 }
 
 .session-feedback {
+  grid-area: feedback;
   min-height: 188px;
   padding: 14px 16px;
 }
@@ -331,42 +331,49 @@
   border-radius: 50%;
 }
 
-.session-feedback__content {
+.session-feedback__body {
   min-width: 0;
   display: grid;
-  gap: 7px;
+  align-content: start;
+  gap: 12px;
 }
 
-.session-feedback__content > div {
-  min-width: 0;
+.session-feedback__paragraph {
+  margin: 0;
+  color: #273148;
+  font-size: 10px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
-.session-feedback__content strong {
+.session-feedback__issue {
+  padding-top: 9px;
+  border-top: 1px solid rgba(126, 77, 190, 0.15);
+}
+
+.session-feedback__issue strong {
   display: block;
-  margin-bottom: 1px;
+  margin-bottom: 3px;
   color: #4f2c82;
   font-size: 9px;
 }
 
-.session-feedback__content p {
+.session-feedback__issue p {
   margin: 0;
   color: #273148;
   font-size: 9px;
-  line-height: 1.55;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-.session-feedback__evidence {
-  padding-top: 6px;
+.session-feedback__issue p span {
   color: #7444b8;
-  font-size: 8px;
   font-weight: 600;
-  border-top: 1px solid rgba(126, 77, 190, 0.15);
 }
 
 .session-feedback__loading,
 .session-feedback__unavailable {
-  min-height: 102px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -396,6 +403,7 @@
 }
 
 .session-breakdown {
+  grid-area: breakdown;
   min-height: 348px;
   padding: 18px 19px;
 }
@@ -475,6 +483,189 @@
   color: #727d90;
   font-size: 10px;
   text-align: center;
+}
+
+.session-progress {
+  grid-area: progress;
+  min-height: 188px;
+  padding: 14px 16px;
+}
+
+.session-progress > h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.session-progress > h2 i {
+  color: #ff5a0a;
+  font-size: 16px;
+}
+
+.session-progress__state {
+  min-height: 135px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #687489;
+  text-align: center;
+}
+
+.session-progress__state p {
+  max-width: 230px;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.session-progress__loading > span {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 3px solid #ffe0cf;
+  border-top-color: #ff5a0a;
+  border-radius: 50%;
+  animation: summary-spin 0.8s linear infinite;
+}
+
+.session-progress__error i {
+  color: #e17b35;
+}
+
+.session-progress__first {
+  min-height: 135px;
+  margin-top: 10px;
+  padding: 17px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(130deg, #fff6ef, #fffaf6);
+  border: 1px solid #ffe1cf;
+  border-radius: 9px;
+}
+
+.session-progress__first > span {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 18px;
+  background: linear-gradient(145deg, #ff6a19, #f04a00);
+  border-radius: 50%;
+  box-shadow: 0 7px 16px rgba(255, 90, 10, 0.18);
+}
+
+.session-progress__first strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #20293b;
+  font-size: 11px;
+}
+
+.session-progress__first p {
+  margin: 0;
+  color: #687489;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.session-progress__content {
+  margin-top: 9px;
+}
+
+.session-progress__subtitle {
+  margin: 0 0 10px;
+  color: #687489;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.session-progress__accuracies {
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  background: #fff8f3;
+  border: 1px solid #ffeadf;
+  border-radius: 9px;
+}
+
+.session-progress__accuracies > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.session-progress__accuracies span {
+  color: #7a8496;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.session-progress__accuracies strong {
+  margin-top: 2px;
+  color: #172033;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.session-progress__versus {
+  color: #a0a8b5 !important;
+  font-size: 8px !important;
+  text-transform: uppercase;
+}
+
+.session-progress__difference {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+
+.session-progress__difference > span {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 50%;
+}
+
+.session-progress__difference--improved {
+  color: #278e35;
+}
+
+.session-progress__difference--improved > span {
+  background: #36a747;
+}
+
+.session-progress__difference--decreased {
+  color: #b46a21;
+}
+
+.session-progress__difference--decreased > span {
+  background: #df8933;
+}
+
+.session-progress__difference--no_change {
+  color: #637086;
+}
+
+.session-progress__difference--no_change > span {
+  background: #8a94a5;
+}
+
+.session-progress__message {
+  margin: 8px 0 0;
+  color: #59667b;
+  font-size: 8px;
+  line-height: 1.5;
 }
 
 .session-summary__dashboard-button {
@@ -558,6 +749,11 @@
 
   .session-summary__grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "overview"
+      "breakdown"
+      "feedback"
+      "progress";
   }
 
   .session-breakdown {
@@ -653,7 +849,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .session-feedback__loading > span {
+  .session-feedback__loading > span,
+  .session-progress__loading > span {
     animation: none;
   }
 }

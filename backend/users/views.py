@@ -1,8 +1,18 @@
 from rest_framework.decorators import api_view
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
-from .models import CustomUser
+from django.db import transaction
+from django.middleware.csrf import get_token
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from .models import CustomUser, WorkoutSession
+from .session_progress_service import (
+    build_progress_comparison,
+    find_previous_completed_session,
+)
 from .coach_feedback_service import (
     AI_FEEDBACK_UNAVAILABLE_MESSAGE,
     GeminiConfigError,
@@ -73,6 +83,7 @@ def login_view(request):
         log_debug(f"Login session started for {username}")
         return Response({
             'message': 'Login successful',
+            'csrf_token': get_token(request),
             'user': {
                 'username': user.username,
                 'first_name': user.first_name,
@@ -87,6 +98,105 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return Response({'message': 'Logged out'})
+
+
+@api_view(['GET'])
+def csrf_token(request):
+    return Response({'csrf_token': get_token(request)})
+
+
+def _non_negative_integer(value, default=0, nullable=False):
+    if value is None and nullable:
+        return None
+    try:
+        return max(0, int(float(value)))
+    except (TypeError, ValueError):
+        return None if nullable else default
+
+
+def _json_list(value):
+    return value if isinstance(value, list) else []
+
+
+def _json_object(value):
+    return value if isinstance(value, dict) else {}
+
+
+def _completed_at(value):
+    parsed = parse_datetime(str(value)) if value else None
+    if parsed is None:
+        return timezone.now()
+    if timezone.is_naive(parsed):
+        return timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def complete_workout_session(request):
+    """Idempotently save a result and compare it with the previous matching session."""
+    data = request.data or {}
+    session_id = str(data.get('id') or '').strip()
+    exercise_data = data.get('exercise') if isinstance(data.get('exercise'), dict) else {}
+    exercise = str(exercise_data.get('id') or '').strip().lower()
+
+    if not session_id or not exercise:
+        return Response(
+            {'error': 'A session id and exercise are required.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    exercise_name = str(exercise_data.get('name') or exercise.replace('-', ' ').title()).strip()[:80]
+    metric_type = WorkoutSession.METRIC_TIME if data.get('metricType') == 'time' else WorkoutSession.METRIC_REPS
+    session_status = (
+        WorkoutSession.STATUS_COMPLETED
+        if data.get('status') == WorkoutSession.STATUS_COMPLETED
+        else WorkoutSession.STATUS_ENDED
+    )
+    accuracy = min(100, _non_negative_integer(data.get('accuracy')))
+    feedback = data.get('feedback')
+
+    values = {
+        'exercise': exercise[:50],
+        'exercise_name': exercise_name or 'Exercise',
+        'metric_type': metric_type,
+        'status': session_status,
+        'completed_at': _completed_at(data.get('completedAt')),
+        'duration': _non_negative_integer(data.get('duration')),
+        'sets_completed': _non_negative_integer(data.get('setsCompleted')),
+        'accuracy': accuracy,
+        'correct_reps': _non_negative_integer(data.get('correctReps'), nullable=True),
+        'incorrect_reps': _non_negative_integer(data.get('incorrectReps'), nullable=True),
+        'total_reps': _non_negative_integer(data.get('totalReps'), nullable=True),
+        'total_hold_time': _non_negative_integer(data.get('totalHoldTime'), nullable=True),
+        'form_issues': _json_list(data.get('formIssues')),
+        'set_results': _json_list(data.get('setResults')),
+        'configuration': _json_object(data.get('config')),
+        'analysis': _json_object(data.get('analysis')),
+    }
+
+    with transaction.atomic():
+        workout_session, created = WorkoutSession.objects.select_for_update().get_or_create(
+            user=request.user,
+            session_id=session_id[:120],
+            defaults=values,
+        )
+        if not created:
+            for field, value in values.items():
+                setattr(workout_session, field, value)
+        if isinstance(feedback, dict) and feedback:
+            workout_session.feedback = feedback
+        workout_session.full_clean()
+        workout_session.save()
+
+        previous_session = find_previous_completed_session(workout_session)
+        comparison = build_progress_comparison(workout_session, previous_session)
+
+    return Response({
+        'sessionId': workout_session.session_id,
+        'saved': True,
+        'comparison': comparison,
+    })
 
 
 def _generate_feedback_response(data):

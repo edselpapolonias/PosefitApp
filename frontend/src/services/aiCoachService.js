@@ -1,7 +1,7 @@
 import axios from 'axios';
+import { apiUrl } from './apiConfig';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000';
-const AI_FEEDBACK_URL = `${API_BASE_URL}/api/users/exercise-coach-feedback/`;
+const AI_FEEDBACK_URL = apiUrl('/api/users/exercise-coach-feedback/');
 
 function normalizeText(value) {
     if (Array.isArray(value)) {
@@ -15,15 +15,13 @@ function normalizeFeedback(feedback) {
         return null;
     }
 
-    const normalized = {
-        overallPerformance: normalizeText(feedback.overallPerformance),
-        whatYouDidWell: normalizeText(feedback.whatYouDidWell || feedback.strengths),
-        whatToImprove: normalizeText(
-            feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations
-        ),
-    };
+    const feedbackParagraph = normalizeText(feedback.feedbackParagraph) || [
+        normalizeText(feedback.overallPerformance),
+        normalizeText(feedback.whatYouDidWell || feedback.strengths),
+        normalizeText(feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations),
+    ].filter(Boolean).join(' ');
 
-    return Object.values(normalized).every(Boolean) ? normalized : null;
+    return feedbackParagraph ? { feedbackParagraph } : null;
 }
 
 function buildAngleStats(repAngles = []) {

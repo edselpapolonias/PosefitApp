@@ -113,14 +113,13 @@ function feedbackText(value) {
 function normalizeSessionFeedback(feedback) {
     if (!feedback || typeof feedback !== 'object') return null;
 
-    const normalized = {
-        overallPerformance: feedbackText(feedback.overallPerformance),
-        whatYouDidWell: feedbackText(feedback.whatYouDidWell || feedback.strengths),
-        whatToImprove: feedbackText(
-            feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations
-        ),
-    };
-    return Object.values(normalized).some(Boolean) ? normalized : null;
+    const feedbackParagraph = feedbackText(feedback.feedbackParagraph) || [
+        feedbackText(feedback.overallPerformance),
+        feedbackText(feedback.whatYouDidWell || feedback.strengths),
+        feedbackText(feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations),
+    ].filter(Boolean).join(' ');
+
+    return feedbackParagraph ? { feedbackParagraph } : null;
 }
 
 export function createSessionResult(data = {}) {

@@ -240,3 +240,35 @@
 [2026-09-02T16:30:17.293756] Login attempt: username=edsel
 [2026-09-02T16:30:19.085611] Authentication result for edsel: SUCCESS
 [2026-09-02T16:30:19.265314] Login session started for edsel
+[2026-09-03T21:17:07.079846] Login attempt: username=edsel
+[2026-09-03T21:17:08.718934] Authentication result for edsel: SUCCESS
+[2026-09-03T21:17:08.844526] Login session started for edsel
+[2026-09-03T21:26:26.470480] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 24 (char 23)
+[2026-09-03T21:45:14.405241] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 23 (char 22)
+[2026-09-03T21:45:24.950568] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 23 (char 22)
+[2026-09-03T21:45:33.920604] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 23 (char 22)
+[2026-09-03T21:45:41.951551] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 23 (char 22)
+[2026-09-03T21:46:01.510389] Gemini coach feedback failed [parse_error]: Failed to parse Gemini response: Unterminated string starting at: line 1 column 23 (char 22)
+[2026-09-03T22:17:07.940476] Login attempt: username=progress-user
+[2026-09-03T22:17:08.677455] Authentication result for progress-user: SUCCESS
+[2026-09-03T22:17:08.688171] Login session started for progress-user
+[2026-09-03T22:27:56.975115] Login attempt: username=edsel
+[2026-09-03T22:27:58.630630] Authentication result for edsel: SUCCESS
+[2026-09-03T22:27:58.682665] Login session started for edsel
+[2026-09-03T22:32:57.352350] Login attempt: username=edsel
+[2026-09-03T22:32:59.002261] Authentication result for edsel: SUCCESS
+[2026-09-03T22:32:59.018216] Login session started for edsel
+[2026-09-03T22:37:19.576068] Login attempt: username=progress-user
+[2026-09-03T22:37:20.357039] Authentication result for progress-user: SUCCESS
+[2026-09-03T22:37:20.363717] Login session started for progress-user
+[2026-09-03T22:39:35.014686] Register attempt: username=admin, first_name=Admin, last_name=Admin, age=21
+[2026-09-03T22:39:36.586619] Register success: Created user admin
+[2026-09-03T22:41:32.940747] Login attempt: username=progress-user
+[2026-09-03T22:41:33.660140] Authentication result for progress-user: SUCCESS
+[2026-09-03T22:41:33.662830] Login session started for progress-user
+[2026-09-03T22:41:35.018857] Login attempt: username=progress-user
+[2026-09-03T22:41:35.710241] Authentication result for progress-user: SUCCESS
+[2026-09-03T22:41:35.715879] Login session started for progress-user
+[2026-09-03T22:42:11.523018] Login attempt: username=admin
+[2026-09-03T22:42:12.279138] Authentication result for admin: SUCCESS
+[2026-09-03T22:42:12.286058] Login session started for admin

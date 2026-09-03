@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { apiUrl } from '../services/apiConfig';
 import backgroundImage from './background.png';
 import frameImg from '../images/frame.png';
 import dashboardImg from '../images/dashboard.png';
@@ -93,15 +94,26 @@ export default function AuthPage() {
     setLoginError('');
     setLoginLoading(true);
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:8000/api/users/login/',
-        loginForm,
+      const csrfResponse = await axios.get(
+        apiUrl('/api/users/csrf/'),
         { withCredentials: true }
       );
+      const csrfToken = csrfResponse.data?.csrf_token;
+      const res = await axios.post(
+        apiUrl('/api/users/login/'),
+        loginForm,
+        {
+          withCredentials: true,
+          headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+        }
+      );
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      if (res.data.csrf_token) {
+        sessionStorage.setItem('posefit-csrf-token', res.data.csrf_token);
+      }
       navigate('/dashboard');
     } catch (err) {
-      setLoginError(err.response?.data?.error || 'Login failed');
+      setLoginError(err.response?.data?.error || err.response?.data?.detail || 'Unable to connect to the login service.');
     } finally {
       setLoginLoading(false);
     }
@@ -113,7 +125,7 @@ export default function AuthPage() {
     setRegisterSuccess('');
     setRegisterLoading(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/users/register/', registerForm);
+      await axios.post(apiUrl('/api/users/register/'), registerForm);
       setRegisterSuccess('Account created! You can now log in.');
       setTimeout(() => switchTab('login'), 1400);
     } catch (err) {

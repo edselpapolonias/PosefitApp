@@ -141,11 +141,14 @@ def _build_system_instruction():
         'not recalculate, override, or reinterpret whether a repetition was correct. Use only facts in '
         'the supplied JSON. Never invent form issues, injuries, pain, medical conditions, joint problems, '
         'or measurements. Mention a form issue only when it appears in summary.mistakes with a count '
-        'greater than zero. If mistakes is empty, explicitly say that no significant form issue was '
-        'detected and recommend only controlled, consistent movement. Return exactly three short fields: '
-        'overallPerformance, whatYouDidWell, and whatToImprove. Each field must be one or two simple '
-        'sentences suitable for a beginner. Keep the complete response under 100 words. Prioritize the '
-        'mostFrequentFormIssue when one exists. Do not provide medical advice.'
+        'greater than zero. Generate one concise and natural exercise form feedback paragraph based only '
+        'on the provided session data. Write 2 to 4 beginner-friendly sentences. Start by briefly evaluating '
+        'the overall performance, acknowledge what went well, and only when an actual form issue exists, '
+        'explain the most important or most frequent issue and give one practical correction. If mistakes '
+        'is empty, provide positive reinforcement and encourage the user to maintain the same controlled '
+        'form. Do not use headings, bullet points, markdown, lists, or separate sections. Do not mention a '
+        '"most detected issue" label in the paragraph. Keep the paragraph under 90 words. Do not provide '
+        'medical advice or diagnoses.'
     )
 
 
@@ -170,16 +173,20 @@ def _build_request_body(payload):
         ],
         'generationConfig': {
             'temperature': 0.2,
-            'maxOutputTokens': 512,
+            # Gemini 2.5 Flash counts thinking tokens toward this limit. Disable
+            # thinking for this simple rewrite task and leave enough room for a
+            # complete JSON response; concision is enforced after parsing.
+            'thinkingConfig': {
+                'thinkingBudget': 0,
+            },
+            'maxOutputTokens': 2048,
             'responseMimeType': 'application/json',
             'responseSchema': {
                 'type': 'OBJECT',
                 'properties': {
-                    'overallPerformance': {'type': 'STRING'},
-                    'whatYouDidWell': {'type': 'STRING'},
-                    'whatToImprove': {'type': 'STRING'}
+                    'feedbackParagraph': {'type': 'STRING'}
                 },
-                'required': ['overallPerformance', 'whatYouDidWell', 'whatToImprove']
+                'required': ['feedbackParagraph']
             }
         },
     }
@@ -251,10 +258,16 @@ def _strip_code_fences(text):
     return cleaned
 
 
-def _shorten_feedback_text(value, max_sentences=2, max_chars=240, max_words=32):
+def _shorten_feedback_text(value, max_sentences=4, max_chars=620, max_words=90):
     text = ' '.join(str(value or '').split()).strip()
     if not text:
         return ''
+
+    text = re.sub(
+        r'(?i)\b(overall performance|what you did well|what to improve|most detected issue)\s*:\s*',
+        '',
+        text,
+    )
 
     sentences = re.split(r'(?<=[.!?])\s+', text)
     shortened = ' '.join(sentences[:max_sentences]).strip()
@@ -268,7 +281,7 @@ def _shorten_feedback_text(value, max_sentences=2, max_chars=240, max_words=32):
     return f'{clipped}.' if clipped else ''
 
 
-def _normalize_feedback(feedback, payload):
+def _normalize_feedback(feedback, _payload):
     if not isinstance(feedback, dict):
         raise GeminiServiceError('Gemini feedback was not returned as JSON.')
 
@@ -279,33 +292,23 @@ def _normalize_feedback(feedback, payload):
             return value
         return ''
 
-    overall = _shorten_feedback_text(feedback.get('overallPerformance'))
-    did_well = _shorten_feedback_text(
-        feedback.get('whatYouDidWell') or _legacy_text(feedback.get('strengths'))
-    )
-    improve = _shorten_feedback_text(
-        feedback.get('whatToImprove')
-        or _legacy_text(feedback.get('areasForImprovement'))
-        or _legacy_text(feedback.get('recommendations'))
-    )
-
-    if not overall or not did_well:
-        raise GeminiServiceError('Gemini feedback was missing a required section.', error_type='invalid_response')
-
-    mistakes = payload.get('summary', {}).get('mistakes', {})
-    if not mistakes:
-        improve = (
-            'No significant form issue was detected during this session. '
-            'Continue using controlled and consistent movement.'
-        )
-    elif not improve:
-        main_issue = payload['summary'].get('mostFrequentFormIssue')
-        improve = f'Focus on correcting the detected issue: {main_issue}.'
+    paragraph = feedback.get('feedbackParagraph')
+    if not paragraph:
+        paragraph = ' '.join(filter(None, [
+            _legacy_text(feedback.get('overallPerformance')),
+            _legacy_text(feedback.get('whatYouDidWell') or feedback.get('strengths')),
+            _legacy_text(
+                feedback.get('whatToImprove')
+                or feedback.get('areasForImprovement')
+                or feedback.get('recommendations')
+            ),
+        ]))
+    paragraph = _shorten_feedback_text(paragraph)
+    if not paragraph:
+        raise GeminiServiceError('Gemini feedback was missing its feedback paragraph.', error_type='invalid_response')
 
     return {
-        'overallPerformance': overall,
-        'whatYouDidWell': did_well,
-        'whatToImprove': improve,
+        'feedbackParagraph': paragraph,
     }
 
 
