@@ -1,5 +1,7 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../services/apiConfig';
 import './Navbar.css';
 
 const navigationItems = [
@@ -19,9 +21,73 @@ function getStoredUser() {
 }
 
 export default function Navbar({ activeItem }) {
+  const navigate = useNavigate();
+  const accountMenuRef = useRef(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const user = getStoredUser();
   const displayName = user.first_name || user.username || 'User';
   const initials = `${user.first_name?.[0] || user.username?.[0] || 'U'}${user.last_name?.[0] || ''}`.toUpperCase();
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) {
+        setAccountMenuOpen(false);
+        setLogoutError('');
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false);
+        setLogoutError('');
+      }
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  const handleLogout = async () => {
+    if (logoutLoading) return;
+    setLogoutLoading(true);
+    setLogoutError('');
+
+    try {
+      const csrfResponse = await axios.get(apiUrl('/api/users/csrf/'), {
+        withCredentials: true,
+        timeout: 10000,
+      });
+      const csrfToken = csrfResponse.data?.csrf_token;
+
+      await axios.post(
+        apiUrl('/api/users/logout/'),
+        {},
+        {
+          withCredentials: true,
+          headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+          timeout: 10000,
+        }
+      );
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('posefitSessionFeedbackById');
+      sessionStorage.removeItem('posefit-csrf-token');
+      sessionStorage.removeItem('posefitSquatWorkoutConfig');
+      sessionStorage.removeItem('posefitLatestSessionResult');
+      navigate('/login', { replace: true });
+    } catch (error) {
+      setLogoutError(error.response?.data?.error || 'Unable to log out. Please try again.');
+    } finally {
+      setLogoutLoading(false);
+    }
+  };
 
   return (
     <header className="top-navbar">
@@ -61,10 +127,38 @@ export default function Navbar({ activeItem }) {
             <i className="fa-regular fa-bell" aria-hidden="true" />
           </button>
 
-          <div className="top-navbar__account" aria-label={`Signed in as ${displayName}`}>
-            <span className="top-navbar__avatar" aria-hidden="true">{initials}</span>
-            <span className="top-navbar__user-name">{displayName}</span>
-            <i className="fa-solid fa-chevron-down top-navbar__chevron" aria-hidden="true" />
+          <div className="top-navbar__account-menu" ref={accountMenuRef}>
+            <button
+              className="top-navbar__account"
+              type="button"
+              aria-label={`Account menu for ${displayName}`}
+              aria-haspopup="menu"
+              aria-expanded={accountMenuOpen}
+              onClick={() => {
+                setAccountMenuOpen((open) => !open);
+                setLogoutError('');
+              }}
+            >
+              <span className="top-navbar__avatar" aria-hidden="true">{initials}</span>
+              <span className="top-navbar__user-name">{displayName}</span>
+              <i className={`fa-solid fa-chevron-down top-navbar__chevron${accountMenuOpen ? ' top-navbar__chevron--open' : ''}`} aria-hidden="true" />
+            </button>
+
+            {accountMenuOpen && (
+              <div className="top-navbar__dropdown" role="menu">
+                <button
+                  className="top-navbar__logout"
+                  type="button"
+                  role="menuitem"
+                  disabled={logoutLoading}
+                  onClick={handleLogout}
+                >
+                  <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" />
+                  <span>{logoutLoading ? 'Logging out...' : 'Log out'}</span>
+                </button>
+                {logoutError && <p className="top-navbar__logout-error" role="alert">{logoutError}</p>}
+              </div>
+            )}
           </div>
         </div>
       </div>

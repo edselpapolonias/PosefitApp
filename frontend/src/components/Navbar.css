@@ -119,6 +119,10 @@ a.top-navbar__link {
   gap: 24px;
 }
 
+.top-navbar__account-menu {
+  position: relative;
+}
+
 .top-navbar__icon-button {
   width: 32px;
   height: 32px;
@@ -139,10 +143,25 @@ a.top-navbar__link {
 }
 
 .top-navbar__account {
+  min-height: 42px;
+  margin: -3px -6px;
+  padding: 3px 6px;
   display: flex;
   align-items: center;
   gap: 10px;
   color: #171b26;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.top-navbar__account:hover,
+.top-navbar__account:focus-visible,
+.top-navbar__account[aria-expanded='true'] {
+  background: #f7f8fa;
+  outline: none;
 }
 
 .top-navbar__avatar {
@@ -172,6 +191,63 @@ a.top-navbar__link {
 .top-navbar__chevron {
   margin-left: 2px;
   font-size: 8px;
+  transition: transform 160ms ease;
+}
+
+.top-navbar__chevron--open {
+  transform: rotate(180deg);
+}
+
+.top-navbar__dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: max-content;
+  min-width: 170px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e9ef;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+}
+
+.top-navbar__logout {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 11px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #b43b31;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.top-navbar__logout:hover,
+.top-navbar__logout:focus-visible {
+  color: #9c2f27;
+  background: #fff2f0;
+  outline: none;
+}
+
+.top-navbar__logout:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.top-navbar__logout-error {
+  max-width: 210px;
+  margin: 5px 7px 6px;
+  color: #b43b31;
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 @media (max-width: 980px) {

@@ -86,15 +86,28 @@ class CoachFeedbackServiceTests(SimpleTestCase):
         )
 
 
-def session_result(accuracy, session_id='session-current'):
+def session_result(
+    accuracy,
+    session_id='session-current',
+    *,
+    metric_type=WorkoutSession.METRIC_REPS,
+    configuration=None,
+    total_reps=10,
+    sets_completed=1,
+    total_hold_time=None,
+):
     return SimpleNamespace(
         session_id=session_id,
         exercise_name='Squat',
+        metric_type=metric_type,
         accuracy=accuracy,
         completed_at=datetime(2026, 9, 3, tzinfo=timezone.utc),
         correct_reps=9,
         incorrect_reps=1,
-        total_hold_time=None,
+        total_reps=total_reps,
+        sets_completed=sets_completed,
+        total_hold_time=total_hold_time,
+        configuration=configuration or {'repsPerSet': 10, 'totalSets': 1},
     )
 
 
@@ -137,6 +150,77 @@ class ProgressComparisonTests(SimpleTestCase):
         self.assertEqual(comparison['differencePercentagePoints'], 0)
         self.assertIn('remained the same', comparison['message'])
 
+    def test_same_configuration_includes_workload_and_completion_context(self):
+        comparison = build_progress_comparison(
+            session_result(
+                92,
+                configuration={'repsPerSet': 12, 'totalSets': 3},
+                total_reps=34,
+                sets_completed=3,
+            ),
+            session_result(
+                85,
+                'session-previous',
+                configuration={'repsPerSet': 12, 'totalSets': 3},
+                total_reps=36,
+                sets_completed=3,
+            ),
+        )
+
+        self.assertTrue(comparison['sameConfiguration'])
+        self.assertEqual(comparison['configurationStatus'], 'same_configuration')
+        self.assertEqual(comparison['current']['target']['totalReps'], 36)
+        self.assertEqual(comparison['current']['completed']['reps'], 34)
+        self.assertIn('same workout configuration', comparison['message'])
+
+    def test_accuracy_decrease_is_contextualized_when_volume_is_higher(self):
+        comparison = build_progress_comparison(
+            session_result(
+                92,
+                configuration={'repsPerSet': 12, 'totalSets': 3},
+                total_reps=36,
+                sets_completed=3,
+            ),
+            session_result(
+                100,
+                'session-previous',
+                configuration={'repsPerSet': 5, 'totalSets': 1},
+                total_reps=5,
+                sets_completed=1,
+            ),
+        )
+
+        self.assertFalse(comparison['sameConfiguration'])
+        self.assertEqual(comparison['configurationStatus'], 'different_volume')
+        self.assertEqual(comparison['volumeComparison'], 'higher')
+        self.assertIn('higher workout volume', comparison['message'])
+
+    def test_time_based_session_uses_hold_time_instead_of_repetitions(self):
+        comparison = build_progress_comparison(
+            session_result(
+                91,
+                metric_type=WorkoutSession.METRIC_TIME,
+                configuration={'holdSecondsPerSet': 45, 'totalSets': 3},
+                total_reps=None,
+                sets_completed=3,
+                total_hold_time=130,
+            ),
+            session_result(
+                88,
+                'session-previous',
+                metric_type=WorkoutSession.METRIC_TIME,
+                configuration={'holdSecondsPerSet': 30, 'totalSets': 2},
+                total_reps=None,
+                sets_completed=2,
+                total_hold_time=60,
+            ),
+        )
+
+        self.assertEqual(comparison['current']['target']['totalHoldTime'], 135)
+        self.assertEqual(comparison['current']['completed']['holdTime'], 130)
+        self.assertIsNone(comparison['current']['target']['repsPerSet'])
+        self.assertEqual(comparison['volumeComparison'], 'higher')
+
 
 class WorkoutSessionApiTests(TestCase):
     def setUp(self):
@@ -146,7 +230,7 @@ class WorkoutSessionApiTests(TestCase):
         self.client.force_authenticate(self.user)
         self.completed_at = django_timezone.now()
 
-    def create_session(self, user, session_id, exercise, accuracy, completed_at):
+    def create_session(self, user, session_id, exercise, accuracy, completed_at, configuration=None):
         return WorkoutSession.objects.create(
             user=user,
             session_id=session_id,
@@ -156,6 +240,7 @@ class WorkoutSessionApiTests(TestCase):
             status=WorkoutSession.STATUS_COMPLETED,
             completed_at=completed_at,
             accuracy=accuracy,
+            configuration=configuration or {},
         )
 
     def test_endpoint_compares_only_immediately_previous_same_user_exercise(self):
@@ -165,6 +250,7 @@ class WorkoutSessionApiTests(TestCase):
             'squat',
             77,
             self.completed_at - timedelta(days=2),
+            {'repsPerSet': 10, 'totalSets': 3},
         )
         self.create_session(
             self.user,
@@ -192,6 +278,7 @@ class WorkoutSessionApiTests(TestCase):
             'totalReps': 30,
             'correctReps': 28,
             'incorrectReps': 2,
+            'config': {'repsPerSet': 10, 'totalSets': 3},
         }
         response = self.client.post('/api/users/sessions/complete/', payload, format='json')
 
@@ -199,6 +286,9 @@ class WorkoutSessionApiTests(TestCase):
         comparison = response.data['comparison']
         self.assertEqual(comparison['previous']['sessionId'], previous.session_id)
         self.assertEqual(comparison['differencePercentagePoints'], 15)
+        self.assertEqual(comparison['configurationStatus'], 'same_configuration')
+        self.assertEqual(comparison['current']['target']['totalReps'], 30)
+        self.assertEqual(comparison['current']['completed']['reps'], 30)
 
         second_response = self.client.post('/api/users/sessions/complete/', payload, format='json')
         self.assertEqual(second_response.status_code, 200)

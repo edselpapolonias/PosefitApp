@@ -11,11 +11,11 @@ import {
   updateStoredSessionFeedback,
 } from '../services/summaryService';
 import { formatTime } from '../utils/formatters';
-import squatImage from '../images/exercise-squat.png';
-import pushUpImage from '../images/exercise-push-up.png';
-import plankImage from '../images/exercise-plank.png';
-import lungeImage from '../images/exercise-lunge.png';
-import sitUpImage from '../images/exercise-sit-up.png';
+import squatImage from '@bryllim/workout-guide/assets/bodyweight-squat/frame-2.png';
+import pushUpImage from '@bryllim/workout-guide/assets/push-up/frame-2.png';
+import plankImage from '@bryllim/workout-guide/assets/plank/frame-2.png';
+import lungeImage from '@bryllim/workout-guide/assets/forward-lunge/frame-2.png';
+import sitUpImage from '@bryllim/workout-guide/assets/decline-sit-up/frame-2.png';
 import './SessionSummaryPage.css';
 
 const exerciseImages = {
@@ -93,6 +93,18 @@ function SummaryMetric({ icon, value, label, detail, secondaryDetail, tone = '' 
   );
 }
 
+function comparisonValue(value, suffix = '') {
+  return value === null || value === undefined ? '—' : `${value}${suffix}`;
+}
+
+function comparisonRatio(completed, target, formatter = (value) => value) {
+  if (completed === null || completed === undefined) return '—';
+  const completedValue = formatter(completed);
+  return target === null || target === undefined
+    ? String(completedValue)
+    : `${completedValue} / ${formatter(target)}`;
+}
+
 function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
   const difference = Number(comparison?.differencePercentagePoints || 0);
   const magnitude = Math.abs(difference);
@@ -100,6 +112,26 @@ function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
   const differenceLabel = status === 'no_change'
     ? 'No change'
     : `${magnitude} percentage ${magnitude === 1 ? 'point' : 'points'}`;
+  const current = comparison?.current;
+  const previous = comparison?.previous;
+  const isTimeBased = current?.metricType === 'time';
+  const comparisonRows = current && previous
+    ? isTimeBased
+      ? [
+          { label: 'Form Accuracy', current: comparisonValue(current.accuracy, '%'), previous: comparisonValue(previous.accuracy, '%') },
+          { label: 'Target Hold', current: comparisonValue(current.target?.holdSecondsPerSet, ' sec'), previous: comparisonValue(previous.target?.holdSecondsPerSet, ' sec') },
+          { label: 'Target Sets', current: comparisonValue(current.target?.sets), previous: comparisonValue(previous.target?.sets) },
+          { label: 'Actual Hold', current: comparisonRatio(current.completed?.holdTime, current.target?.totalHoldTime, formatTime), previous: comparisonRatio(previous.completed?.holdTime, previous.target?.totalHoldTime, formatTime) },
+          { label: 'Completed Sets', current: comparisonRatio(current.completed?.sets, current.target?.sets), previous: comparisonRatio(previous.completed?.sets, previous.target?.sets) },
+        ]
+      : [
+          { label: 'Form Accuracy', current: comparisonValue(current.accuracy, '%'), previous: comparisonValue(previous.accuracy, '%') },
+          { label: 'Target Reps', current: comparisonValue(current.target?.repsPerSet), previous: comparisonValue(previous.target?.repsPerSet) },
+          { label: 'Target Sets', current: comparisonValue(current.target?.sets), previous: comparisonValue(previous.target?.sets) },
+          { label: 'Completed Reps', current: comparisonRatio(current.completed?.reps, current.target?.totalReps), previous: comparisonRatio(previous.completed?.reps, previous.target?.totalReps) },
+          { label: 'Completed Sets', current: comparisonRatio(current.completed?.sets, current.target?.sets), previous: comparisonRatio(previous.completed?.sets, previous.target?.sets) },
+        ]
+    : [];
 
   return (
     <section className="session-summary-card session-progress">
@@ -126,17 +158,23 @@ function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
       ) : (
         <div className="session-progress__content">
           <p className="session-progress__subtitle">{comparison.title}</p>
-          <div className="session-progress__accuracies">
-            <div>
-              <span>Current</span>
-              <strong>{comparison.current.accuracy}%</strong>
+          <div className="session-progress__matrix" role="table" aria-label={`${exerciseName} session comparison`}>
+            <div className="session-progress__matrix-row session-progress__matrix-header" role="row">
+              <span role="columnheader">Metric</span>
+              <span role="columnheader">Current</span>
+              <span role="columnheader">Previous</span>
             </div>
-            <span className="session-progress__versus">vs</span>
-            <div>
-              <span>Previous</span>
-              <strong>{comparison.previous.accuracy}%</strong>
-            </div>
+            {comparisonRows.map((row) => (
+              <div className="session-progress__matrix-row" role="row" key={row.label}>
+                <span role="rowheader">{row.label}</span>
+                <strong role="cell">{row.current}</strong>
+                <strong role="cell">{row.previous}</strong>
+              </div>
+            ))}
           </div>
+          <span className={`session-progress__configuration session-progress__configuration--${comparison.configurationStatus || 'configuration_unavailable'}`}>
+            {comparison.configurationLabel || 'Workout Configuration Unavailable'}
+          </span>
           <div
             className={`session-progress__difference session-progress__difference--${status}`}
             aria-label={status === 'no_change' ? 'No change' : `${status} by ${differenceLabel}`}
@@ -325,11 +363,22 @@ export default function SessionSummaryPage() {
           <span>Summary</span>
         </nav>
 
-        <section className="session-summary__hero">
-          <div className="session-summary__exercise-image">
-            <img src={exerciseImage} alt={`${exerciseName} exercise`} />
+        <section className="session-summary__top">
+          <div className="session-summary__exercise-column">
+            <div className="session-summary__exercise-image">
+              <img src={exerciseImage} alt={`${exerciseName} exercise`} />
+            </div>
           </div>
 
+          <section className="session-summary-card session-overview">
+            <h2>Performance Overview</h2>
+            <div className="session-overview__metrics">
+              {metrics.map((metric) => <SummaryMetric key={metric.label} {...metric} />)}
+            </div>
+          </section>
+        </section>
+
+        <section className="session-summary__middle">
           <div className="session-summary__celebration">
             <span className={`session-summary__status session-summary__status--${sessionResult.status}`}>
               <i className={`fa-regular ${completed ? 'fa-circle-check' : 'fa-circle-stop'}`} aria-hidden="true" />
@@ -349,24 +398,7 @@ export default function SessionSummaryPage() {
             </div>
           </div>
 
-          <aside className="session-summary__motivation">
-            <span aria-hidden="true"><i className="fa-solid fa-trophy" /></span>
-            <div>
-              <strong>{isTimeBased ? 'Every Second Counts!' : 'Every Rep Counts!'}</strong>
-              <p>Consistency today,<br />strength tomorrow.</p>
-            </div>
-          </aside>
-        </section>
-
-        <div className="session-summary__grid">
-          <section className="session-summary-card session-overview">
-            <h2>Performance Overview</h2>
-            <div className="session-overview__metrics">
-              {metrics.map((metric) => <SummaryMetric key={metric.label} {...metric} />)}
-            </div>
-          </section>
-
-          <section className="session-summary-card session-breakdown">
+          <section className="session-breakdown">
             <h2>Set Breakdown</h2>
             {sessionResult.setResults.length > 0 ? (
               <div className="session-breakdown__scroll">
@@ -408,7 +440,9 @@ export default function SessionSummaryPage() {
               <p className="session-breakdown__empty">No set data was recorded for this session.</p>
             )}
           </section>
+        </section>
 
+        <div className="session-summary__lower-grid">
           <section className="session-summary-card session-feedback">
             <h2><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Form Feedback</h2>
             <div className="session-feedback__panel">
@@ -452,6 +486,15 @@ export default function SessionSummaryPage() {
           Back to Dashboard
           <i className="fa-solid fa-arrow-right" aria-hidden="true" />
         </button>
+
+        <p className="session-summary__artwork-credit">
+          Exercise artwork by{' '}
+          <a href="https://bryllim.com" target="_blank" rel="noreferrer">Bryl Lim</a>
+          {' '}and{' '}
+          <a href="https://github.com/everkinetic/data" target="_blank" rel="noreferrer">Everkinetic</a>,
+          {' '}licensed under{' '}
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
+        </p>
       </main>
     </div>
   );
