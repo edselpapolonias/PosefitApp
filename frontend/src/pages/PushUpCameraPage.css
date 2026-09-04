@@ -1,0 +1,50 @@
+.camera-session--push-up {
+  --push-up-session-accent: #176fff;
+  --push-up-session-soft: #eff6ff;
+}
+
+.camera-session--push-up .camera-session__exercise-icon,
+.camera-session--push-up .camera-session__start-icon,
+.camera-session--push-up .camera-session__rest-check,
+.camera-session--push-up .camera-session__complete-overlay > span {
+  background: linear-gradient(145deg, #3988ff, #0b62ef);
+  box-shadow: 0 8px 20px rgba(23, 111, 255, 0.24);
+}
+
+.camera-session--push-up .camera-session__back:hover,
+.camera-session--push-up .camera-session__back:focus-visible,
+.camera-session--push-up .camera-session__voice,
+.camera-session--push-up .camera-session__start-eyebrow,
+.camera-session--push-up .camera-session__guide-row > i,
+.camera-session--push-up .camera-configuration-error__icon {
+  color: var(--push-up-session-accent);
+}
+
+.camera-session--push-up .camera-session__voice,
+.camera-session--push-up .camera-session__back:hover,
+.camera-session--push-up .camera-session__back:focus-visible {
+  background: var(--push-up-session-soft);
+}
+
+.camera-session--push-up .camera-session__voice,
+.camera-session--push-up .camera-session__metric--primary {
+  border-color: #cfe1ff !important;
+}
+
+.camera-session--push-up .camera-session__metric--primary {
+  background: linear-gradient(145deg, #fff, #f7faff) !important;
+}
+
+.camera-session--push-up .camera-session__progress-track > span {
+  background: linear-gradient(90deg, #1265f3, #4792ff);
+}
+
+.camera-session--push-up .camera-session__start-button,
+.camera-session--push-up .camera-configuration-error button {
+  background: linear-gradient(90deg, #1265f3, #1677ff);
+  box-shadow: 0 9px 22px rgba(23, 111, 255, 0.24);
+}
+
+.camera-session--push-up .camera-session__brand span {
+  color: var(--push-up-session-accent);
+}

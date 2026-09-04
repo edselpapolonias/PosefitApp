@@ -1,0 +1,69 @@
+.push-up-page {
+  --push-up-accent: #176fff;
+  --push-up-accent-dark: #075de8;
+  --push-up-soft: #eff6ff;
+}
+
+.push-up-page .squat-breadcrumb button,
+.push-up-page .squat-overview__facts i,
+.push-up-page .squat-config__icon,
+.push-up-page .squat-reminders > i,
+.push-up-page .squat-tip > i,
+.push-up-page .squat-equipment__grid i {
+  color: var(--push-up-accent);
+}
+
+.push-up-page .squat-breadcrumb button:hover,
+.push-up-page .squat-breadcrumb button:focus-visible {
+  color: var(--push-up-accent-dark);
+}
+
+.push-up-page .squat-overview__guide-button {
+  color: var(--push-up-accent);
+  border-color: #8ab9ff;
+}
+
+.push-up-page .squat-overview__guide-button:hover,
+.push-up-page .squat-overview__guide-button:focus-visible {
+  color: #ffffff;
+  background: var(--push-up-accent);
+  border-color: var(--push-up-accent);
+}
+
+.push-up-page .squat-stepper button:hover:not(:disabled),
+.push-up-page .squat-stepper button:focus-visible {
+  color: var(--push-up-accent);
+  background: var(--push-up-soft);
+}
+
+.push-up-page .squat-toggle--enabled {
+  background: var(--push-up-accent);
+}
+
+.push-up-page .squat-tip {
+  background: linear-gradient(90deg, #f8fbff, #edf5ff);
+  border-color: #d6e7ff;
+}
+
+.push-up-page .squat-start {
+  background: linear-gradient(90deg, #1265f3, #1677ff);
+  box-shadow: 0 5px 14px rgba(22, 111, 255, 0.22);
+}
+
+.push-up-page .squat-start:hover,
+.push-up-page .squat-start:focus-visible {
+  background: linear-gradient(90deg, #0755dc, #0967ed);
+}
+
+.push-up-guide__pose {
+  overflow: hidden;
+  background: #eef3f8;
+  border-radius: 6px;
+}
+
+.push-up-guide__pose img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}

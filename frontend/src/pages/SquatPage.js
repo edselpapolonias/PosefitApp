@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import WorkoutConfigRow from '../components/WorkoutConfigRow';
 import squatPhoto from '../images/exercise-squat.png';
 import squatFormGuide from '../images/squat-form-guide.png';
 import './SquatPage.css';
@@ -43,44 +44,6 @@ const equipment = [
   { icon: 'fa-person', title: 'Space', description: 'Enough room to move' },
   { icon: 'fa-bottle-water', title: 'Hydration', description: 'Stay hydrated and perform best' },
 ];
-
-function ConfigRow({ icon, label, description, value, suffix = '', min, max, step, onChange }) {
-  const updateValue = (direction) => {
-    const nextValue = Math.min(max, Math.max(min, value + (step * direction)));
-    onChange(nextValue);
-  };
-
-  return (
-    <div className="squat-config__row">
-      <span className="squat-config__icon" aria-hidden="true">
-        <i className={`fa-solid ${icon}`} />
-      </span>
-      <span className="squat-config__copy">
-        <strong>{label}</strong>
-        <small>{description}</small>
-      </span>
-      <div className="squat-stepper" aria-label={`${label}: ${value}${suffix}`}>
-        <button
-          type="button"
-          onClick={() => updateValue(-1)}
-          disabled={value <= min}
-          aria-label={`Decrease ${label}`}
-        >
-          <i className="fa-solid fa-minus" aria-hidden="true" />
-        </button>
-        <output aria-live="polite">{value}{suffix}</output>
-        <button
-          type="button"
-          onClick={() => updateValue(1)}
-          disabled={value >= max}
-          aria-label={`Increase ${label}`}
-        >
-          <i className="fa-solid fa-plus" aria-hidden="true" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function SquatPage() {
   const navigate = useNavigate();
@@ -149,7 +112,7 @@ export default function SquatPage() {
               <h2 id="configure-workout-title">Configure Your Workout</h2>
 
               <div className="squat-config">
-                <ConfigRow
+                <WorkoutConfigRow
                   icon="fa-rotate"
                   label="Reps"
                   description="Number of repetitions per set."
@@ -159,7 +122,7 @@ export default function SquatPage() {
                   step={1}
                   onChange={setReps}
                 />
-                <ConfigRow
+                <WorkoutConfigRow
                   icon="fa-layer-group"
                   label="Sets"
                   description="Number of sets you want to perform."
@@ -169,7 +132,7 @@ export default function SquatPage() {
                   step={1}
                   onChange={setSets}
                 />
-                <ConfigRow
+                <WorkoutConfigRow
                   icon="fa-clock"
                   label="Rest Time"
                   description="Rest time after each set."

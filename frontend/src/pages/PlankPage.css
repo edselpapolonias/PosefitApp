@@ -1,0 +1,69 @@
+.plank-page {
+  --plank-accent: #9b3df0;
+  --plank-accent-dark: #8125da;
+  --plank-soft: #f8f0ff;
+}
+
+.plank-page .squat-breadcrumb button,
+.plank-page .squat-overview__facts i,
+.plank-page .squat-config__icon,
+.plank-page .squat-reminders > i,
+.plank-page .squat-tip > i,
+.plank-page .squat-equipment__grid i {
+  color: var(--plank-accent);
+}
+
+.plank-page .squat-breadcrumb button:hover,
+.plank-page .squat-breadcrumb button:focus-visible {
+  color: var(--plank-accent-dark);
+}
+
+.plank-page .squat-overview__guide-button {
+  color: var(--plank-accent);
+  border-color: #c98df8;
+}
+
+.plank-page .squat-overview__guide-button:hover,
+.plank-page .squat-overview__guide-button:focus-visible {
+  color: #ffffff;
+  background: var(--plank-accent);
+  border-color: var(--plank-accent);
+}
+
+.plank-page .squat-stepper button:hover:not(:disabled),
+.plank-page .squat-stepper button:focus-visible {
+  color: var(--plank-accent);
+  background: var(--plank-soft);
+}
+
+.plank-page .squat-toggle--enabled {
+  background: var(--plank-accent);
+}
+
+.plank-page .squat-tip {
+  background: linear-gradient(90deg, #fdfaff, #f7edff);
+  border-color: #ead5fb;
+}
+
+.plank-page .squat-start {
+  background: linear-gradient(90deg, #932eea, #a83df3);
+  box-shadow: 0 5px 14px rgba(151, 47, 235, 0.2);
+}
+
+.plank-page .squat-start:hover,
+.plank-page .squat-start:focus-visible {
+  background: linear-gradient(90deg, #7f22d0, #9128dc);
+}
+
+.plank-guide__pose {
+  overflow: hidden;
+  background: #f4eee9;
+  border-radius: 6px;
+}
+
+.plank-guide__pose img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}

@@ -27,6 +27,7 @@ const exercises = [
     description: 'Strengthen your chest, shoulders, arms, and core.',
     muscles: 'Chest, Shoulders, Triceps, Core',
     image: pushUpPhoto,
+    route: '/exercises/push-up',
   },
   {
     id: 'plank',
@@ -36,6 +37,7 @@ const exercises = [
     description: 'Improve core stability and overall body control.',
     muscles: 'Core, Shoulders, Lower Back',
     image: plankPhoto,
+    route: '/exercises/plank',
   },
   {
     id: 'lunge',
@@ -45,6 +47,7 @@ const exercises = [
     description: 'Improve leg strength, balance, and coordination.',
     muscles: 'Quadriceps, Hamstrings, Glutes',
     image: lungePhoto,
+    route: '/exercises/lunge',
   },
   {
     id: 'sit-up',
@@ -54,6 +57,7 @@ const exercises = [
     description: 'Strengthen your core and improve posture.',
     muscles: 'Abs, Hip Flexors',
     image: sitUpPhoto,
+    route: '/exercises/sit-up',
   },
 ];
 

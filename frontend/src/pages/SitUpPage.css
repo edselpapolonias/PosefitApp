@@ -1,0 +1,12 @@
+.sit-up-guide__pose {
+  overflow: hidden;
+  background: #fff3ea;
+  border-radius: 6px;
+}
+
+.sit-up-guide__pose img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}

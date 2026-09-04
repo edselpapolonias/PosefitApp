@@ -5,6 +5,14 @@ import DashboardPage from './pages/DashboardPage';
 import ExerciseSelectionPage from './pages/ExerciseSelectionPage';
 import SquatPage from './pages/SquatPage';
 import SquatCameraPage from './pages/SquatCameraPage';
+import PlankPage from './pages/PlankPage';
+import PlankCameraPage from './pages/PlankCameraPage';
+import PushUpPage from './pages/PushUpPage';
+import PushUpCameraPage from './pages/PushUpCameraPage';
+import LungePage from './pages/LungePage';
+import LungeCameraPage from './pages/LungeCameraPage';
+import SitUpPage from './pages/SitUpPage';
+import SitUpCameraPage from './pages/SitUpCameraPage';
 import SessionSummaryPage from './pages/SessionSummaryPage';
 
 function PrivateRoute({ children }) {
@@ -23,6 +31,14 @@ function App() {
         <Route path="/exercises" element={<PrivateRoute><ExerciseSelectionPage /></PrivateRoute>} />
         <Route path="/exercises/squat" element={<PrivateRoute><SquatPage /></PrivateRoute>} />
         <Route path="/exercises/squat/start" element={<PrivateRoute><SquatCameraPage /></PrivateRoute>} />
+        <Route path="/exercises/plank" element={<PrivateRoute><PlankPage /></PrivateRoute>} />
+        <Route path="/exercises/plank/start" element={<PrivateRoute><PlankCameraPage /></PrivateRoute>} />
+        <Route path="/exercises/push-up" element={<PrivateRoute><PushUpPage /></PrivateRoute>} />
+        <Route path="/exercises/push-up/start" element={<PrivateRoute><PushUpCameraPage /></PrivateRoute>} />
+        <Route path="/exercises/lunge" element={<PrivateRoute><LungePage /></PrivateRoute>} />
+        <Route path="/exercises/lunge/start" element={<PrivateRoute><LungeCameraPage /></PrivateRoute>} />
+        <Route path="/exercises/sit-up" element={<PrivateRoute><SitUpPage /></PrivateRoute>} />
+        <Route path="/exercises/sit-up/start" element={<PrivateRoute><SitUpCameraPage /></PrivateRoute>} />
         <Route path="/session-summary" element={<PrivateRoute><SessionSummaryPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>

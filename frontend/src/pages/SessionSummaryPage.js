@@ -407,6 +407,7 @@ export default function SessionSummaryPage() {
                     <tr>
                       <th>Set</th>
                       <th>{isTimeBased ? 'Hold Time (Goal)' : 'Reps (Goal)'}</th>
+                      {!isTimeBased && <th>Invalid</th>}
                       <th>Accuracy</th>
                       <th>Result</th>
                     </tr>
@@ -421,13 +422,14 @@ export default function SessionSummaryPage() {
                           : sessionResult.accuracy;
                       const setResult = resultLabel(setAccuracy);
                       const achieved = isTimeBased
-                        ? formatTime(set.holdTime || set.duration)
-                        : (set.goodReps || 0);
+                        ? formatTime(set.holdTime ?? set.duration)
+                        : (set.completedReps ?? set.goodReps ?? 0);
                       const goal = isTimeBased ? holdGoal : sessionResult.config?.repsPerSet;
                       return (
                         <tr key={set.setNum || index}>
                           <td>{set.setNum || index + 1}</td>
                           <td>{achieved}{goal ? ` / ${isTimeBased ? formatTime(goal) : goal}` : ''}</td>
+                          {!isTimeBased && <td>{set.badReps || 0}</td>}
                           <td className={`session-breakdown__accuracy session-breakdown__accuracy--${setResult.tone}`}>{setAccuracy}%</td>
                           <td><span className={`session-breakdown__result session-breakdown__result--${setResult.tone}`}>{setResult.label}</span></td>
                         </tr>

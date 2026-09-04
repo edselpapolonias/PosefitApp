@@ -1,0 +1,62 @@
+.camera-session--plank {
+  --plank-session-accent: #9635e8;
+  --plank-session-dark: #7f24cf;
+  --plank-session-soft: #faf4ff;
+}
+
+.camera-session--plank .camera-session__exercise-icon,
+.camera-session--plank .camera-session__start-icon,
+.camera-session--plank .camera-session__rest-check,
+.camera-session--plank .camera-session__complete-overlay > span {
+  background: linear-gradient(145deg, #ab4ff3, #8829dd);
+  box-shadow: 0 8px 20px rgba(145, 42, 221, 0.24);
+}
+
+.camera-session--plank .camera-session__back:hover,
+.camera-session--plank .camera-session__back:focus-visible,
+.camera-session--plank .camera-session__voice,
+.camera-session--plank .camera-session__start-eyebrow,
+.camera-session--plank .camera-session__guide-row > i,
+.camera-session--plank .camera-configuration-error__icon {
+  color: var(--plank-session-accent);
+}
+
+.camera-session--plank .camera-session__back:hover,
+.camera-session--plank .camera-session__back:focus-visible,
+.camera-session--plank .camera-session__voice {
+  background: var(--plank-session-soft);
+}
+
+.camera-session--plank .camera-session__voice {
+  border-color: #e4c7fa;
+}
+
+.camera-session--plank .camera-session__metric--primary {
+  border-color: #e7cdfa !important;
+  background: linear-gradient(145deg, #ffffff, #fcf8ff) !important;
+}
+
+.camera-session--plank .camera-session__progress-track > span {
+  background: linear-gradient(90deg, #8e2cdd, #b65bf6);
+}
+
+.camera-session--plank .camera-session__rest-eyebrow {
+  color: #dba8ff;
+}
+
+.camera-session--plank .camera-session__start-button,
+.camera-session--plank .camera-configuration-error button {
+  background: linear-gradient(90deg, #8c2adc, #aa43ef);
+  box-shadow: 0 9px 22px rgba(145, 42, 221, 0.24);
+}
+
+.camera-session--plank .camera-session__start-button:hover,
+.camera-session--plank .camera-session__start-button:focus-visible,
+.camera-session--plank .camera-configuration-error button:hover,
+.camera-session--plank .camera-configuration-error button:focus-visible {
+  background: linear-gradient(90deg, #7620c2, #9130d8);
+}
+
+.camera-session--plank .camera-session__brand span {
+  color: var(--plank-session-accent);
+}
