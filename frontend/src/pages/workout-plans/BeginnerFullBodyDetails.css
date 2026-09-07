@@ -1,0 +1,756 @@
+.beginner-detail-page,
+.beginner-detail-page * {
+  box-sizing: border-box;
+}
+
+.beginner-detail-page {
+  min-height: 100vh;
+  color: #171b25;
+  background: #fff;
+  font-family: 'Poppins', sans-serif;
+}
+
+.beginner-detail-page button {
+  font: inherit;
+}
+
+.beginner-detail-page__main {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 22px 30px 40px;
+}
+
+.beginner-detail-page__back {
+  margin: 0 0 18px 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #ff5a0a;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.beginner-detail-page__back:hover,
+.beginner-detail-page__back:focus-visible {
+  color: #dc4903;
+  outline: none;
+}
+
+.beginner-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 315px;
+  align-items: start;
+  gap: 24px;
+}
+
+.beginner-detail-layout__primary,
+.beginner-detail-sidebar {
+  min-width: 0;
+}
+
+.beginner-detail-layout__primary {
+  display: grid;
+  gap: 24px;
+}
+
+.beginner-plan-overview {
+  min-height: 300px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 59%) minmax(0, 41%);
+  background: linear-gradient(110deg, #fff, #fff8f3);
+  border: 1px solid #dfe4e9;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(31, 37, 46, 0.04);
+}
+
+.beginner-plan-overview__content {
+  padding: 25px 26px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.beginner-plan-overview__badge {
+  align-self: flex-start;
+  height: 27px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #ff8a34, #ffad77);
+  border-radius: 5px;
+}
+
+.beginner-plan-overview__badge i {
+  font-size: 8px;
+}
+
+.beginner-plan-overview h1 {
+  margin: 13px 0 9px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.65px;
+  line-height: 1.16;
+}
+
+.beginner-plan-overview__content > p {
+  max-width: 590px;
+  margin: 0;
+  color: #414956;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.beginner-plan-overview__facts {
+  margin-top: auto;
+  padding-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.beginner-detail-fact {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.beginner-detail-fact > i {
+  width: 22px;
+  color: #ff5a0a;
+  font-size: 19px;
+  text-align: center;
+}
+
+.beginner-detail-fact > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.beginner-detail-fact strong {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.beginner-detail-fact small {
+  color: #646d79;
+  font-size: 8px;
+}
+
+.beginner-plan-overview__image {
+  min-width: 0;
+  overflow: hidden;
+  background: #eee8e1;
+}
+
+.beginner-plan-overview__image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 57% center;
+}
+
+.beginner-exercises-panel,
+.beginner-progression {
+  padding: 23px 24px;
+  background: #fff;
+  border: 1px solid #dfe4e9;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(31, 37, 46, 0.035);
+}
+
+.beginner-exercises-panel h2,
+.beginner-schedule h2,
+.beginner-progression h2,
+.beginner-sidebar-card h2,
+.beginner-reminder-card h2,
+.beginner-help-card h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.beginner-exercises-panel__list {
+  min-height: 150px;
+  padding: 23px 22px 18px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+
+.beginner-exercise-summary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.beginner-exercise-summary img {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 8px;
+  display: block;
+  object-fit: contain;
+}
+
+.beginner-exercise-summary strong {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.beginner-exercise-summary small {
+  margin-top: 3px;
+  color: #626b78;
+  font-size: 8px;
+}
+
+.beginner-exercises-panel__tip {
+  min-height: 49px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #303743;
+  font-size: 9px;
+  line-height: 1.5;
+  background: linear-gradient(90deg, #fff6ef, #fff1e7);
+  border-radius: 7px;
+}
+
+.beginner-exercises-panel__tip > i {
+  color: #ff5a0a;
+  font-size: 20px;
+}
+
+.beginner-exercises-panel__tip strong {
+  font-weight: 600;
+}
+
+.beginner-schedule {
+  padding: 0 1px;
+}
+
+.beginner-schedule > p,
+.beginner-progression > p {
+  margin: 7px 0 17px;
+  color: #515a67;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.beginner-schedule__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.beginner-day-card {
+  min-height: 335px;
+  padding: 18px 17px 15px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #dfe4e9;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(31, 37, 46, 0.04);
+}
+
+.beginner-day-card__label {
+  align-self: flex-start;
+  min-height: 24px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 600;
+  background: #ff5a0a;
+  border-radius: 4px;
+}
+
+.beginner-day-card h3 {
+  margin: 12px 0 17px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.beginner-day-card__exercises {
+  display: grid;
+  gap: 12px;
+}
+
+.beginner-day-exercise {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.beginner-day-exercise img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  object-fit: contain;
+}
+
+.beginner-day-exercise > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.beginner-day-exercise strong {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.beginner-day-exercise small {
+  color: #4f5865;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.beginner-day-card__estimate {
+  min-height: 36px;
+  margin-top: auto;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #303844;
+  font-size: 8px;
+  background: #fafbfc;
+  border-radius: 5px;
+}
+
+.beginner-day-card__estimate i {
+  color: #414a57;
+}
+
+.beginner-progression {
+  padding-bottom: 27px;
+}
+
+.beginner-progression > p {
+  margin-bottom: 20px;
+}
+
+.beginner-progression__track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.beginner-progression__step {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.beginner-progression__icon {
+  width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ff5a0a;
+  font-size: 20px;
+  background: #fff;
+  border: 1px solid #ffb992;
+  border-radius: 50%;
+}
+
+.beginner-progression__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.beginner-progression__copy strong {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.beginner-progression__copy small {
+  max-width: 115px;
+  color: #4e5764;
+  font-size: 7px;
+  line-height: 1.55;
+}
+
+.beginner-progression__arrow {
+  flex: 0 0 auto;
+  color: #69717c;
+  font-size: 11px;
+}
+
+.beginner-detail-sidebar {
+  display: grid;
+  gap: 24px;
+}
+
+.beginner-sidebar-card,
+.beginner-reminder-card,
+.beginner-help-card {
+  padding: 21px 20px;
+  background: #fff;
+  border: 1px solid #dfe4e9;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(31, 37, 46, 0.04);
+}
+
+.beginner-sidebar-card > h2 i {
+  margin-right: 5px;
+  color: #9a4c28;
+}
+
+.beginner-about-card > p {
+  margin: 14px 0 21px;
+  color: #343c49;
+  font-size: 10px;
+  line-height: 1.75;
+}
+
+.beginner-about-card__need {
+  padding-top: 18px;
+  border-top: 1px solid #e6e9ed;
+}
+
+.beginner-about-card__need h3 {
+  margin: 0 0 13px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.beginner-about-card__need > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.beginner-about-card__need i {
+  margin-top: 2px;
+  color: #29ad55;
+  font-size: 17px;
+}
+
+.beginner-about-card__need span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.beginner-about-card__need strong {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.beginner-about-card__need small {
+  color: #565f6c;
+  font-size: 8px;
+}
+
+.beginner-start-button,
+.beginner-save-button {
+  width: 100%;
+  height: 45px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.beginner-start-button {
+  margin-top: 24px;
+  color: #fff;
+  background: linear-gradient(90deg, #ff5a0a, #ff6814);
+  border: 1px solid #ff5a0a;
+  box-shadow: 0 4px 11px rgba(255, 90, 10, 0.18);
+}
+
+.beginner-save-button {
+  margin-top: 12px;
+  color: #ff5a0a;
+  background: #fff;
+  border: 1px solid #ff6b2a;
+}
+
+.beginner-start-button:hover,
+.beginner-start-button:focus-visible {
+  background: #e94e03;
+  outline: none;
+}
+
+.beginner-save-button:hover,
+.beginner-save-button:focus-visible,
+.beginner-save-button--saved {
+  background: #fff4ed;
+  outline: none;
+}
+
+.beginner-expect-card__list {
+  margin-top: 17px;
+  display: grid;
+  gap: 17px;
+}
+
+.beginner-expect-card__list > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.beginner-expect-card__list > div > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ff6b22;
+  font-size: 15px;
+  background: #fff4ec;
+  border-radius: 50%;
+}
+
+.beginner-expect-card__list p {
+  margin: 0;
+  color: #35404c;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.beginner-reminder-card,
+.beginner-help-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border: 0;
+  box-shadow: none;
+}
+
+.beginner-reminder-card {
+  background: linear-gradient(120deg, #fff9f5, #fff2e9);
+}
+
+.beginner-reminder-card > i {
+  color: #ff5a0a;
+  font-size: 22px;
+}
+
+.beginner-reminder-card p,
+.beginner-help-card p {
+  margin: 9px 0 0;
+  color: #37404c;
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.beginner-help-card {
+  color: #682bff;
+  background: linear-gradient(120deg, #faf7ff, #f3edff);
+}
+
+.beginner-help-card > i {
+  font-size: 22px;
+}
+
+.beginner-help-card p {
+  color: #454052;
+}
+
+.beginner-help-card button {
+  margin-top: 13px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #5522e8;
+  font-size: 9px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.beginner-detail-footer-note {
+  min-height: 91px;
+  margin-top: 38px;
+  padding: 19px 36px;
+  display: flex;
+  align-items: center;
+  gap: 23px;
+  background: linear-gradient(90deg, #fff9f4, #fff4eb, #fff9f5);
+  border-radius: 10px;
+}
+
+.beginner-detail-footer-note i {
+  color: #ff5a0a;
+  font-size: 31px;
+}
+
+.beginner-detail-footer-note p {
+  margin: 0;
+  color: #252c36;
+  font-size: 11px;
+}
+
+@media (max-width: 1120px) {
+  .beginner-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .beginner-detail-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .beginner-reminder-card,
+  .beginner-help-card {
+    min-height: 145px;
+  }
+}
+
+@media (max-width: 860px) {
+  .beginner-detail-page__main {
+    padding: 20px 20px 34px;
+  }
+
+  .beginner-plan-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .beginner-plan-overview__image {
+    height: 310px;
+    grid-row: 1;
+  }
+
+  .beginner-plan-overview__content {
+    min-height: 285px;
+    grid-row: 2;
+  }
+
+  .beginner-schedule__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .beginner-day-card {
+    min-height: 0;
+  }
+
+  .beginner-day-card__estimate {
+    margin-top: 20px;
+  }
+
+  .beginner-progression__track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .beginner-progression__arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .beginner-detail-page__main {
+    padding: 17px 14px 28px;
+  }
+
+  .beginner-detail-layout__primary,
+  .beginner-detail-sidebar {
+    gap: 16px;
+  }
+
+  .beginner-plan-overview__image {
+    height: 235px;
+  }
+
+  .beginner-plan-overview__content {
+    min-height: 0;
+    padding: 21px 17px;
+  }
+
+  .beginner-plan-overview h1 {
+    font-size: 24px;
+  }
+
+  .beginner-plan-overview__facts {
+    margin-top: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+  }
+
+  .beginner-exercises-panel,
+  .beginner-progression {
+    padding: 20px 16px;
+  }
+
+  .beginner-exercises-panel__list {
+    padding: 22px 0 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px 8px;
+  }
+
+  .beginner-exercise-summary img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .beginner-progression__track,
+  .beginner-detail-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .beginner-progression__copy small {
+    max-width: none;
+  }
+
+  .beginner-reminder-card,
+  .beginner-help-card {
+    min-height: 0;
+  }
+
+  .beginner-detail-footer-note {
+    min-height: 80px;
+    margin-top: 22px;
+    padding: 18px;
+    align-items: flex-start;
+  }
+
+  .beginner-detail-footer-note p {
+    line-height: 1.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beginner-start-button,
+  .beginner-save-button {
+    transition: none;
+  }
+}
+

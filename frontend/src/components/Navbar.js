@@ -7,7 +7,7 @@ import './Navbar.css';
 const navigationItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Exercises', path: '/exercises' },
-  { label: 'Workout Plans' },
+  { label: 'Workout Plans', path: '/workout-plans' },
   { label: 'History' },
   { label: 'Progress' },
 ];

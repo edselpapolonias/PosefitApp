@@ -1,0 +1,31 @@
+.lower-body-detail-page .beginner-plan-overview__badge {
+  background: linear-gradient(90deg, #6459dd, #7d74ed);
+}
+
+.lower-body-detail-page .beginner-detail-fact > i {
+  color: #5f58dc;
+}
+
+.lower-body-detail-page .beginner-day-card__label {
+  color: #4b43ba;
+  background: #e7e5ff;
+}
+
+.lower-body-detail-page .beginner-plan-overview__image img {
+  object-position: center;
+}
+
+.lower-body-exercises-list {
+  padding-right: 70px;
+  padding-left: 70px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 620px) {
+  .lower-body-exercises-list {
+    padding-right: 0;
+    padding-left: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+

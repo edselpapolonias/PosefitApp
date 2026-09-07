@@ -14,6 +14,10 @@ import LungeCameraPage from './pages/LungeCameraPage';
 import SitUpPage from './pages/SitUpPage';
 import SitUpCameraPage from './pages/SitUpCameraPage';
 import SessionSummaryPage from './pages/SessionSummaryPage';
+import WorkoutPlansPage from './pages/WorkoutPlansPage';
+import BeginnerFullBodyDetails from './pages/workout-plans/BeginnerFullBodyDetails';
+import LowerBodyFocusDetails from './pages/workout-plans/LowerBodyFocusDetails';
+import CoreUpperBodyDetails from './pages/workout-plans/CoreUpperBodyDetails';
 
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
@@ -40,6 +44,10 @@ function App() {
         <Route path="/exercises/sit-up" element={<PrivateRoute><SitUpPage /></PrivateRoute>} />
         <Route path="/exercises/sit-up/start" element={<PrivateRoute><SitUpCameraPage /></PrivateRoute>} />
         <Route path="/session-summary" element={<PrivateRoute><SessionSummaryPage /></PrivateRoute>} />
+        <Route path="/workout-plans" element={<PrivateRoute><WorkoutPlansPage /></PrivateRoute>} />
+        <Route path="/workout-plans/beginner-full-body" element={<PrivateRoute><BeginnerFullBodyDetails /></PrivateRoute>} />
+        <Route path="/workout-plans/lower-body-focus" element={<PrivateRoute><LowerBodyFocusDetails /></PrivateRoute>} />
+        <Route path="/workout-plans/core-upper-body" element={<PrivateRoute><CoreUpperBodyDetails /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );
