@@ -54,7 +54,7 @@ function ExerciseList({ exercises }) {
     <div className="plan-exercises">
       {exercises.map((exercise) => (
         <div className="plan-exercise" key={exercise.name}>
-          <img src={exercise.icon} alt="" aria-hidden="true" />
+          <img className={exercise.id === 'leg-raise' ? 'leg-raise-icon' : ''} src={exercise.icon} alt="" aria-hidden="true" />
           <span>{exercise.name}</span>
         </div>
       ))}

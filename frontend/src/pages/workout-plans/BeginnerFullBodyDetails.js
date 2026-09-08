@@ -66,7 +66,7 @@ export default function BeginnerFullBodyDetails() {
               <div className="beginner-exercises-panel__list">
                 {beginnerExercises.map((exercise) => (
                   <div className="beginner-exercise-summary" key={exercise.id}>
-                    <img src={exercise.icon} alt="" aria-hidden="true" />
+                    <img className={exercise.id === 'leg-raise' ? 'leg-raise-icon' : ''} src={exercise.icon} alt="" aria-hidden="true" />
                     <strong>{exercise.name}</strong>
                     <small>{exercise.focus}</small>
                   </div>

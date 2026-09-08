@@ -16,6 +16,7 @@ import pushUpImage from '@bryllim/workout-guide/assets/push-up/frame-2.png';
 import plankImage from '@bryllim/workout-guide/assets/plank/frame-2.png';
 import lungeImage from '@bryllim/workout-guide/assets/forward-lunge/frame-2.png';
 import sitUpImage from '@bryllim/workout-guide/assets/decline-sit-up/frame-2.png';
+import legRaiseImage from '@bryllim/workout-guide/assets/lying-leg-raise/frame-2.png';
 import './SessionSummaryPage.css';
 
 const exerciseImages = {
@@ -24,6 +25,9 @@ const exerciseImages = {
   pushup: pushUpImage,
   plank: plankImage,
   lunge: lungeImage,
+  'leg-raise': legRaiseImage,
+  legraise: legRaiseImage,
+  // Retained only so existing saved Sit-up sessions keep their historical illustration.
   'sit-up': sitUpImage,
   situp: sitUpImage,
 };

@@ -11,8 +11,8 @@ import PushUpPage from './pages/PushUpPage';
 import PushUpCameraPage from './pages/PushUpCameraPage';
 import LungePage from './pages/LungePage';
 import LungeCameraPage from './pages/LungeCameraPage';
-import SitUpPage from './pages/SitUpPage';
-import SitUpCameraPage from './pages/SitUpCameraPage';
+import LegRaisePage from './pages/LegRaisePage';
+import LegRaiseCameraPage from './pages/LegRaiseCameraPage';
 import SessionSummaryPage from './pages/SessionSummaryPage';
 import WorkoutPlansPage from './pages/WorkoutPlansPage';
 import BeginnerFullBodyDetails from './pages/workout-plans/BeginnerFullBodyDetails';
@@ -41,8 +41,8 @@ function App() {
         <Route path="/exercises/push-up/start" element={<PrivateRoute><PushUpCameraPage /></PrivateRoute>} />
         <Route path="/exercises/lunge" element={<PrivateRoute><LungePage /></PrivateRoute>} />
         <Route path="/exercises/lunge/start" element={<PrivateRoute><LungeCameraPage /></PrivateRoute>} />
-        <Route path="/exercises/sit-up" element={<PrivateRoute><SitUpPage /></PrivateRoute>} />
-        <Route path="/exercises/sit-up/start" element={<PrivateRoute><SitUpCameraPage /></PrivateRoute>} />
+        <Route path="/exercises/leg-raise" element={<PrivateRoute><LegRaisePage /></PrivateRoute>} />
+        <Route path="/exercises/leg-raise/start" element={<PrivateRoute><LegRaiseCameraPage /></PrivateRoute>} />
         <Route path="/session-summary" element={<PrivateRoute><SessionSummaryPage /></PrivateRoute>} />
         <Route path="/workout-plans" element={<PrivateRoute><WorkoutPlansPage /></PrivateRoute>} />
         <Route path="/workout-plans/beginner-full-body" element={<PrivateRoute><BeginnerFullBodyDetails /></PrivateRoute>} />

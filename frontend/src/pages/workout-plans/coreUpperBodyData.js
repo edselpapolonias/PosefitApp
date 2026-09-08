@@ -1,14 +1,14 @@
 import pushUpIcon from '../../images/icon-push-up.png';
 import plankIcon from '../../images/icon-plank.png';
-import sitUpIcon from '../../images/icon-sit-up.png';
+import legRaiseIcon from '../../images/icon-leg-raise.png';
 
 const exerciseLibrary = {
   'push-up': { id: 'push-up', name: 'Push-up', focus: 'Chest, Shoulders, Triceps', icon: pushUpIcon },
   plank: { id: 'plank', name: 'Plank', focus: 'Core', icon: plankIcon },
-  'sit-up': { id: 'sit-up', name: 'Sit-up', focus: 'Core', icon: sitUpIcon },
+  'leg-raise': { id: 'leg-raise', name: 'Leg Raise', focus: 'Hip Flexors, Core', icon: legRaiseIcon },
 };
 
-export const coreUpperExercises = [exerciseLibrary['push-up'], exerciseLibrary.plank, exerciseLibrary['sit-up']];
+export const coreUpperExercises = [exerciseLibrary['push-up'], exerciseLibrary.plank, exerciseLibrary['leg-raise']];
 
 export const coreUpperSchedule = [
   {
@@ -18,7 +18,7 @@ export const coreUpperSchedule = [
     exercises: [
       { ...exerciseLibrary['push-up'], prescription: '3 sets × 8 reps' },
       { ...exerciseLibrary.plank, prescription: '3 sets × 20 sec' },
-      { ...exerciseLibrary['sit-up'], prescription: '3 sets × 10 reps' },
+      { ...exerciseLibrary['leg-raise'], prescription: '3 sets × 10 reps' },
     ],
   },
   {
@@ -26,7 +26,7 @@ export const coreUpperSchedule = [
     day: 'Wednesday',
     estimate: '25–35 min',
     exercises: [
-      { ...exerciseLibrary['sit-up'], prescription: '3 sets × 10 reps' },
+      { ...exerciseLibrary['leg-raise'], prescription: '3 sets × 10 reps' },
       { ...exerciseLibrary['push-up'], prescription: '3 sets × 8 reps' },
       { ...exerciseLibrary.plank, prescription: '3 sets × 20 sec' },
     ],
@@ -38,7 +38,7 @@ export const coreUpperSchedule = [
     exercises: [
       { ...exerciseLibrary['push-up'], prescription: '3 sets × 10 reps' },
       { ...exerciseLibrary.plank, prescription: '3 sets × 25 sec' },
-      { ...exerciseLibrary['sit-up'], prescription: '3 sets × 12 reps' },
+      { ...exerciseLibrary['leg-raise'], prescription: '3 sets × 12 reps' },
     ],
   },
 ];
@@ -49,4 +49,3 @@ export const coreUpperProgression = [
   { week: 'Week 3', icon: 'fa-bullseye', text: 'Add intensity and improve execution.' },
   { week: 'Week 4', icon: 'fa-trophy', text: 'Push your limits and stay consistent!' },
 ];
-

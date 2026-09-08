@@ -1,1755 +1,1374 @@
-PoseFit System Implementation Plan
+# PoseFit System Implementation Plan
 
-Table of Contents
+## 1. Project Overview
 
-Project Overview
+**PoseFit** is a computer vision based web application designed to evaluate exercise form in real time using pose estimation and biomechanical joint angle analysis.
 
-System Flow
+The system allows users to perform five supported exercises:
 
-Authentication
+1. Squat
+2. Push Up
+3. Plank
+4. Forward Lunge
+5. Leg Raise
 
-Dashboard
+PoseFit will use the device camera to detect body landmarks, calculate relevant joint angles, count repetitions, monitor exercise sets, evaluate exercise form, provide real time corrective feedback, and generate a post workout analysis.
 
-Exercise Selection
+The web application must be responsive and adaptable to different screen sizes, including:
 
-Exercise Setup
+- Desktop computers
+- Laptops
+- Tablets
+- Mobile devices
 
-Exercise Session
+The interface should automatically adjust its layout according to the available screen size while maintaining access to all important functions.
 
-Biomechanical Exercise Detection
+---
 
-Accuracy and Session Results
+# 2. Main System Flow
 
-Gemini Generated Feedback
+The general flow of PoseFit will be:
 
-Workout Plan
+**Login or Signup → Dashboard → Exercise Selection or Workout Plan → Exercise Setup → Camera Exercise Session → End Session → Exercise Analysis → Progress Recording → History**
 
-Workout History and Progress
+For a normal exercise session:
 
-Responsive Design
+1. User logs in.
+2. User selects an exercise.
+3. User configures repetitions, sets, and rest time.
+4. User starts the exercise.
+5. PoseFit activates the camera.
+6. MediaPipe detects body landmarks.
+7. The system calculates joint angles.
+8. PoseFit determines whether the exercise form is correct.
+9. Repetitions and sets are automatically recorded.
+10. Corrective feedback is displayed during the exercise.
+11. The user finishes the session.
+12. Session information is processed.
+13. Exercise results are sent to the Gemini API.
+14. Gemini generates personalized session feedback.
+15. PoseFit displays the session results and accuracy report.
+16. The completed workout is stored in the user's history.
+17. Dashboard statistics and progress reports are updated.
 
-System Architecture
+---
 
-Core System Requirements
+# 3. Authentication
 
-Development Phases
-
-Scientific Basis
-
-1. Project Overview
-
-PoseFit is a computer vision based web application designed to evaluate exercise form in real time using pose estimation and biomechanical joint angle analysis.
-
-PoseFit supports five exercises:
-
-Squat
-
-Push Up
-
-Plank
-
-Forward Lunge
-
-Sit Up
-
-The system uses the device camera to:
-
-Detect body landmarks
-
-Calculate joint angles
-
-Evaluate exercise form
-
-Count repetitions
-
-Track exercise sets
-
-Monitor exercise duration
-
-Provide real time corrective feedback
-
-Generate exercise accuracy reports
-
-Compare workout performance
-
-Track user progress
-
-Generate post workout feedback
-
-Supported Devices
-
-PoseFit must be responsive and adjustable based on the user's device.
-
-The system should support:
-
-Desktop computers
-
-Laptops
-
-Tablets
-
-Mobile devices
-
-The interface should automatically adapt according to the available screen size without removing important system functions.
-
-2. System Flow
-
-The general PoseFit workflow is:
-
-Login / Signup → Dashboard → Exercise Selection or Workout Plan → Exercise Setup → Camera Session → Session Results → Progress Update → History
-
-Normal Exercise Session Flow
-
-The user logs in.
-
-The user selects an exercise.
-
-The user configures repetitions, sets, and rest time.
-
-The user clicks Start Now.
-
-PoseFit activates the device camera.
-
-MediaPipe detects the user's body landmarks.
-
-PoseFit calculates the required joint angles.
-
-The system determines the current exercise movement state.
-
-PoseFit evaluates whether the exercise is being performed correctly.
-
-Corrective feedback is shown when an incorrect movement is detected.
-
-Valid repetitions are automatically counted.
-
-Sets are automatically monitored.
-
-A rest timer starts after each completed set.
-
-The user completes or manually ends the workout.
-
-PoseFit calculates the exercise results and accuracy.
-
-Processed session information is sent to the Gemini API.
-
-Gemini generates personalized feedback based on the PoseFit results.
-
-The session results are displayed.
-
-The completed session is saved to the database.
-
-Dashboard statistics, history, and progress reports are updated.
-
-3. Authentication
-
-3.1 Login Page
+## 3.1 Login Page
 
 The Login Page allows registered users to access their PoseFit account.
 
-Required Fields
+### Required Fields
 
-Username
+- Email Address
+- Password
 
-Password
+### Functions
 
-Functions
+- Login
+- Show or Hide Password
+- Redirect to Signup Page
+- Form Validation
+- Invalid Credential Notification
 
-Login
+### Successful Login
 
-Show or Hide Password
+After successful authentication, the user will be redirected to the **Dashboard**.
 
-Form Validation
+---
 
-Invalid Credential Notification
+## 3.2 Signup Page
 
-Redirect to Signup Page
+The Signup Page allows new users to create their PoseFit account.
 
-After successful authentication, the user is redirected to the Dashboard.
+### Suggested Fields
 
-3.2 Signup Page
+- Full Name
+- Email Address
+- Password
+- Confirm Password
 
-The Signup Page allows new users to create a PoseFit account.
+### Functions
 
-After successful registration, the user may be automatically logged in or redirected to the Login Page.
+- Account Registration
+- Email Validation
+- Password Validation
+- Password Confirmation
+- Duplicate Email Detection
+- Terms and Privacy Consent
 
-4. Dashboard
+After registration, the user may be automatically logged in or redirected to the Login Page.
 
-The Dashboard serves as the main overview of the user's workout activity and progress.
+---
 
-It should allow users to quickly understand their recent exercise performance.
+# 4. Dashboard
 
-4.1 User Greeting
+The Dashboard serves as the main overview of the user's exercise activity and progress.
 
-Display a personalized greeting.
+It should provide users with a quick understanding of their recent performance.
+
+## 4.1 Dashboard Components
+
+### User Greeting
 
 Example:
 
-Good morning, Alex! Ready for today's workout?
+> Good morning, Alex! Ready for today's workout?
 
-4.2 Login Streak
+## 4.2 Login Streak
 
-Display the number of consecutive days the user has logged in to PoseFit.
-
-Example:
-
-🔥 7 Day Login Streak
-
-The streak is intended to encourage consistent system use.
-
-4.3 Seven Day Exercise Bar Graph
-
-The Dashboard should contain a bar graph showing how many minutes the user exercised during the previous seven days.
+Display the number of consecutive days the user has accessed PoseFit.
 
 Example:
 
-Day
+**🔥 7 Day Login Streak**
 
-Exercise Duration
+The streak can encourage users to consistently use the system.
 
-Monday
+## 4.3 Weekly Exercise Bar Graph
 
-30 minutes
+Display the user's total exercise duration for the previous seven days.
 
-Tuesday
+Example data:
 
-20 minutes
-
-Wednesday
-
-0 minutes
-
-Thursday
-
-45 minutes
-
-Friday
-
-25 minutes
-
-Saturday
-
-60 minutes
-
-Sunday
-
-35 minutes
+| Day | Exercise Duration |
+| --- | ---: |
+| Monday | 30 minutes |
+| Tuesday | 20 minutes |
+| Wednesday | 0 minutes |
+| Thursday | 45 minutes |
+| Friday | 25 minutes |
+| Saturday | 60 minutes |
+| Sunday | 35 minutes |
 
 The graph should automatically update whenever a workout session is completed.
 
-4.4 Progress Report
+## 4.4 Progress Report
 
-The Dashboard should provide a summary of the user's exercise progress.
+The Dashboard should summarize the user's progress.
 
 Possible statistics include:
 
-Total workouts completed
-
-Total exercise minutes
-
-Total repetitions
-
-Total sets
-
-Average exercise accuracy
-
-Highest recorded accuracy
-
-Current workout streak
-
-Workouts completed this week
+- Total workouts completed
+- Total exercise minutes
+- Total repetitions
+- Total sets
+- Average exercise accuracy
+- Highest recorded accuracy
+- Current workout streak
+- Number of workouts completed this week
 
 Example:
 
-Weekly Progress
+> **Weekly Progress**
+>
+> 4 Workouts Completed  
+> 125 Total Minutes  
+> 320 Total Repetitions  
+> 89% Average Form Accuracy
 
-4 Workouts Completed
-
-125 Total Minutes
-
-320 Total Repetitions
-
-89% Average Form Accuracy
-
-4.5 Recent Workout
+## 4.5 Recent Workout
 
 Display the user's most recently completed exercise.
 
 Example:
 
-Push Up
+**Push Up**
 
-3 Sets
+- 3 Sets
+- 30 Repetitions
+- 88% Accuracy
+- 12 Minutes
 
-30 Repetitions
+A button can allow the user to open the complete session result.
 
-88% Accuracy
+## 4.6 Quick Actions
 
-12 Minutes
+Suggested dashboard buttons:
 
-The user should be able to open the complete session result.
+- Start Exercise
+- View Workout Plan
+- View History
+- View Progress
 
-4.6 Today's Workout
+---
 
-If the user has a scheduled workout plan, the Dashboard should display it.
+# 5. Exercise Selection Page
 
-Example:
+The Exercise Selection Page displays the five exercises currently supported by PoseFit.
 
-Today's Workout
+The exercises are:
 
-Squat
+1. Squat
+2. Push Up
+3. Plank
+4. Forward Lunge
+5. Leg Raise
 
-Push Up
+Each exercise may be represented using a card containing:
 
-Plank
-
-A Start Workout button should allow the user to begin the scheduled workout.
-
-4.7 Quick Actions
-
-Suggested Dashboard actions:
-
-Start Exercise
-
-View Workout Plan
-
-View History
-
-View Progress
-
-5. Exercise Selection
-
-The Exercise Selection Page displays the five exercises supported by PoseFit.
-
-Available Exercises
-
-Squat
-
-Push Up
-
-Plank
-
-Forward Lunge
-
-Sit Up
-
-Each exercise should be represented by an exercise card.
-
-Exercise Card Content
-
-Each card may contain:
-
-Exercise Name
-
-Exercise Image or Illustration
-
-Short Description
-
-Target Body Area
-
-Start Exercise Button
+- Exercise Name
+- Exercise Image or Illustration
+- Short Description
+- Target Body Area
+- Start Exercise Button
 
 Example:
 
-Squat
+### Leg Raise
 
-Develops the lower body while PoseFit monitors knee and hip movement.
+Strengthens the hip flexors and abdominal region while monitoring hip flexion and leg extension.
 
-Start Exercise
+**Start Exercise**
 
-Selecting an exercise redirects the user to its Exercise Setup Page.
+---
 
-6. Exercise Setup
+# 6. Exercise Setup Page
 
-Before activating the camera, the user configures the exercise session.
+After choosing an exercise, the user will first configure their workout before activating the camera.
 
-6.1 Repetitions
+## 6.1 Configuration Options
 
-The user selects the target number of repetitions for each set.
+### Repetitions
 
-Example:
-
-10 Repetitions
-
-6.2 Sets
-
-The user selects the target number of sets.
+The user selects the number of repetitions per set.
 
 Example:
 
-3 Sets
+`10 Repetitions`
 
-6.3 Rest Time
+### Sets
 
-The user selects the rest duration after each completed set.
-
-Suggested options:
-
-15 seconds
-
-30 seconds
-
-45 seconds
-
-60 seconds
-
-90 seconds
-
-A custom rest duration may also be provided.
-
-6.4 Plank Configuration
-
-Because the plank is a time based exercise, its setup should use hold duration instead of repetitions.
+The user selects the number of sets.
 
 Example:
 
-Hold Duration: 30 seconds
+`3 Sets`
 
-Sets: 3
+### Rest Time
 
-Rest Time: 30 seconds
+The user selects how long the rest period should be after completing each set.
 
-6.5 Exercise Instructions
+Examples:
 
-Before the session begins, the system should display basic instructions for the selected exercise.
+- 15 seconds
+- 30 seconds
+- 45 seconds
+- 60 seconds
+- 90 seconds
 
-Example for Push Up:
+The system may also allow a custom rest duration.
 
-Position the camera from the side.
+## 6.2 Plank Configuration
 
-Make sure your entire body is visible.
+Because Plank is time based, the setup should use hold duration instead of repetitions.
 
-Keep your body straight.
+Example:
 
-Lower your body until the correct elbow angle is reached.
+- Hold Duration: 30 seconds
+- Sets: 3
+- Rest Time: 30 seconds
 
-Fully extend your arms when returning to the top position.
+## 6.3 Exercise Information
 
-6.6 Camera Position
+Before starting, the system should show basic instructions.
 
-PoseFit should primarily use a side view for biomechanical evaluation.
+Example for Leg Raise:
 
-The side view allows the system to clearly observe landmarks involving the:
+- Position the camera from the side.
+- Lie flat on your back.
+- Make sure your full body is visible.
+- Keep both legs extended.
+- Raise the legs using controlled hip flexion.
+- Avoid excessive knee bending.
+- Lower the legs in a controlled manner.
 
-Shoulder
+## 6.4 Start Now
 
-Elbow
+After completing the configuration, the user presses:
 
-Wrist
+**Start Now**
 
-Hip
+The system will request permission to access the camera and redirect the user to the Exercise Camera Page.
 
-Knee
+---
 
-Ankle
+# 7. Camera Exercise Session
 
-Before starting, PoseFit should display:
+The Camera Exercise Session is the primary real time exercise evaluation interface.
 
-Position yourself sideways to the camera and make sure your entire body is visible.
+The camera feed should occupy the largest portion of the interface.
 
-6.7 Start Now
+The system will use pose estimation to detect the user's body landmarks.
 
-After completing the setup, the user clicks Start Now.
-
-The system should:
-
-Request camera permission if necessary.
-
-Check whether the user is visible.
-
-Activate pose detection.
-
-Redirect the user to the Exercise Session interface.
-
-7. Exercise Session
-
-The Exercise Session is the primary real time exercise evaluation interface.
-
-The camera feed should occupy the largest portion of the screen.
-
-7.1 Camera Display
+## 7.1 Camera Display
 
 The camera should display:
 
-Live Camera Feed
+- Live Camera Feed
+- Pose Skeleton
+- Detected Body Landmarks
+- Joint Connections
+- Angle Information when necessary
 
-Pose Skeleton
-
-Detected Body Landmarks
-
-Joint Connections
-
-Corrective Feedback
-
-Relevant Joint Angles when needed
-
-The skeleton or interface may indicate whether the current posture is:
-
-Correct
-
-Warning
-
-Incorrect
-
-7.2 Session Information
-
-The following information should remain visible while exercising:
-
-Current Repetitions
-
-Target Repetitions
-
-Current Set
-
-Total Sets
-
-Exercise Timer
-
-Rest Timer
-
-Current Feedback
-
-End Session Button
+The skeleton overlay may visually indicate form status.
 
 Example:
 
-Reps: 7 / 10
-Set: 2 / 3
-Time: 05:32
+- Correct posture indicator
+- Warning indicator
+- Incorrect posture indicator
 
-7.3 Real Time Corrective Feedback
+---
 
-PoseFit should evaluate joint angles continuously while the exercise is being performed.
+# 8. Exercise Session Information
 
-Possible feedback includes:
+The following information should remain visible during the exercise:
 
-Squat deeper.
-
-Bend your knees more.
-
-Keep your body straight.
-
-Lower your chest.
-
-Fully extend your arms.
-
-Raise your hips slightly.
-
-Lower your hips slightly.
-
-Keep your upper body upright.
-
-Raise your upper body further.
-
-Keep your knees stable.
-
-Feedback should be short and understandable so the user can immediately respond while exercising.
-
-7.4 Repetition Counting
-
-PoseFit should not count repetitions based only on movement.
-
-A repetition should only be counted when the expected movement sequence is completed.
-
-Example for Squat:
-
-Standing → Valid Bottom Position → Standing
-
-Example for Push Up:
-
-Top Position → Valid Bottom Position → Top Position
-
-This prevents small or incomplete movements from being counted as full repetitions.
-
-7.5 Set Management
-
-PoseFit automatically tracks completed sets.
+### Repetition Counter
 
 Example:
 
-Set 1 of 3
+**Reps: 7 / 10**
 
-When the target number of repetitions is completed:
-
-The set is marked as complete.
-
-Rep counting temporarily stops.
-
-The rest timer starts.
-
-The user receives a notification.
-
-The next set begins after the rest period.
+### Current Set
 
 Example:
 
-Set 1 Complete. Rest for 30 seconds.
+**Set: 2 / 3**
 
-7.6 Rest Timer
-
-The rest timer uses the duration selected during Exercise Setup.
+### Exercise Timer
 
 Example:
 
-Rest Time Remaining
-00:28
+**Time: 05:32**
 
-Optional controls may include:
+### Exercise Accuracy
 
-Skip Rest
+Optional real time indicator:
 
-Pause
+**Current Form: 91%**
 
-Continue
+### Rest Timer
 
-7.7 End Session
+When a set is completed:
 
-An End Session button must remain accessible during the workout.
+**Rest: 00:30**
 
-When selected, PoseFit should display a confirmation:
+### End Session Button
 
-Are you sure you want to end this session?
+Users must be able to manually end the workout at any time.
 
-Options:
+---
 
-Continue Workout
+# 9. Real Time Corrective Feedback
 
-End Session
+PoseFit should analyze detected joint angles while the exercise is being performed.
 
-If the user confirms, available workout data should be processed and saved.
+If incorrect exercise form is detected, the system displays corrective feedback.
 
-8. Biomechanical Exercise Detection
+Examples:
 
-PoseFit evaluates exercise form using joint angles calculated from MediaPipe body landmarks.
+- Bend your knees more.
+- Squat deeper.
+- Keep your back straight.
+- Lower your chest.
+- Fully extend your elbows.
+- Lower your hips.
+- Raise your hips slightly.
+- Bend your front knee.
+- Keep your trunk upright.
+- Raise your legs higher.
+- Keep your knees straight.
+- Lower your legs slowly.
 
-The following thresholds are based on studies included in the Review of Related Literature.
+The feedback should be short and understandable so users can respond while exercising.
 
-8.1 Squat
+---
 
-Primary Measurement
+# 10. Biomechanical Exercise Detection
 
-PoseFit calculates the:
+PoseFit will evaluate exercise form using joint angles calculated from detected body landmarks.
 
-Hip → Knee → Ankle angle
+These biomechanical rules are based on the studies included in the Review of Related Literature.
 
-This represents knee flexion during the squat.
+---
 
-Target Angle
+# 11. Squat Detection
+
+## Primary Joint Measurement
+
+PoseFit will calculate the:
+
+**Hip → Knee → Ankle angle**
+
+This represents the knee flexion angle during the squat.
+
+## Target Squat Angle
 
 Based on Kumaresan and Asmawi (2026):
 
-Correct squat knee angle: approximately 80° to 100°
+**Correct squat knee angle: approximately 80° to 100°**
 
-Knee Angle
+### Classification
 
-Classification
+| Knee Angle | Interpretation |
+| --- | --- |
+| Below 80° | Possible over flexion |
+| 80° to 100° | Correct squat depth |
+| Above 100° | Insufficient squat depth |
 
-Below 80°
+## Squat Movement States
 
-Possible over flexion
+### Standing Position
 
-80° to 100°
+The user begins with the knees mostly extended.
 
-Correct squat depth
+### Descending
 
-Above 100°
+The knee angle gradually decreases as the user lowers the body.
 
-Insufficient squat depth
+### Bottom Position
 
-Movement States
+The knee angle reaches approximately:
 
-Standing
+**80° to 100°**
 
-The knees are mostly extended.
-
-Descending
-
-The knee angle decreases as the user lowers the body.
-
-Bottom Position
-
-The knee reaches approximately 80° to 100°.
-
-Ascending
+### Ascending
 
 The knee angle increases as the user returns to standing.
 
-Repetition Rule
+### Repetition Completion
 
-A valid repetition follows:
+One repetition is counted when the user completes:
 
-Standing → Descending → Valid Bottom Position → Standing
+**Standing → Descending → Valid Squat Depth → Standing**
 
-Corrective Feedback
+## Possible Squat Feedback
 
 If the lowest detected knee angle remains above 100°:
 
-Squat deeper.
+> Squat deeper.
 
-If excessive knee flexion is detected:
+If knee flexion falls significantly below the target:
 
-Avoid excessive knee flexion.
+> Avoid excessive knee flexion.
 
 PoseFit may additionally monitor hip and trunk alignment when reliable landmarks are available.
 
-8.2 Push Up
+---
 
-Primary Measurement
+# 12. Push Up Detection
 
-PoseFit calculates the:
+The Push Up primarily uses elbow angle and body alignment.
 
-Shoulder → Elbow → Wrist angle
+## Primary Joint Measurement
 
-Top Position
+PoseFit calculates:
+
+**Shoulder → Elbow → Wrist angle**
+
+## Top Position
 
 According to Park et al. (2020):
 
-Elbow angle should exceed 150°.
+**Elbow angle should exceed 150°.**
 
-This represents the extended arm position.
+This represents an extended arm position.
 
-Bottom Position
+## Bottom Position
 
-The elbow should fall below:
+The elbow angle should fall below:
 
-90°
+**90°**
 
-An optimal bottom position of approximately:
+The study identified approximately:
 
-50° to 70°
+**50° to 70°**
 
-was also identified.
+as an optimal bottom range.
 
-Repetition Rule
+## Push Up Repetition
 
-A valid Push Up follows:
+A repetition may be counted using:
 
-Top >150° → Bottom <90° → Top >150°
+**Top Position >150° → Bottom Position <90° → Top Position >150°**
 
-Body Alignment
+## Body Alignment
 
-PoseFit should calculate:
+PoseFit should also monitor the user's body alignment.
 
-Shoulder → Hip → Ankle angle
+Park et al. (2020) identified approximately:
 
-Proper body alignment should remain approximately:
+**160° to 180°**
 
-160° to 180°
+for maintaining a straight body posture.
 
-Arm Symmetry
+This can be calculated using:
 
-When both arms can be reliably detected, the difference between left and right arm angles should preferably remain:
+**Shoulder → Hip → Ankle**
 
-Below 30°
+## Arm Symmetry
 
-Corrective Feedback
+If both sides of the body are reliably visible, the difference between left and right arm angles should preferably remain:
 
-If the bottom elbow angle remains above 90°:
+**Below 30°**
 
-Lower your body further.
+## Possible Push Up Feedback
+
+If the bottom elbow angle remains greater than 90°:
+
+> Lower your body further.
 
 If the user does not return above 150°:
 
-Fully extend your arms.
+> Fully extend your arms.
 
-If body alignment is outside the accepted range:
+If body alignment falls outside the accepted straight posture range:
 
-Keep your body straight.
+> Keep your body straight.
 
-If excessive arm asymmetry is detected:
+If arm asymmetry exceeds the acceptable threshold:
 
-Keep your arms balanced.
+> Keep your arms balanced.
 
-8.3 Plank
+---
 
-The Plank is primarily evaluated using posture and hold duration rather than repetitions.
+# 13. Plank Detection
 
-Primary Measurement
+Unlike the other exercises, the Plank is primarily time based instead of repetition based.
+
+## Primary Alignment Measurement
 
 PoseFit calculates:
 
-Shoulder → Hip → Ankle angle
+**Shoulder → Hip → Ankle angle**
 
-According to Kagdi and Van Der Haar (2025), proper alignment should approximately fall between:
+According to Kagdi and Van Der Haar (2025), proper plank alignment should approximately fall between:
 
-170° and 210°
+**170° and 210°**
 
-Body Angle
+## Plank Classification
 
-Classification
+| Body Angle | Interpretation |
+| --- | --- |
+| Below 170° | Low back or hip drop |
+| 170° to 210° | Acceptable plank alignment |
+| Above 210° | High back or hips raised |
 
-Below 170°
+## Plank Timer
 
-Low back or hip drop
-
-170° to 210°
-
-Acceptable plank alignment
-
-Above 210°
-
-High back or raised hips
-
-Valid Hold Timer
-
-PoseFit may maintain two timers:
-
-Total Session Time
-
-Valid Plank Hold Time
-
-The valid timer should count only while the user's posture remains within the accepted range.
+The valid plank timer may only continue while proper posture is detected.
 
 Example:
 
-Valid Hold Time: 00:42
+**Valid Plank Time: 00:42**
 
-Corrective Feedback
+The total session timer may continue separately.
 
-If the angle is below 170°:
+## Possible Plank Feedback
 
-Raise your hips slightly.
+If angle is below 170°:
 
-If the angle is above 210°:
+> Raise your hips slightly.
 
-Lower your hips slightly.
+If angle is above 210°:
 
-If the posture is correct:
+> Lower your hips slightly.
 
-Good plank position.
+If alignment is within the accepted range:
 
-García Jaén et al. (2023) supports body alignment monitoring because changes in plank positioning influence core muscle activation.
+> Good plank position.
 
-8.4 Forward Lunge
+García Jaén et al. (2023) supports monitoring body alignment because changes in plank positioning affect core muscle activation.
 
-Primary Measurement
+---
 
-PoseFit calculates the:
+# 14. Forward Lunge Detection
 
-Hip → Knee → Ankle angle of the front leg
+PoseFit will primarily evaluate the front leg knee angle during the bottom phase of the lunge.
 
-Biomechanical studies demonstrate that the bottom phase of a Forward Lunge approaches approximately 90° of front knee flexion.
+## Primary Joint Measurement
 
-Mohamed Sabadri et al. (2023) reported approximately:
+**Hip → Knee → Ankle angle of the front leg**
 
-82.91° to 84.31°
+Biomechanical studies indicate that the bottom phase of a Forward Lunge commonly approaches approximately:
 
-Shin et al. (2026) standardized the holding phase at approximately:
+**90° of front knee flexion**
 
-90°
+Mohamed Sabadri et al. (2023) reported mean knee angles of approximately:
+
+**82.91° to 84.31°**
+
+Shin et al. (2026) standardized the Forward Lunge holding phase at approximately:
+
+**90°**
 
 Goulette et al. (2021) reported peak knee flexion of approximately:
 
-103° ± 7.4°
+**103° ± 7.4°**
 
-PoseFit Target
+## Proposed PoseFit Target
 
-PoseFit should use a target centered around:
+Instead of requiring exactly 90°, PoseFit should allow natural movement variability.
 
-Approximately 90° of front knee flexion
+A practical target can be centered around:
 
-Natural movement variability should be allowed rather than requiring exactly 90°.
+**Approximately 90° knee flexion**
 
-The final accepted tolerance should be validated during system testing.
+with an accepted tolerance determined during system testing and validation.
 
-Repetition Rule
+## Movement Sequence
 
-A valid Forward Lunge follows:
+A Lunge repetition can follow:
 
-Standing → Lunge Forward → Valid Knee Flexion → Return to Standing
+**Standing → Step or Lunge Forward → Reach Target Knee Flexion → Return to Standing**
 
-Additional Alignment
+## Additional Alignment
 
 PoseFit should monitor:
 
-Upright trunk position
+- Upright trunk position
+- Controlled front knee movement
+- Stable body posture
 
-Controlled knee movement
+## Possible Lunge Feedback
 
-Stable posture
+If the user does not reach sufficient knee flexion:
 
-Corrective Feedback
+> Lower your body further.
 
-If insufficient knee flexion is detected:
+If the user exceeds the acceptable movement range:
 
-Lower your body further.
+> Avoid lowering excessively.
 
-If excessive depth is detected:
+If excessive trunk leaning is detected:
 
-Avoid lowering excessively.
+> Keep your upper body upright.
 
-If excessive trunk leaning occurs:
+---
 
-Keep your upper body upright.
+# 15. Leg Raise Detection
 
-8.5 Sit Up
+The Leg Raise primarily involves hip flexion while the legs remain extended.
 
-The Sit Up involves trunk flexion followed by increased hip flexion.
+Juan et al. (2024) conducted a systematic review examining hip flexor muscle activation during rehabilitation and strengthening exercises. Their findings showed that the iliopsoas, one of the primary muscles involved in hip flexion, becomes increasingly active as the leg is raised.
 
-Raiola et al. (2020) describes the Sit Up as a biomechanical sequence involving lumbar and hip flexion.
+Greater muscle activation was observed between:
 
-Rahmadani et al. (2022) identified the hip and knee as important joints for evaluating Sit Up form.
+**30° and 60° of hip flexion**
 
-Hip Measurement
+compared with the:
 
-PoseFit calculates:
+**0° to 30° range**
 
-Shoulder → Hip → Knee
+during active Straight Leg Raise exercises.
 
-At the upper phase:
+Substantial iliopsoas activation was also reported at approximately:
 
-Hip angle should fall below approximately 90°.
+**60° of hip flexion**
 
-Knee Measurement
+during Straight Leg Raise and Leg Lift exercises.
 
-PoseFit calculates:
+These findings support the use of hip flexion angle as a measurable indicator for PoseFit's Leg Raise evaluation.
 
-Hip → Knee → Ankle
+## Primary Joint Measurement
 
-The knee should remain approximately:
+PoseFit should monitor hip flexion using landmarks around the:
 
-90°
+**Shoulder → Hip → Knee**
 
-during the exercise.
+or another equivalent hip flexion angle representation based on the coordinate system used during implementation.
 
-Movement States
+The system should ensure that the selected angle calculation consistently represents the amount of leg elevation.
 
-Starting Position
+## Hip Flexion Range
 
-The upper body is close to the floor.
+The following range can serve as the initial biomechanical basis:
 
-Ascending
+| Hip Flexion | Interpretation |
+| --- | --- |
+| 0° to below 30° | Early or low raising phase |
+| 30° to 60° | Effective hip flexion range |
+| Approximately 60° | Target raised position |
+| Above selected upper tolerance | Possible excessive elevation |
 
-The hip angle decreases as the upper body moves toward the knees.
+The final acceptable tolerance should be verified through system testing.
 
-Top Position
+## Leg Extension
 
-The hip angle reaches the target threshold.
+Because the exercise is performed as a straight Leg Raise, PoseFit should also monitor whether the knee remains extended.
 
-Descending
+A possible secondary measurement is:
 
-The user returns toward the starting position.
+**Hip → Knee → Ankle angle**
 
-Repetition Rule
+The knee angle should remain close to a straight position during the movement.
 
-A valid Sit Up follows:
+An implementation threshold for knee extension should be established and validated during system testing rather than being assigned solely from the Juan et al. (2024) findings.
 
-Starting Position → Valid Upper Position → Starting Position
+## Movement States
 
-Corrective Feedback
+### Starting Position
 
-If the hip angle does not reach the required range:
+The user lies flat with the legs close to the floor.
 
-Raise your upper body further.
+Hip flexion is approximately:
 
-If excessive knee movement is detected:
+**0° or near the resting position**
 
-Keep your knees stable.
+### Raising Phase
 
-If the movement is incomplete:
+The user raises the legs while keeping them extended.
 
-Complete the full Sit Up movement.
+Hip flexion gradually increases.
 
-8.6 Exercise Detection Summary
+### Valid Raised Position
 
-Exercise
+The legs reach approximately:
 
-Measurement
+**30° to 60° of hip flexion**
 
-Target
+with approximately **60°** serving as the main target position.
 
-Squat
+### Lowering Phase
 
-Hip → Knee → Ankle
+The user lowers the legs in a controlled manner toward the starting position.
 
-80° to 100° knee angle
+### Repetition Completion
 
-Push Up
+One repetition may be counted when the user completes:
 
-Shoulder → Elbow → Wrist
+**Starting Position → Raising Phase → Valid Raised Position → Return to Starting Position**
 
-Below 90° bottom, above 150° top
+## Possible Leg Raise Feedback
 
-Push Up Alignment
+If the user does not reach sufficient hip flexion:
 
-Shoulder → Hip → Ankle
+> Raise your legs higher.
 
-160° to 180°
+If the user bends the knees excessively:
 
-Plank
+> Keep your knees straight.
 
-Shoulder → Hip → Ankle
+If the user raises the legs beyond the validated upper limit:
 
-170° to 210°
+> Avoid raising your legs too high.
 
-Forward Lunge
+If the user lowers the legs too quickly:
 
-Hip → Knee → Ankle
+> Lower your legs slowly and with control.
 
-Approximately 90° front knee flexion
+If the legs remain properly extended and reach the target range:
 
-Sit Up
+> Good Leg Raise.
 
-Shoulder → Hip → Knee
+---
 
-Hip angle below approximately 90°
+# 16. Camera Position
 
-Sit Up Knee
+Because the monitored movements primarily occur in the sagittal plane, PoseFit should generally instruct users to position the camera from the:
 
-Hip → Knee → Ankle
+**Side View**
 
-Approximately 90°
+The side view improves visibility of:
 
-These thresholds provide the initial biomechanical basis of PoseFit and should be verified during system testing and accuracy validation.
+- Shoulder
+- Elbow
+- Wrist
+- Hip
+- Knee
+- Ankle
 
-9. Accuracy and Session Results
+The full body must remain inside the camera frame.
 
-After the workout is completed, PoseFit redirects the user to the Session Results Page.
+For Leg Raise, the camera should be positioned from the side so the system can observe the hip, knee, and ankle while the user is lying down.
 
-9.1 Accuracy Calculation
+Before starting an exercise, PoseFit should provide positioning guidance such as:
 
-For repetition based exercises, a basic session accuracy may be calculated using:
+> Position yourself sideways to the camera and make sure your entire body is visible.
 
-Accuracy = Correct Repetitions / Total Detected Repetitions × 100
+For Leg Raise:
+
+> Lie sideways relative to the camera view and make sure your upper body, hips, knees, and feet are visible.
+
+---
+
+# 17. Exercise Repetition Counting
+
+PoseFit should not count a repetition based only on body movement.
+
+A repetition should only be considered complete after the expected movement sequence is detected.
+
+Example for Push Up:
+
+**Top → Bottom → Top**
+
+Example for Squat:
+
+**Standing → Correct Depth → Standing**
+
+Example for Leg Raise:
+
+**Starting Position → Valid Raised Position → Starting Position**
+
+This helps prevent incomplete or small movements from being counted as complete repetitions.
+
+---
+
+# 18. Set Management
+
+The system automatically tracks exercise sets.
 
 Example:
 
+**Set 1 of 3**
+
+After the target number of repetitions is completed:
+
+1. The current set ends.
+2. The repetition counter temporarily stops.
+3. The rest timer begins.
+4. The user receives a rest notification.
+5. After the rest period finishes, the next set begins.
+
+Example:
+
+> Set 1 Complete  
+> Rest for 30 seconds.
+
+After the final set, the system may automatically display:
+
+> Workout Complete
+
+The user can then proceed to the session result.
+
+---
+
+# 19. Rest Timer
+
+The rest timer is based on the duration selected during Exercise Setup.
+
+Display example:
+
+**Rest Time Remaining**
+
+`00:28`
+
+The system may include:
+
+- Skip Rest
+- Pause
+- Continue
+
+After the countdown reaches zero, PoseFit begins the next set.
+
+---
+
+# 20. End Session
+
+An **End Session** button must always be accessible during the workout.
+
+When clicked, the system should ask:
+
+> Are you sure you want to end this session?
+
+Options:
+
+- Continue Workout
+- End Session
+
+If the user confirms, available workout information is saved and the user is redirected to the End Session Page.
+
+---
+
+# 21. Exercise Accuracy Calculation
+
+PoseFit should calculate a session accuracy score based on the number of correctly performed exercise movements compared with detected exercise attempts.
+
+A possible implementation can consider:
+
+- Correct repetitions
+- Incorrect repetitions
+- Joint angle compliance
+- Posture violations
+- Alignment violations
+
+Example:
+
+```text
 Correct Repetitions: 18
 Total Repetitions: 20
 
 Accuracy = 18 / 20 × 100
 Accuracy = 90%
+```
 
-Additional factors may include:
+For Plank, accuracy may instead be determined from the percentage of exercise time where body alignment remained within the acceptable angle range.
 
-Joint angle compliance
+For Leg Raise, accuracy may consider:
 
-Movement completion
+- Reaching the target hip flexion range
+- Maintaining leg extension
+- Completing the full movement
+- Returning to the starting position
 
-Alignment violations
+The exact accuracy formula should remain consistent across implementation and system evaluation.
 
-Posture violations
+---
 
-For the Plank, accuracy may instead represent the percentage of exercise time during which the user's alignment remained within the accepted range.
+# 22. End Session Page
 
-The final accuracy formula should remain consistent throughout development, Alpha Testing, and system evaluation.
+After completing or ending a workout, the user is redirected to the Session Results Page.
 
-9.2 Session Summary
+The page should display a complete summary of the workout.
 
-The End Session Page should display:
+## 22.1 Session Summary
 
-Exercise Name
+Display:
 
-Date
-
-Start Time
-
-End Time
-
-Total Exercise Duration
-
-Total Sets
-
-Total Repetitions
-
-Correct Repetitions
-
-Incorrect Repetitions
-
-Exercise Accuracy
+- Exercise Name
+- Date
+- Start Time
+- End Time
+- Total Exercise Duration
+- Total Sets
+- Total Repetitions
+- Correct Repetitions
+- Incorrect Repetitions
+- Exercise Accuracy
 
 Example:
 
-Push Up Session
+### Leg Raise Session
 
-Duration: 14 minutes
+**Duration:** 10 minutes  
+**Sets:** 3  
+**Repetitions:** 30  
+**Correct Repetitions:** 27  
+**Incorrect Repetitions:** 3  
+**Accuracy:** 90%
 
-Sets: 3
+---
 
-Repetitions: 30
+# 23. Accuracy Report
 
-Correct Repetitions: 27
-
-Incorrect Repetitions: 3
-
-Accuracy: 90%
-
-9.3 Accuracy Report
-
-PoseFit should provide a more detailed analysis depending on the exercise.
-
-Squat
-
-Squat Depth
-
-Knee Angle
-
-Movement Completion
-
-Posture Alignment
-
-Push Up
-
-Elbow Depth
-
-Arm Extension
-
-Body Alignment
-
-Symmetry
-
-Plank
-
-Hip Alignment
-
-Body Alignment
-
-Valid Hold Time
-
-Forward Lunge
-
-Knee Flexion
-
-Trunk Alignment
-
-Movement Completion
-
-Sit Up
-
-Hip Flexion
-
-Knee Stability
-
-Movement Completion
+The session result should provide a more detailed accuracy analysis.
 
 Example:
 
-Overall Accuracy: 90%
+### Form Accuracy
 
-Correct Depth: 93%
-Full Extension: 90%
-Body Alignment: 87%
-Movement Completion: 91%
+**Overall Accuracy: 90%**
 
-9.4 Session Comparison
+### Performance Breakdown
 
-PoseFit should compare the current session with the most recent previous session of the same exercise.
+- Target Angle: 93%
+- Movement Completion: 90%
+- Leg Extension: 87%
+- Movement Control: 91%
 
-Possible comparisons include:
+The available categories should depend on the exercise.
 
-Accuracy
+### Squat
 
-Repetitions
+- Squat Depth
+- Knee Angle
+- Movement Completion
+- Posture Alignment
 
-Sets
+### Push Up
 
-Exercise Duration
+- Elbow Depth
+- Arm Extension
+- Body Alignment
+- Symmetry
 
-Correct Repetitions
+### Plank
 
-Incorrect Repetitions
+- Hip Alignment
+- Body Alignment
+- Valid Hold Time
 
-Example:
+### Lunge
 
-Previous Push Up Accuracy: 84%
-Current Push Up Accuracy: 90%
+- Knee Flexion
+- Trunk Alignment
+- Movement Completion
 
-PoseFit may display:
+### Leg Raise
 
-Your Push Up accuracy improved by 6 percentage points compared with your previous session.
+- Hip Flexion
+- Target Raise Height
+- Leg Extension
+- Movement Completion
+- Movement Control
 
-Other examples:
+---
 
-You completed 5 more repetitions than your previous workout.
+# 24. Gemini Generated Feedback
 
-You exercised 4 minutes longer than your previous session.
+After the workout ends, summarized exercise results will be sent to the **Gemini API**.
 
-You reduced incorrect repetitions from 6 to 3.
+The Gemini API should not perform the actual biomechanical detection.
 
-If no previous session exists:
+PoseFit's own computer vision and angle evaluation system should first determine:
 
-This is your first recorded Push Up session. Future workouts will be compared with this result.
+- Exercise performed
+- Repetitions
+- Sets
+- Correct repetitions
+- Incorrect repetitions
+- Accuracy score
+- Frequent posture errors
+- Exercise duration
+- Previous performance
 
-9.5 Save Session
+Gemini will use the already processed information to generate understandable feedback.
 
-Completed workout sessions should automatically be stored in the database.
+## Example Information Sent to Gemini
 
-Suggested stored data:
-
-User ID
-
-Exercise ID
-
-Date
-
-Start Time
-
-End Time
-
-Duration
-
-Sets
-
-Repetitions
-
-Correct Repetitions
-
-Incorrect Repetitions
-
-Accuracy Score
-
-Detected Errors
-
-Generated Feedback
-
-This information supports:
-
-Dashboard Statistics
-
-Progress Reports
-
-Workout History
-
-Session Comparison
-
-Gemini Feedback
-
-10. Gemini Generated Feedback
-
-After the workout ends, processed exercise results should be sent to the Gemini API.
-
-Gemini should not perform the biomechanical exercise evaluation.
-
-The PoseFit computer vision system should first determine:
-
-Exercise performed
-
-Total repetitions
-
-Correct repetitions
-
-Incorrect repetitions
-
-Sets
-
-Exercise duration
-
-Accuracy
-
-Common detected errors
-
-Previous session performance
-
-Gemini should only use these results to generate understandable and personalized feedback.
-
-Example Data Sent to Gemini
-
+```json
 {
-  "exercise": "Push Up",
+  "exercise": "Leg Raise",
   "sets": 3,
   "repetitions": 30,
   "correct_repetitions": 27,
   "incorrect_repetitions": 3,
   "accuracy": 90,
-  "duration_minutes": 14,
+  "duration_minutes": 10,
   "common_errors": [
-    "Incomplete elbow extension",
-    "Hip dropped during several repetitions"
+    "Insufficient hip flexion",
+    "Knees bent during several repetitions"
   ]
 }
+```
 
-Example Generated Feedback
+## Example Gemini Feedback
 
-Great session. You completed 30 Push Ups across three sets with an overall form accuracy of 90%. Your elbow depth was consistent, but several repetitions showed incomplete arm extension and slight hip dropping. Focus on fully extending your arms at the top while maintaining straight body alignment.
+> Great session. You completed 30 Leg Raises across three sets with an overall form accuracy of 90%. Most repetitions reached the desired raising range, but several repetitions showed reduced hip flexion and slight knee bending. Focus on keeping your legs extended while raising them with controlled hip movement.
 
-Gemini Failure Handling
+The generated feedback should be treated as an explanation of the measured PoseFit results rather than allowing Gemini to independently determine whether exercise form was correct.
 
-The Session Results Page must continue to work even if the Gemini API is unavailable.
+---
 
-If the Gemini request fails:
+# 25. Session Comparison
 
-Save the workout normally.
+PoseFit should compare the completed session with the user's most recent session for the same exercise.
 
-Display the PoseFit accuracy report.
+Possible comparisons include:
 
-Display the detected errors.
-
-Allow Gemini feedback generation to fail independently without losing the session.
-
-11. Workout Plan
-
-The Workout Plan Page allows users to create exercise schedules for the current and upcoming weeks.
-
-11.1 Weekly Calendar
-
-Display:
-
-Monday
-
-Tuesday
-
-Wednesday
-
-Thursday
-
-Friday
-
-Saturday
-
-Sunday
-
-Users can assign one or more PoseFit exercises to each day.
+- Accuracy
+- Number of repetitions
+- Number of sets
+- Exercise duration
+- Correct repetitions
+- Incorrect repetitions
 
 Example:
 
-Day
+### Previous Leg Raise Session
 
-Exercise
+Accuracy: **84%**
 
-Monday
+### Current Leg Raise Session
 
-Squat and Push Up
+Accuracy: **90%**
 
-Tuesday
+PoseFit displays:
 
-Rest
+> Your Leg Raise accuracy improved by **6 percentage points** compared with your previous session.
 
-Wednesday
+Other examples:
 
-Forward Lunge and Sit Up
+> You completed 5 more repetitions than your previous workout.
 
-Thursday
+> Your workout duration increased by 4 minutes.
 
-Rest
+> You reduced incorrect repetitions from 6 to 3.
 
-Friday
+> Your leg extension score improved by 8 percentage points.
 
-Squat, Push Up and Plank
+If no previous session exists, PoseFit should display:
 
-Saturday
+> This is your first recorded Leg Raise session. Future workouts will be compared with this result.
 
-Plank
+---
 
-Sunday
+# 26. Save Session
 
-Rest
+After the result has been generated, the completed workout should automatically be saved to the database.
 
-11.2 Create Workout
+Stored information may include:
 
-For each scheduled exercise, users should configure:
+- User ID
+- Exercise ID
+- Date
+- Start Time
+- End Time
+- Duration
+- Number of Sets
+- Number of Repetitions
+- Correct Repetitions
+- Incorrect Repetitions
+- Accuracy Score
+- Detected Errors
+- Gemini Feedback
 
-Exercise
+This information will support the Dashboard, Progress Report, Workout History, and Session Comparison features.
 
-Repetitions
+---
 
-Sets
+# 27. Workout Plan Page
 
-Rest Duration
+The Workout Plan Page allows users to organize workouts for the current week and upcoming weeks.
 
-Plank Hold Duration when applicable
+Users can build their own workout routine using the five PoseFit exercises.
 
-Example:
+## 27.1 Weekly Calendar
 
-Monday
+The interface may display:
 
-Squat
+- Monday
+- Tuesday
+- Wednesday
+- Thursday
+- Friday
+- Saturday
+- Sunday
 
-12 Repetitions
-
-3 Sets
-
-45 Second Rest
-
-Push Up
-
-10 Repetitions
-
-3 Sets
-
-60 Second Rest
-
-11.3 Workout Plan Functions
-
-Users should be able to:
-
-Create Workout
-
-Edit Workout
-
-Delete Workout
-
-Move Workout
-
-Duplicate Workout
-
-Mark Workout as Completed
-
-11.4 Upcoming Weeks
-
-Users should be able to prepare workout plans for future weeks.
-
-The system should clearly distinguish:
-
-Current Week
-
-Upcoming Week
-
-Previous Week
-
-11.5 Planned Workout Session
-
-If a workout contains multiple exercises, PoseFit should guide the user through them sequentially.
+Users can assign exercises to each day.
 
 Example:
 
-Monday Workout
+| Day | Exercise |
+| --- | --- |
+| Monday | Squat and Push Up |
+| Tuesday | Rest |
+| Wednesday | Lunge and Leg Raise |
+| Thursday | Rest |
+| Friday | Squat, Push Up and Plank |
+| Saturday | Leg Raise and Plank |
+| Sunday | Rest |
+
+---
+
+# 28. Create Workout Plan
+
+When adding an exercise, users should configure:
+
+- Exercise
+- Number of Repetitions
+- Number of Sets
+- Rest Duration
+- Plank Duration where applicable
+
+Example:
+
+### Monday
+
+**Squat**
+
+- 12 Repetitions
+- 3 Sets
+- 45 Second Rest
+
+**Leg Raise**
+
+- 12 Repetitions
+- 3 Sets
+- 45 Second Rest
+
+---
+
+# 29. Upcoming Workout Plans
+
+Users should be able to prepare routines for upcoming weeks.
+
+Functions may include:
+
+- Create Workout
+- Edit Workout
+- Delete Workout
+- Move Workout
+- Duplicate Workout
+- Mark Workout as Completed
+
+The Dashboard may show:
+
+> Today's Workout
+
+and provide a:
+
+**Start Workout**
+
+button.
+
+---
+
+# 30. Workout Plan Session
+
+If a workout contains several exercises, PoseFit may guide the user through the selected exercises sequentially.
+
+Example:
+
+**Monday Workout**
 
 1. Squat
 2. Push Up
-3. Plank
+3. Leg Raise
 
 After completing Squat:
 
-Squat Complete. Next Exercise: Push Up.
+> Squat Complete  
+> Next Exercise: Push Up
 
-The user may:
+The user may continue to the next exercise or end the workout.
 
-Continue to Next Exercise
+---
 
-Take Rest
+# 31. Workout History Page
 
-End Workout
+The History Page stores previously completed exercise sessions.
 
-12. Workout History and Progress
+Users should be able to view their workout activity over time.
 
-12.1 Workout History
+## History Information
 
-The History Page stores previously completed workout sessions.
+Each workout entry should display:
 
-Each entry should display:
-
-Date
-
-Exercise
-
-Sets
-
-Repetitions
-
-Accuracy
-
-Duration
-
-Session Status
+- Exercise
+- Date
+- Duration
+- Sets
+- Repetitions
+- Accuracy
+- Session Status
 
 Example:
 
-Date
+| Date | Exercise | Sets | Reps | Accuracy | Duration |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Aug 20 | Push Up | 3 | 30 | 90% | 14 min |
+| Aug 19 | Squat | 4 | 40 | 92% | 18 min |
+| Aug 18 | Leg Raise | 3 | 30 | 88% | 10 min |
 
-Exercise
+---
 
-Sets
+# 32. History Filters
 
-Reps
+Users may filter records according to:
 
-Accuracy
+- Exercise
+- Date
+- Week
+- Month
+- Accuracy
 
-Duration
+Example:
 
-Aug 20
+**Exercise: Leg Raise**
 
-Push Up
+This displays only previous Leg Raise sessions.
 
-3
+---
 
-30
+# 33. View Session Details
 
-90%
+Selecting a history entry should display the complete session analysis including:
 
-14 min
+- Accuracy Report
+- Sets
+- Repetitions
+- Duration
+- Detected Errors
+- Gemini Feedback
+- Comparison with Previous Session
 
-Aug 19
+---
 
-Squat
+# 34. Progress Tracking
 
-4
-
-40
-
-92%
-
-18 min
-
-Aug 18
-
-Plank
-
-3
-
-N/A
-
-88%
-
-8 min
-
-12.2 History Filters
-
-Users may filter workout history by:
-
-Exercise
-
-Date
-
-Week
-
-Month
-
-Accuracy
-
-12.3 Session Details
-
-Selecting a workout history record should display:
-
-Session Summary
-
-Accuracy Report
-
-Sets
-
-Repetitions
-
-Duration
-
-Detected Errors
-
-Gemini Feedback
-
-Previous Session Comparison
-
-12.4 Progress Tracking
-
-PoseFit should use workout history to generate progress statistics.
+PoseFit should use workout history to generate long term progress information.
 
 Possible metrics include:
 
-Weekly Average Accuracy
+- Weekly average accuracy
+- Monthly average accuracy
+- Total exercise duration
+- Total completed workouts
+- Total repetitions
+- Accuracy improvement
+- Workout consistency
 
-Monthly Average Accuracy
+---
 
-Total Exercise Duration
+# 35. Responsive Web Design
 
-Total Completed Workouts
+PoseFit must use a responsive interface.
 
-Total Repetitions
+The web application should automatically adjust according to the user's device and screen size.
 
-Accuracy Improvement
+## Desktop and Laptop
 
-Workout Consistency
+The interface may use:
 
-Exercise Frequency
+- Top Navigation Bar
+- Large Dashboard Cards
+- Multi Column Graphs
+- Large Camera Area
+- Side Exercise Information Panel
 
-These statistics should be used by the Dashboard and Progress Report.
+## Tablet
 
-13. Responsive Design
+The interface should reduce the number of columns while preserving important information.
 
-PoseFit must provide a responsive interface that adjusts to the user's device.
+Example:
 
-13.1 Desktop and Laptop
+Two column dashboard layout.
 
-Suggested interface:
+## Mobile
 
-Sidebar Navigation
+The interface should use:
 
-Large Dashboard Cards
+- Single Column Layout
+- Mobile Navigation Menu
+- Large Touch Friendly Buttons
+- Responsive Cards
+- Full Width Camera
+- Simplified Camera Controls
 
-Multi Column Layout
+During an exercise, essential information should remain visible without blocking the camera.
 
-Large Camera Area
+Essential information includes:
 
-Side Exercise Information Panel
+- Repetitions
+- Current Set
+- Timer
+- Corrective Feedback
+- End Session
 
-Full Progress Charts
+---
 
-13.2 Tablet
+# 36. Camera Responsiveness
 
-Suggested interface:
+The camera component should dynamically adjust its size according to the screen.
 
-Reduced Number of Columns
+The user's body should remain clearly visible without stretching or distorting the video.
 
-Responsive Dashboard Cards
+Pose overlays must remain correctly positioned when the camera container changes size.
 
-Touch Friendly Controls
+Special consideration should be given to Leg Raise because the user performs the exercise while lying horizontally.
 
-Adjustable Camera Area
+The camera layout should therefore ensure that the full body remains visible on both desktop and mobile devices.
 
-13.3 Mobile
+---
 
-Suggested interface:
+# 37. Suggested Major Frontend Components
 
-Single Column Layout
-
-Bottom Navigation or Mobile Menu
-
-Large Touch Friendly Buttons
-
-Responsive Cards
-
-Full Width Camera
-
-Simplified Exercise Controls
-
-During exercise sessions, important information must remain visible without significantly blocking the user's camera feed.
-
-Essential information:
-
-Repetitions
-
-Current Set
-
-Timer
-
-Corrective Feedback
-
-End Session
-
-13.4 Camera Responsiveness
-
-The camera component must dynamically resize according to the device.
-
-Requirements:
-
-Video should not appear stretched.
-
-Body landmarks should stay aligned with the video.
-
-Skeleton overlays should scale with the camera.
-
-The user's entire body should remain visible.
-
-Controls should not cover important body landmarks.
-
-Portrait and landscape layouts should be considered for mobile devices.
-
-14. System Architecture
-
-PoseFit should clearly separate the responsibilities of the frontend, backend, computer vision logic, and Gemini integration.
-
-14.1 Frontend Responsibilities
-
-The React frontend should handle:
-
-User Interface
-
-Dashboard
-
-Exercise Selection
-
-Exercise Setup
-
-Camera Interface
-
-Real Time Pose Visualization
-
-Exercise Counters
-
-Timers
-
-Corrective Feedback Display
-
-Workout Planning Interface
-
-History Interface
-
-Responsive Design
-
-14.2 MediaPipe Responsibilities
-
-MediaPipe is responsible for:
-
-Detecting body landmarks
-
-Tracking body position
-
-Providing landmark coordinates to PoseFit
-
-MediaPipe does not independently determine whether an exercise is correct.
-
-14.3 PoseFit Biomechanical Logic
-
-PoseFit's exercise logic is responsible for:
-
-Joint Angle Calculation
-
-Movement State Detection
-
-Repetition Counting
-
-Exercise Form Classification
-
-Posture Error Detection
-
-Corrective Feedback Rules
-
-Exercise Accuracy Calculation
-
-14.4 Backend Responsibilities
-
-The Django backend should handle:
-
-User Authentication
-
-User Profiles
-
-Workout Plans
-
-Workout Session Storage
-
-Workout History
-
-Progress Tracking
-
-Accuracy Report Storage
-
-Session Comparison
-
-Gemini API Communication
-
-14.5 Database
-
-PostgreSQL should store persistent PoseFit information.
-
-Suggested main entities include:
-
-User
-UserProfile
-Exercise
-WorkoutPlan
-WorkoutPlanExercise
-WorkoutSession
-ExerciseSet
-ExercisePerformance
-DetectedError
-AccuracyReport
-GeneratedFeedback
-LoginActivity
-
-14.6 Gemini Responsibilities
-
-Gemini is responsible for:
-
-Summarizing completed workout results
-
-Explaining common detected errors
-
-Highlighting improvements
-
-Providing understandable post workout feedback
-
-Gemini should not replace PoseFit's angle based biomechanical evaluation.
-
-14.7 Suggested Frontend Components
-
+```text
 Navbar
-Sidebar
 MobileNavigation
 DashboardCard
 ProgressChart
@@ -1774,381 +1393,288 @@ HistoryTable
 HistoryCard
 ResponsiveModal
 ConfirmationDialog
+```
 
-15. Core System Requirements
+---
 
-The completed PoseFit system should provide the following features.
-
-User Account
-
-User Registration
-
-Secure Login
-
-User Profile
-
-Privacy Consent
-
-Dashboard
-
-User Greeting
-
-Login Streak
-
-Seven Day Exercise Bar Graph
-
-Progress Report
-
-Recent Workout
-
-Today's Workout
-
-Quick Actions
-
-Exercises
-
-Squat
-
-Push Up
-
-Plank
-
-Forward Lunge
-
-Sit Up
-
-Exercise Setup
-
-Repetition Configuration
-
-Set Configuration
-
-Rest Time Configuration
-
-Plank Hold Duration
-
-Exercise Instructions
-
-Camera Position Instructions
-
-Computer Vision
-
-Webcam Pose Detection
-
-Body Landmark Detection
-
-Skeleton Overlay
-
-Joint Angle Calculation
-
-Exercise Movement Detection
-
-Form Classification
-
-Exercise Session
-
-Automatic Repetition Counting
-
-Automatic Set Tracking
-
-Exercise Timer
-
-Rest Timer
-
-Plank Timer
-
-Corrective Feedback
-
-Manual End Session
-
-Results
-
-Exercise Accuracy
-
-Accuracy Report
-
-Session Summary
-
-Previous Session Comparison
-
-Gemini Generated Feedback
-
-Workout Planning
-
-Weekly Workout Plan
-
-Upcoming Workout Plan
-
-Add Workout
-
-Edit Workout
-
-Delete Workout
-
-Start Planned Workout
-
-History and Progress
-
-Workout History
-
-Session Details
-
-Weekly Statistics
-
-Progress Reports
-
-Accuracy Trends
-
-Compatibility
-
-Desktop
-
-Laptop
-
-Tablet
-
-Mobile
-
-16. Development Phases
-
-To make PoseFit development manageable, implementation should be completed in phases.
-
-Phase 1: Authentication and User System
+# 38. Proposed Backend Responsibilities
+
+The Django backend should primarily handle:
+
+- User Authentication
+- User Profile Management
+- Workout Plan Management
+- Workout Session Storage
+- Progress Tracking
+- Workout History
+- Accuracy Report Storage
+- Session Comparison
+- Gemini API Communication
+
+MediaPipe pose detection may primarily operate through the frontend so that real time webcam processing can happen directly on the user's device.
+
+---
+
+# 39. System Responsibility Separation
+
+PoseFit should clearly separate three responsibilities.
+
+## MediaPipe
+
+Responsible for:
+
+- Detecting body landmarks
+- Tracking body position
+
+## PoseFit Biomechanical Logic
+
+Responsible for:
+
+- Calculating joint angles
+- Detecting movement stages
+- Counting repetitions
+- Determining valid exercise form
+- Detecting posture errors
+- Calculating accuracy
+
+## Gemini API
+
+Responsible for:
+
+- Transforming completed exercise results into understandable feedback
+- Summarizing performance
+- Explaining common mistakes
+- Highlighting improvements
+
+Gemini should not replace the angle based biomechanical evaluation system.
+
+---
+
+# 40. Exercise Detection Summary
+
+| Exercise | Primary Measurement | General Target |
+| --- | --- | --- |
+| Squat | Hip → Knee → Ankle | Approximately 80° to 100° knee angle |
+| Push Up | Shoulder → Elbow → Wrist | Below 90° bottom, above 150° top |
+| Push Up Alignment | Shoulder → Hip → Ankle | Approximately 160° to 180° |
+| Plank | Shoulder → Hip → Ankle | Approximately 170° to 210° |
+| Forward Lunge | Hip → Knee → Ankle | Approximately 90° front knee flexion |
+| Leg Raise | Hip Flexion | 30° to 60°, with approximately 60° as target raised position |
+| Leg Raise Knee | Hip → Knee → Ankle | Leg should remain extended |
+
+These thresholds should serve as the initial biomechanical basis of the implementation and should be verified during system testing before final deployment.
+
+---
+
+# 41. Core System Requirements
+
+The completed PoseFit system should provide:
+
+- User registration
+- Secure login
+- Responsive dashboard
+- Login streak tracking
+- Seven day exercise duration graph
+- User progress reports
+- Five supported exercises
+- Squat
+- Push Up
+- Plank
+- Forward Lunge
+- Leg Raise
+- Exercise configuration
+- Repetition configuration
+- Set configuration
+- Rest configuration
+- Webcam based pose detection
+- Real time skeletal tracking
+- Joint angle calculation
+- Exercise form classification
+- Real time corrective feedback
+- Automatic repetition counting
+- Automatic set tracking
+- Rest timer
+- Plank timer
+- Exercise session timer
+- Manual End Session function
+- Exercise accuracy report
+- Session summary
+- Previous session comparison
+- Gemini generated feedback
+- Weekly workout planning
+- Upcoming workout planning
+- Workout history
+- Detailed historical session reports
+- Responsive desktop interface
+- Responsive tablet interface
+- Responsive mobile interface
+
+---
+
+# 42. Development Priority
+
+To make implementation manageable, development should be completed in phases.
+
+## Phase 1: Core User System
 
 Implement:
 
-Signup
+- Signup
+- Login
+- Authentication
+- User Profile
+- Basic Dashboard
 
-Login
-
-Authentication
-
-User Profile
-
-Phase 2: Dashboard
+## Phase 2: Exercise Interface
 
 Implement:
 
-Dashboard Layout
+- Exercise Selection
+- Exercise Setup
+- Repetitions
+- Sets
+- Rest Timer
+- Camera Page
 
-Login Streak
-
-Seven Day Exercise Graph
-
-Progress Cards
-
-Recent Workout
-
-Today's Workout
-
-Phase 3: Exercise Interface
+## Phase 3: Computer Vision
 
 Implement:
 
-Exercise Selection
+- MediaPipe Pose
+- Landmark Detection
+- Skeleton Overlay
+- Joint Angle Calculation
 
-Exercise Cards
-
-Exercise Setup
-
-Repetitions
-
-Sets
-
-Rest Duration
-
-Plank Hold Duration
-
-Camera Instructions
-
-Phase 4: Computer Vision
-
-Implement:
-
-MediaPipe Pose
-
-Webcam Access
-
-Landmark Detection
-
-Skeleton Overlay
-
-Joint Angle Calculation
-
-Phase 5: Exercise Logic
+## Phase 4: Exercise Logic
 
 Implement exercises individually:
 
-Squat
+1. Squat
+2. Push Up
+3. Plank
+4. Forward Lunge
+5. Leg Raise
 
-Push Up
+For each exercise, complete:
 
-Plank
+- Movement state detection
+- Correct posture rules
+- Incorrect posture rules
+- Repetition counting or hold tracking
+- Corrective feedback
 
-Forward Lunge
+For Leg Raise specifically:
 
-Sit Up
+- Hip flexion detection
+- Leg raise movement state
+- Target angle detection
+- Knee extension monitoring
+- Repetition counting
+- Corrective feedback
 
-For each exercise, implement:
-
-Movement States
-
-Angle Thresholds
-
-Correct Form Rules
-
-Incorrect Form Rules
-
-Repetition or Hold Detection
-
-Corrective Feedback
-
-Phase 6: Session Management
-
-Implement:
-
-Rep Counter
-
-Set Counter
-
-Exercise Timer
-
-Rest Timer
-
-End Session
-
-Session Storage
-
-Phase 7: Accuracy and Reports
+## Phase 5: Exercise Session Management
 
 Implement:
 
-Accuracy Calculation
+- Set Counter
+- Rep Counter
+- Timer
+- Rest Timer
+- Pause handling if required
+- End Session
+- Session Saving
 
-Exercise Performance Breakdown
-
-Session Summary
-
-Session Comparison
-
-Phase 8: Gemini Integration
-
-Implement:
-
-Session Data Preparation
-
-Gemini API Request
-
-Generated Feedback
-
-Gemini Error Handling
-
-PoseFit should remain usable even if Gemini is unavailable.
-
-Phase 9: Workout Planning
+## Phase 6: Accuracy and Reporting
 
 Implement:
 
-Weekly Calendar
+- Accuracy Calculation
+- Accuracy Report
+- Session Summary
+- Previous Session Comparison
 
-Add Workout
-
-Edit Workout
-
-Delete Workout
-
-Upcoming Week
-
-Planned Workout Sessions
-
-Phase 10: History and Progress
+## Phase 7: Gemini Integration
 
 Implement:
 
-Workout History
+- Session Data Preparation
+- Gemini API Request
+- Generated Feedback
+- Error Handling if Gemini is unavailable
 
-Session Details
+The PoseFit result page should still function if the Gemini API fails.
 
-Weekly Progress
+## Phase 8: Workout Planning
 
-Seven Day Exercise Graph
+Implement:
 
-Accuracy Trends
+- Weekly Calendar
+- Add Workout
+- Edit Workout
+- Delete Workout
+- Upcoming Weeks
+- Start Planned Workout
 
-Dashboard Statistics
+## Phase 9: History and Progress
 
-Phase 11: Responsive Design and Optimization
+Implement:
 
-Test and optimize PoseFit for:
+- Workout History
+- Session Details
+- Weekly Progress
+- Seven Day Exercise Graph
+- Accuracy Trends
+- Dashboard Statistics
 
-Desktop
+## Phase 10: Responsive Design and Optimization
 
-Laptop
+Test and improve PoseFit on:
 
-Tablet
-
-Mobile
+- Desktop
+- Laptop
+- Tablet
+- Mobile
 
 Verify:
 
-Camera Scaling
+- Camera scaling
+- Pose overlay scaling
+- Touch controls
+- Navigation
+- Dashboard charts
+- Exercise cards
+- Session results
+- Horizontal body positioning for Leg Raise
 
-Pose Overlay Scaling
+---
 
-Navigation
+# 43. Expected Final User Experience
 
-Touch Controls
+A completed PoseFit experience should feel simple to the user.
 
-Dashboard Charts
+The user should be able to:
 
-Exercise Cards
+**Open PoseFit → Login → See Progress → Choose Exercise → Configure Workout → Position Camera → Perform Exercise → Receive Real Time Feedback → Complete Sets → View Accuracy → Receive Personalized Feedback → Compare Progress → Review History → Plan the Next Workout**
 
-Exercise Session Controls
+The computer vision, biomechanical calculations, database operations, and AI processing should operate behind the interface without requiring users to understand the technical implementation.
 
-Results Page
+---
 
-17. Scientific Basis
+# 44. Scientific Basis
 
-The biomechanical rules used by PoseFit are grounded in the studies included in the project's Review of Related Literature.
+The biomechanical rules used in PoseFit are supported by the studies included in the project's Review of Related Literature.
 
-Squat
+- Wijayanti et al. (2024) for squat biomechanics and joint positioning.
+- Kumaresan and Asmawi (2026) for squat knee angle classification.
+- Park et al. (2020) for Push Up elbow angle, body alignment, wrist shoulder distance, and symmetry.
+- Kowalski et al. (2021) for Push Up joint position and muscle activation.
+- García Jaén et al. (2023) for Plank body alignment and core muscle activation.
+- Kagdi and Van Der Haar (2025) for Plank shoulder hip ankle angle classification.
+- Mohamed Sabadri et al. (2023) for knee angles during Forward Lunges.
+- Goulette et al. (2021) for Forward Lunge knee flexion biomechanics.
+- Shin et al. (2026) for approximately 90° knee flexion and upright trunk positioning during Forward Lunges.
+- Juan et al. (2024) for hip flexor activation during Straight Leg Raise and Leg Lift exercises, supporting the use of hip flexion angle as a measurable indicator for Leg Raise evaluation.
 
-Wijayanti et al. (2024) supports the use of knee and hip positioning as measurable indicators of squat biomechanics.
+For the Leg Raise, Juan et al. (2024) found greater iliopsoas activation between **30° and 60° of hip flexion** compared with the **0° to 30° range**, with substantial activation occurring at approximately **60°**. These findings provide a scientific basis for PoseFit to monitor the raising phase using hip flexion angle while also checking that the leg remains extended throughout the movement.
 
-Kumaresan and Asmawi (2026) provides the 80° to 100° knee angle range used for squat depth classification.
-
-Push Up
-
-Park et al. (2020) provides biomechanical rules for elbow angle, body alignment, wrist to shoulder distance, and arm symmetry.
-
-Kowalski et al. (2021) supports the importance of joint position in Push Up muscle activation.
-
-Plank
-
-García Jaén et al. (2023) supports monitoring body alignment because alignment affects core muscle activation.
-
-Kagdi and Van Der Haar (2025) provides the 170° to 210° shoulder hip ankle alignment range.
-
-Forward Lunge
-
-Mohamed Sabadri et al. (2023) reports knee angles of approximately 82.91° to 84.31° during maximum descent.
-
-Shin et al. (2026) uses approximately 90° of front knee flexion with an upright trunk.
-
-Goulette et al. (2021) reports peak knee flexion of approximately 103° ± 7.4° and demonstrates the biomechanical importance of knee flexion.
-
-Sit Up
-
-Raiola et al. (2020) describes Sit Up movement through trunk and hip flexion.
-
-Rahmadani et al. (2022) supports using hip and knee angles for Sit Up evaluation, including a hip angle below approximately 90° and knee positioning near 90°.
-
-These findings provide the scientific foundation for PoseFit's angle based exercise evaluation system.
-
-Expected Final User Experience
-
-The complete PoseFit experience should follow a simple user flow:
-
-Open PoseFit → Login → View Dashboard → Select Exercise → Configure Workout → Position Camera → Perform Exercise → Receive Real Time Feedback → Complete Sets → View Accuracy Report → Receive Gemini Feedback → Compare Performance → Review History → Plan Future Workouts
-
-The computer vision, biomechanical calculations, database operations, and AI processing should operate behind the interface without requiring the user to understand the underlying technical implementation.
+These biomechanical findings provide the scientific foundation for PoseFit's angle based exercise evaluation system.

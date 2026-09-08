@@ -151,6 +151,10 @@
   object-fit: contain;
 }
 
+.plan-exercise img.leg-raise-icon {
+  filter: brightness(0) saturate(100%) invert(39%) sepia(96%) saturate(3237%) hue-rotate(358deg) brightness(101%) contrast(106%);
+}
+
 .plan-details-button {
   width: 100%;
   height: 39px;

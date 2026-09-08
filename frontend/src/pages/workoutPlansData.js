@@ -5,7 +5,7 @@ import squatIcon from '../images/icon-squat.png';
 import pushUpIcon from '../images/icon-push-up.png';
 import plankIcon from '../images/icon-plank.png';
 import lungeIcon from '../images/icon-lunge.png';
-import sitUpIcon from '../images/icon-sit-up.png';
+import legRaiseIcon from '../images/icon-leg-raise.png';
 
 export const workoutPlans = [
   {
@@ -19,11 +19,11 @@ export const workoutPlans = [
     image: pushUpPhoto,
     imageAlt: 'Athlete performing a push-up',
     exercises: [
-      { name: 'Squat', icon: squatIcon },
-      { name: 'Push-up', icon: pushUpIcon },
-      { name: 'Plank', icon: plankIcon },
-      { name: 'Lunge', icon: lungeIcon },
-      { name: 'Sit-up', icon: sitUpIcon },
+      { id: 'squat', name: 'Squat', icon: squatIcon },
+      { id: 'push-up', name: 'Push-up', icon: pushUpIcon },
+      { id: 'plank', name: 'Plank', icon: plankIcon },
+      { id: 'lunge', name: 'Lunge', icon: lungeIcon },
+      { id: 'leg-raise', name: 'Leg Raise', icon: legRaiseIcon },
     ],
   },
   {
@@ -38,9 +38,9 @@ export const workoutPlans = [
     imageAlt: 'Athlete performing a lunge',
     overlayIcon: lungeIcon,
     exercises: [
-      { name: 'Squat', icon: squatIcon },
-      { name: 'Lunge', icon: lungeIcon },
-      { name: 'Plank', icon: plankIcon },
+      { id: 'squat', name: 'Squat', icon: squatIcon },
+      { id: 'lunge', name: 'Lunge', icon: lungeIcon },
+      { id: 'plank', name: 'Plank', icon: plankIcon },
     ],
   },
   {
@@ -55,9 +55,9 @@ export const workoutPlans = [
     imageAlt: 'Athlete holding a plank',
     overlayIcon: plankIcon,
     exercises: [
-      { name: 'Push-up', icon: pushUpIcon },
-      { name: 'Plank', icon: plankIcon },
-      { name: 'Sit-up', icon: sitUpIcon },
+      { id: 'push-up', name: 'Push-up', icon: pushUpIcon },
+      { id: 'plank', name: 'Plank', icon: plankIcon },
+      { id: 'leg-raise', name: 'Leg Raise', icon: legRaiseIcon },
     ],
   },
 ];

@@ -2,14 +2,14 @@ import squatIcon from '../../images/icon-squat.png';
 import pushUpIcon from '../../images/icon-push-up.png';
 import plankIcon from '../../images/icon-plank.png';
 import lungeIcon from '../../images/icon-lunge.png';
-import sitUpIcon from '../../images/icon-sit-up.png';
+import legRaiseIcon from '../../images/icon-leg-raise.png';
 
 export const beginnerExercises = [
   { id: 'squat', name: 'Squat', focus: 'Legs', icon: squatIcon },
   { id: 'push-up', name: 'Push-up', focus: 'Chest, Arms', icon: pushUpIcon },
   { id: 'plank', name: 'Plank', focus: 'Core', icon: plankIcon },
   { id: 'lunge', name: 'Lunge', focus: 'Legs, Glutes', icon: lungeIcon },
-  { id: 'sit-up', name: 'Sit-up', focus: 'Core', icon: sitUpIcon },
+  { id: 'leg-raise', name: 'Leg Raise', focus: 'Hip Flexors, Core', icon: legRaiseIcon },
 ];
 
 const exercisesById = Object.fromEntries(beginnerExercises.map((exercise) => [exercise.id, exercise]));
@@ -31,7 +31,7 @@ export const beginnerSchedule = [
     estimate: '30–40 min',
     exercises: [
       { ...exercisesById.lunge, prescription: '2–3 sets × 8 reps (each leg)' },
-      { ...exercisesById['sit-up'], prescription: '3 sets × 10 reps' },
+      { ...exercisesById['leg-raise'], prescription: '3 sets × 10 reps' },
       { ...exercisesById.plank, prescription: '3 sets × 20 sec' },
     ],
   },
@@ -43,7 +43,7 @@ export const beginnerSchedule = [
       { ...exercisesById.squat, prescription: '3 sets × 10 reps' },
       { ...exercisesById['push-up'], prescription: '3 sets × 8 reps' },
       { ...exercisesById.lunge, prescription: '2 sets × 8 reps (each leg)' },
-      { ...exercisesById['sit-up'], prescription: '2 sets × 10 reps' },
+      { ...exercisesById['leg-raise'], prescription: '2 sets × 10 reps' },
     ],
   },
 ];

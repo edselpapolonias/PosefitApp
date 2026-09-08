@@ -208,6 +208,10 @@
   object-fit: contain;
 }
 
+.beginner-exercise-summary img.leg-raise-icon {
+  filter: brightness(0) saturate(100%) invert(39%) sepia(96%) saturate(3237%) hue-rotate(358deg) brightness(101%) contrast(106%);
+}
+
 .beginner-exercise-summary strong {
   font-size: 10px;
   font-weight: 600;
@@ -307,6 +311,10 @@
   height: 34px;
   display: block;
   object-fit: contain;
+}
+
+.beginner-day-exercise img.leg-raise-icon {
+  filter: brightness(0) saturate(100%) invert(39%) sepia(96%) saturate(3237%) hue-rotate(358deg) brightness(101%) contrast(106%);
 }
 
 .beginner-day-exercise > span {
@@ -753,4 +761,3 @@
     transition: none;
   }
 }
-

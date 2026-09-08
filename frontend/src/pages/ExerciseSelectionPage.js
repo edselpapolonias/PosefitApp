@@ -5,7 +5,7 @@ import squatPhoto from '../images/exercise-squat.png';
 import pushUpPhoto from '../images/exercise-push-up.png';
 import plankPhoto from '../images/exercise-plank.png';
 import lungePhoto from '../images/exercise-lunge.png';
-import sitUpPhoto from '../images/exercise-sit-up.png';
+import legRaisePhoto from '../images/exercise-leg-raise.png';
 import './ExerciseSelectionPage.css';
 
 const exercises = [
@@ -50,14 +50,14 @@ const exercises = [
     route: '/exercises/lunge',
   },
   {
-    id: 'sit-up',
-    name: 'Sit Up',
+    id: 'leg-raise',
+    name: 'Leg Raise',
     category: 'Core',
     tone: 'purple',
-    description: 'Strengthen your core and improve posture.',
-    muscles: 'Abs, Hip Flexors',
-    image: sitUpPhoto,
-    route: '/exercises/sit-up',
+    description: 'Strengthen your hip flexors and core while improving leg control.',
+    muscles: 'Hip Flexors, Abdominals',
+    image: legRaisePhoto,
+    route: '/exercises/leg-raise',
   },
 ];
 
@@ -151,7 +151,7 @@ export default function ExerciseSelectionPage() {
           {visibleExercises.map((exercise) => (
             <article
               key={exercise.id}
-              className={`exercise-card exercise-card--${exercise.tone}${selectedExercise === exercise.id ? ' exercise-card--selected' : ''}`}
+              className={`exercise-card exercise-card--${exercise.tone} exercise-card--${exercise.id}${selectedExercise === exercise.id ? ' exercise-card--selected' : ''}`}
               onClick={() => selectExercise(exercise)}
             >
               <div className="exercise-card__photo">

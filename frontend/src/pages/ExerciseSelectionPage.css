@@ -167,6 +167,20 @@
   object-position: center;
 }
 
+.exercise-card--leg-raise .exercise-card__photo {
+  background: linear-gradient(145deg, #49666b, #314a50);
+}
+
+.exercise-card--leg-raise .exercise-card__photo-image {
+  padding: 9px 18px;
+  object-fit: contain;
+}
+
+.exercise-card--leg-raise .exercise-card__mini-photo img {
+  background: #49666b;
+  object-fit: contain;
+}
+
 .exercise-card__mini-photo {
   position: absolute;
   top: 9px;

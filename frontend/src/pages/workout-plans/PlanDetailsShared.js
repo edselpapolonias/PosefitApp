@@ -20,7 +20,7 @@ export function WorkoutDayCard({ workout }) {
       <div className="beginner-day-card__exercises">
         {workout.exercises.map((exercise) => (
           <div className="beginner-day-exercise" key={exercise.id}>
-            <img src={exercise.icon} alt="" aria-hidden="true" />
+            <img className={exercise.id === 'leg-raise' ? 'leg-raise-icon' : ''} src={exercise.icon} alt="" aria-hidden="true" />
             <span>
               <strong>{exercise.name}</strong>
               <small>{exercise.prescription}</small>
@@ -35,4 +35,3 @@ export function WorkoutDayCard({ workout }) {
     </article>
   );
 }
-
