@@ -60,7 +60,7 @@ function PlanCard({ plan }) {
       <div className="workout-plan-card__image">
         <img src={plan.image} alt={plan.imageAlt} />
         <span className={`workout-plan-card__level workout-plan-card__level--${plan.level.toLowerCase()}`}>{plan.level}</span>
-        {plan.popular && <span className="workout-plan-card__popular"><i className="fa-solid fa-star" aria-hidden="true" />Most Popular</span>}
+        {plan.popular && <span className="workout-plan-card__popular"><i className="fa-solid fa-star" aria-hidden="true" />Recommended</span>}
       </div>
 
       <div className="workout-plan-card__body">

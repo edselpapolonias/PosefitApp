@@ -1,36 +1,52 @@
 .core-upper-detail-page .beginner-plan-overview__badge {
-  background: linear-gradient(90deg, #6759e7, #8074ee);
+  background: linear-gradient(100deg, #ff4f00, #ff6814);
 }
 
 .core-upper-detail-page .beginner-detail-fact > i {
-  color: #5952d8;
+  color: #ff5a0a;
 }
 
 .core-upper-detail-page .beginner-day-card__label {
-  color: #4c43c6;
-  background: #eceaff;
+  color: #fff;
+  background: #ff5a0a;
+}
+
+.core-upper-detail-page .beginner-plan-overview__image {
+  background: #f0f6fc;
 }
 
 .core-upper-detail-page .beginner-plan-overview__image img {
-  object-position: center;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.core-upper-detail-page .beginner-plan-overview__image > p {
+  max-width: 225px;
+  color: #ff5a0a;
+  text-align: right;
+  text-shadow: 0 2px 12px rgba(255, 255, 255, 0.92);
 }
 
 .core-upper-exercises-list {
-  padding-right: 70px;
-  padding-left: 70px;
+  padding-right: 92px;
+  padding-left: 92px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.core-upper-detail-page .beginner-expect-card__list > div > span {
-  color: #6b42ed;
-  background: #f2edff;
+@media (max-width: 860px) {
+  .core-upper-exercises-list {
+    padding-right: 0;
+    padding-left: 0;
+  }
 }
 
 @media (max-width: 620px) {
   .core-upper-exercises-list {
-    padding-right: 0;
-    padding-left: 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-}
 
+  .core-upper-detail-page .beginner-plan-overview__image > p {
+    max-width: 175px;
+    font-size: 20px;
+  }
+}

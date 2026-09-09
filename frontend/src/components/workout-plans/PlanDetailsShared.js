@@ -17,6 +17,7 @@ export function WorkoutDayCard({ workout }) {
     <article className="beginner-day-card">
       <span className="beginner-day-card__label">{workout.label}</span>
       <h3>{workout.day}</h3>
+      {workout.focus && <p className="beginner-day-card__focus">{workout.focus}</p>}
       <div className="beginner-day-card__exercises">
         {workout.exercises.map((exercise) => (
           <div className="beginner-day-exercise" key={exercise.id}>

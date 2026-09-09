@@ -1,31 +1,43 @@
 .lower-body-detail-page .beginner-plan-overview__badge {
-  background: linear-gradient(90deg, #6459dd, #7d74ed);
+  background: linear-gradient(100deg, #ff4f00, #ff6814);
 }
 
 .lower-body-detail-page .beginner-detail-fact > i {
-  color: #5f58dc;
+  color: #ff5a0a;
 }
 
 .lower-body-detail-page .beginner-day-card__label {
-  color: #4b43ba;
-  background: #e7e5ff;
+  color: #fff;
+  background: #ff5a0a;
+}
+
+.lower-body-detail-page .beginner-plan-overview__image {
+  background: #fff8f3;
 }
 
 .lower-body-detail-page .beginner-plan-overview__image img {
-  object-position: center;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.lower-body-detail-page .beginner-plan-overview__image > p {
+  max-width: 245px;
+  color: #ff5a0a;
+  text-align: right;
+  text-shadow: 0 2px 12px rgba(255, 255, 255, 0.9);
 }
 
 .lower-body-exercises-list {
-  padding-right: 70px;
-  padding-left: 70px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 @media (max-width: 620px) {
   .lower-body-exercises-list {
-    padding-right: 0;
-    padding-left: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lower-body-detail-page .beginner-plan-overview__image > p {
+    max-width: 190px;
+    font-size: 20px;
   }
 }
-

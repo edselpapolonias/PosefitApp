@@ -25,6 +25,8 @@ describe('Workout Plans page', () => {
     expect(within(plans).getByRole('heading', { name: 'Beginner Full Body' })).toBeInTheDocument();
     expect(within(plans).getByRole('heading', { name: 'Lower Body Focus' })).toBeInTheDocument();
     expect(within(plans).getByRole('heading', { name: 'Core & Upper Body' })).toBeInTheDocument();
+    expect(within(plans).getByText('Recommended')).toBeInTheDocument();
+    expect(within(plans).queryByText('Most Popular')).not.toBeInTheDocument();
     expect(screen.queryByText('Total Body Challenge')).not.toBeInTheDocument();
     expect(screen.queryByText(/Sit-up/i)).not.toBeInTheDocument();
     expect(within(plans).getAllByText('Leg Raise')).toHaveLength(2);

@@ -317,7 +317,18 @@
 }
 
 .workout-plan-card--lower-body-focus .workout-plan-card__image > img {
-  object-position: 49% 55%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.workout-plan-card--beginner-full-body .workout-plan-card__image,
+.workout-plan-card--lower-body-focus .workout-plan-card__image {
+  background: #fff8f3;
+}
+
+.workout-plan-card--beginner-full-body .workout-plan-card__image > img {
+  object-fit: contain;
+  object-position: center;
 }
 
 .workout-plan-card--core-upper-body .workout-plan-card__image > img {
