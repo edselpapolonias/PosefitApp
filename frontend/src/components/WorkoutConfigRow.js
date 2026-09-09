@@ -10,14 +10,16 @@ export default function WorkoutConfigRow({
   max,
   step,
   onChange,
+  disabled = false,
 }) {
   const updateValue = (direction) => {
+    if (disabled) return;
     const nextValue = Math.min(max, Math.max(min, value + (step * direction)));
     onChange(nextValue);
   };
 
   return (
-    <div className="squat-config__row">
+    <div className={`squat-config__row${disabled ? ' squat-config__row--locked' : ''}`} aria-disabled={disabled}>
       <span className="squat-config__icon" aria-hidden="true">
         <i className={`fa-solid ${icon}`} />
       </span>
@@ -25,11 +27,11 @@ export default function WorkoutConfigRow({
         <strong>{label}</strong>
         <small>{description}</small>
       </span>
-      <div className="squat-stepper" aria-label={`${label}: ${value}${suffix}`}>
+      <div className="squat-stepper" aria-label={`${label}: ${value}${suffix}${disabled ? ', locked' : ''}`}>
         <button
           type="button"
           onClick={() => updateValue(-1)}
-          disabled={value <= min}
+          disabled={disabled || value <= min}
           aria-label={`Decrease ${label}`}
         >
           <i className="fa-solid fa-minus" aria-hidden="true" />
@@ -38,7 +40,7 @@ export default function WorkoutConfigRow({
         <button
           type="button"
           onClick={() => updateValue(1)}
-          disabled={value >= max}
+          disabled={disabled || value >= max}
           aria-label={`Increase ${label}`}
         >
           <i className="fa-solid fa-plus" aria-hidden="true" />

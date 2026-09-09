@@ -1,25 +1,75 @@
-.leg-raise-page .squat-overview__image-wrap,
-.leg-raise-guide__pose {
-  background: linear-gradient(145deg, #49666b, #314a50);
+.leg-raise-page .squat-redesign__title-row > span {
+  color: #ff3157;
+  background: #fff0f3;
 }
 
-.leg-raise-page .squat-overview__image-wrap img,
-.leg-raise-guide__pose img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
+.leg-raise-page .squat-overview-content__photo img {
+  object-position: 53% center;
 }
 
-.leg-raise-page .squat-overview__image-wrap img {
-  padding: 12px;
+.leg-raise-page .squat-redesign__tabs-card {
+  min-height: 696px;
 }
 
-.leg-raise-guide__pose {
-  overflow: hidden;
-  border-radius: 6px;
+.leg-raise-page .squat-key-reminders ul {
+  gap: 10px;
 }
 
-.leg-raise-guide__pose img {
-  padding: 3px;
+.leg-raise-page .squat-muscle-breakdown {
+  gap: 7px;
+}
+
+.leg-raise-page .squat-muscle {
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.leg-raise-page .squat-muscle__image {
+  width: 56px;
+  height: 57px;
+}
+
+.leg-raise-page .squat-muscle__copy {
+  gap: 2px;
+}
+
+.leg-raise-page .squat-muscle__copy small {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.squat-muscle__image--leg-raise-rectus {
+  background-position: center -42px;
+  background-size: 116px auto;
+}
+
+.squat-muscle__image--leg-raise-lower-abs {
+  background-position: center -51px;
+  background-size: 126px auto;
+}
+
+.squat-muscle__image--leg-raise-hip-flexors {
+  background-position: center -64px;
+  background-size: 122px auto;
+}
+
+.squat-muscle__image--leg-raise-obliques {
+  background-position: center -47px;
+  background-size: 122px auto;
+}
+
+.squat-muscle__image--leg-raise-transverse {
+  background-position: center -49px;
+  background-size: 128px auto;
+}
+
+@media (max-width: 520px) {
+  .leg-raise-page .squat-muscle {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .leg-raise-page .squat-muscle__image {
+    width: 52px;
+    height: 55px;
+  }
 }

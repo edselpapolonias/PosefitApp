@@ -568,3 +568,1035 @@
     transition: none;
   }
 }
+
+/* Squat configuration redesign. Scoped so the shared legacy exercise-page
+   classes used by the other exercise pages keep their existing appearance. */
+.squat-page--configuration {
+  background: #ffffff;
+}
+
+.squat-page--configuration .squat-page__main {
+  max-width: 1500px;
+  padding: 20px 30px 44px;
+}
+
+.squat-redesign__back {
+  margin: 0 0 14px 15px;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #37445a;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.squat-redesign__back i {
+  color: #ff5a0a;
+  font-size: 14px;
+}
+
+.squat-redesign__back:hover,
+.squat-redesign__back:focus-visible {
+  color: #ff5a0a;
+  outline: none;
+}
+
+.squat-redesign__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(510px, 0.92fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.squat-redesign__left,
+.squat-redesign__right {
+  min-width: 0;
+}
+
+.squat-redesign__right {
+  display: grid;
+  gap: 16px;
+}
+
+.squat-redesign__intro {
+  padding: 0 15px 17px;
+}
+
+.squat-redesign__title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.squat-redesign__title-row h1 {
+  margin: 0;
+  color: #101828;
+  font-size: clamp(32px, 2.8vw, 42px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -1.2px;
+}
+
+.squat-redesign__title-row > span {
+  padding: 7px 13px;
+  color: #ff5a0a;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff1e8;
+  border-radius: 11px;
+}
+
+.squat-redesign__intro > p {
+  margin: 8px 0 0;
+  color: #44516a;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.squat-redesign__facts {
+  margin-top: 27px;
+  display: grid;
+  grid-template-columns: 1.12fr 0.92fr 1.1fr;
+  gap: 24px;
+}
+
+.squat-redesign__fact {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+}
+
+.squat-redesign__fact-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  color: #ff5a0a;
+  font-size: 27px;
+  background: #fff7f1;
+  border-radius: 50%;
+}
+
+.squat-redesign__fact > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.squat-redesign__fact strong {
+  color: #151c2d;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.squat-redesign__fact small {
+  overflow: hidden;
+  color: #4c5870;
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.squat-redesign__workout {
+  padding: 19px 17px 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dde3ea;
+  border-radius: 15px;
+  box-shadow: 0 4px 14px rgba(28, 39, 54, 0.025);
+}
+
+.squat-redesign__workout > h2 {
+  margin: 0 0 20px;
+  color: #111827;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.35px;
+}
+
+.squat-presets {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.squat-preset {
+  position: relative;
+  min-width: 0;
+  min-height: 106px;
+  padding: 15px 14px 12px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  color: #152034;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #dfe5eb;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.squat-preset:hover,
+.squat-preset:focus-visible {
+  border-color: #ff9a68;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.squat-preset--selected {
+  background: linear-gradient(135deg, #fffdfb 0%, #fff2e8 100%);
+  border-color: #ff5a0a;
+  box-shadow: 0 5px 13px rgba(255, 90, 10, 0.08);
+}
+
+.squat-preset strong {
+  max-width: calc(100% - 17px);
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.squat-preset b {
+  margin-top: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.squat-preset small {
+  margin-top: 8px;
+  color: #526077;
+  font-size: 12px;
+}
+
+.squat-preset__check {
+  position: absolute;
+  top: 10px;
+  right: 9px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 9px;
+  background: #ff5a0a;
+  border-radius: 50%;
+}
+
+.squat-preset--custom {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.squat-preset--custom strong {
+  max-width: 100%;
+  margin-top: 4px;
+}
+
+.squat-preset--custom small {
+  margin-top: 3px;
+}
+
+.squat-preset__custom-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  color: #122038;
+  font-size: 24px;
+  background: #f4f7fb;
+  border-radius: 50%;
+}
+
+.squat-redesign__config {
+  margin: 18px -17px 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
+}
+
+.squat-page--configuration .squat-config__row {
+  min-height: 73px;
+  margin: 0 25px;
+  grid-template-columns: 46px minmax(0, 1fr) 182px;
+  gap: 12px;
+}
+
+.squat-page--configuration .squat-config__icon {
+  color: #ff5a0a;
+  font-size: 28px;
+}
+
+.squat-page--configuration .squat-config__copy {
+  gap: 4px;
+}
+
+.squat-page--configuration .squat-config__copy strong {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.squat-page--configuration .squat-config__copy small {
+  color: #58657b;
+  font-size: 12px;
+}
+
+.squat-page--configuration .squat-stepper {
+  width: 182px;
+  height: 45px;
+  grid-template-columns: 51px 1fr 51px;
+  border-color: #dce3eb;
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.squat-page--configuration .squat-stepper button {
+  color: #182235;
+  font-size: 13px;
+}
+
+.squat-page--configuration .squat-stepper output {
+  color: #172033;
+  font-size: 15px;
+}
+
+.squat-page--configuration .squat-config__row--locked .squat-stepper {
+  background: #f7f8fa;
+  border-color: #e3e7ec;
+}
+
+.squat-page--configuration .squat-config__row--locked .squat-stepper button {
+  color: #aeb5c0;
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.squat-page--configuration .squat-config__row--locked .squat-stepper output {
+  color: #263044;
+}
+
+.squat-redesign__tip {
+  min-height: 86px;
+  margin: 17px 17px 0;
+  padding: 14px 18px;
+  grid-template-columns: 57px minmax(0, 1fr);
+  gap: 13px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.squat-redesign__tip-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: #ff5a0a;
+  font-size: 22px;
+  background: #fff5ee;
+  border-radius: 50%;
+}
+
+.squat-page--configuration .squat-redesign__tip strong {
+  font-size: 13px;
+}
+
+.squat-page--configuration .squat-redesign__tip small {
+  color: #48566d;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.squat-redesign__tabs-card {
+  min-height: 696px;
+  padding: 17px;
+  background: #ffffff;
+  border: 1px solid #dde3ea;
+  border-radius: 15px;
+  box-shadow: 0 4px 14px rgba(28, 39, 54, 0.025);
+}
+
+.squat-tabs {
+  height: 46px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  background: #fafbfc;
+  border: 1px solid #dce2e9;
+  border-radius: 12px;
+}
+
+.squat-tabs button {
+  color: #172033;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.squat-tabs button + button {
+  border-left: 1px solid #dce2e9;
+}
+
+.squat-tabs button:hover:not(.is-active),
+.squat-tabs button:focus-visible:not(.is-active) {
+  color: #ff5a0a;
+  background: #fff8f4;
+  outline: none;
+}
+
+.squat-tabs button.is-active {
+  color: #ffffff;
+  background: linear-gradient(100deg, #ff5a0a, #ff6514);
+  box-shadow: 0 5px 13px rgba(255, 90, 10, 0.16);
+}
+
+.squat-tab-panel {
+  animation: squat-tab-enter 180ms ease both;
+}
+
+@keyframes squat-tab-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.squat-overview-content {
+  margin-top: 17px;
+  display: grid;
+  grid-template-columns: minmax(250px, 1.05fr) minmax(220px, 0.95fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.squat-overview-content__photo {
+  height: 302px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #fff8f3, #fff0e5);
+  border-radius: 11px;
+}
+
+.squat-overview-content__photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 49% center;
+}
+
+.squat-about {
+  padding: 7px 12px 7px 0;
+}
+
+.squat-about h2,
+.squat-key-reminders h2,
+.squat-body-focus h2,
+.squat-muscles-intro h2 {
+  margin: 0;
+  color: #151c2c;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.squat-about p {
+  margin: 11px 0 17px;
+  color: #4b5870;
+  font-size: 11.5px;
+  line-height: 1.85;
+}
+
+.squat-about button {
+  width: 100%;
+  min-height: 47px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #ff5a0a;
+  font-size: 12px;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid #ff6f29;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.squat-about button:hover,
+.squat-about button:focus-visible {
+  color: #ffffff;
+  background: #ff5a0a;
+  outline: none;
+}
+
+.squat-overview-lower {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(190px, 0.9fr);
+  overflow: hidden;
+  background: #fbfcfd;
+  border: 1px solid #e5e9ee;
+  border-radius: 12px;
+}
+
+.squat-key-reminders,
+.squat-body-focus {
+  min-width: 0;
+  padding: 20px 19px 17px;
+}
+
+.squat-body-focus {
+  border-left: 1px solid #e5e9ee;
+}
+
+.squat-key-reminders ul {
+  margin: 17px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 15px;
+  list-style: none;
+}
+
+.squat-key-reminders li {
+  display: grid;
+  grid-template-columns: 21px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  color: #344157;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.squat-key-reminders li > span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 9px;
+  background: #38b64a;
+  border-radius: 50%;
+}
+
+.squat-key-reminders li > span.is-incorrect {
+  background: #f11b22;
+}
+
+.squat-anatomy-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.squat-anatomy-pair figure {
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.squat-anatomy-pair img {
+  width: 100%;
+  height: 310px;
+  display: block;
+  object-fit: contain;
+}
+
+.squat-anatomy-pair figcaption {
+  width: 84%;
+  margin-top: -1px;
+  padding: 5px 6px;
+  color: #28354a;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  background: #f3f5f7;
+  border-radius: 8px;
+}
+
+.squat-anatomy-pair--compact {
+  margin: 9px auto 7px;
+  max-width: 192px;
+  gap: 2px;
+}
+
+.squat-anatomy-pair--compact img {
+  height: 144px;
+}
+
+.squat-body-focus__muscles {
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(110deg, #fff6ef, #fff0e4);
+  border-radius: 9px;
+}
+
+.squat-body-focus__muscles strong {
+  color: #172033;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.squat-body-focus__muscles span {
+  color: #354258;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.exercise-benefits {
+  min-height: 104px;
+  margin-top: 12px;
+  padding: 16px 9px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: linear-gradient(100deg, #fffaf6, #fff3e9);
+  border-radius: 12px;
+}
+
+.exercise-benefits > div {
+  min-width: 0;
+  padding: 2px 12px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  color: #172033;
+  font-size: 10.5px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.exercise-benefits > div + div {
+  border-left: 1px solid #e4e0dc;
+}
+
+.exercise-benefits i {
+  color: #ff5a0a;
+  font-size: 24px;
+}
+
+.squat-muscles-intro {
+  padding: 29px 0 13px;
+}
+
+.squat-muscles-intro p {
+  margin: 6px 0 0;
+  color: #4b5870;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.squat-muscles-content {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.05fr) minmax(235px, 0.95fr);
+  gap: 17px;
+  align-items: center;
+}
+
+.squat-muscles-anatomy {
+  min-width: 0;
+  padding: 4px 7px 9px;
+  background: linear-gradient(135deg, #ffffff, #fafbfc);
+  border-radius: 12px;
+}
+
+.squat-muscle-breakdown {
+  display: grid;
+  gap: 9px;
+}
+
+.squat-muscle {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 61px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.squat-muscle__image {
+  width: 61px;
+  height: 66px;
+  display: block;
+  overflow: hidden;
+  background-color: #f4f5f6;
+  background-image: var(--muscle-image);
+  background-repeat: no-repeat;
+  border-radius: 9px;
+}
+
+.squat-muscle__image--quadriceps {
+  background-position: center -77px;
+  background-size: 118px auto;
+}
+
+.squat-muscle__image--glutes {
+  background-position: center -67px;
+  background-size: 116px auto;
+}
+
+.squat-muscle__image--hamstrings {
+  background-position: center -92px;
+  background-size: 116px auto;
+}
+
+.squat-muscle__image--core {
+  background-position: center -48px;
+  background-size: 112px auto;
+}
+
+.squat-muscle__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.squat-muscle__heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.squat-muscle__heading strong {
+  color: #182135;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.squat-muscle__heading em {
+  padding: 3px 8px;
+  color: #ff5a0a;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 600;
+  background: #fff0e6;
+  border-radius: 8px;
+}
+
+.squat-muscle__heading em.is-secondary {
+  color: #48546a;
+  background: #eef1f4;
+}
+
+.squat-muscle__copy small {
+  color: #4b5870;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.squat-motivation {
+  min-height: 92px;
+  margin-top: 17px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(100deg, #fff8f3, #fff1e7);
+  border-radius: 12px;
+}
+
+.squat-motivation > span {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  color: #ff5a0a;
+  font-size: 25px;
+  background: #fff1e6;
+  border-radius: 50%;
+}
+
+.squat-motivation p {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.squat-motivation strong {
+  color: #172033;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.squat-motivation small {
+  color: #4b5870;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.squat-redesign__start {
+  height: 69px;
+  padding: 0 29px;
+  grid-template-columns: 1fr auto 1fr;
+  font-size: 17px;
+  border-radius: 13px;
+  box-shadow: 0 8px 20px rgba(255, 90, 10, 0.19);
+}
+
+.squat-redesign__start i:first-child {
+  grid-column: 1;
+  justify-self: end;
+  margin-right: 14px;
+  font-size: 17px;
+}
+
+.squat-redesign__start span {
+  grid-column: 2;
+}
+
+.squat-redesign__start i:last-child {
+  grid-column: 3;
+  justify-self: end;
+  font-size: 20px;
+}
+
+@media (max-width: 1220px) {
+  .squat-redesign__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(470px, 0.9fr);
+  }
+
+  .squat-redesign__facts {
+    gap: 14px;
+  }
+
+  .squat-redesign__fact {
+    grid-template-columns: 45px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .squat-redesign__fact-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+  }
+
+  .squat-preset {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .squat-overview-content {
+    grid-template-columns: minmax(220px, 1fr) minmax(190px, 0.9fr);
+  }
+
+  .squat-muscles-content {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(225px, 1fr);
+  }
+}
+
+@media (max-width: 1050px) {
+  .squat-redesign__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .squat-redesign__right {
+    margin-top: 4px;
+  }
+
+  .squat-redesign__tabs-card {
+    min-height: 0;
+  }
+
+  .squat-redesign__facts {
+    max-width: 780px;
+  }
+
+  .squat-overview-content {
+    grid-template-columns: minmax(280px, 1.05fr) minmax(250px, 0.95fr);
+  }
+
+  .squat-muscles-content {
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .squat-page--configuration .squat-page__main {
+    padding: 17px 15px 30px;
+  }
+
+  .squat-redesign__back {
+    margin-left: 4px;
+  }
+
+  .squat-redesign__intro {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .squat-redesign__intro > p {
+    font-size: 14px;
+  }
+
+  .squat-redesign__facts {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .squat-redesign__fact small {
+    white-space: normal;
+  }
+
+  .squat-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .squat-preset--custom {
+    grid-column: 1 / -1;
+    min-height: 92px;
+  }
+
+  .squat-overview-content,
+  .squat-overview-lower,
+  .squat-muscles-content {
+    grid-template-columns: 1fr;
+  }
+
+  .squat-overview-content__photo {
+    height: 280px;
+  }
+
+  .squat-about {
+    padding: 4px 3px;
+  }
+
+  .squat-body-focus {
+    border-top: 1px solid #e5e9ee;
+    border-left: 0;
+  }
+
+  .squat-anatomy-pair--compact {
+    max-width: 240px;
+  }
+
+  .squat-muscles-anatomy {
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  .exercise-benefits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exercise-benefits > div:nth-child(3) {
+    padding-top: 14px;
+    border-left: 0;
+    border-top: 1px solid #e4e0dc;
+  }
+
+  .exercise-benefits > div:nth-child(4) {
+    padding-top: 14px;
+    border-top: 1px solid #e4e0dc;
+  }
+}
+
+@media (max-width: 520px) {
+  .squat-redesign__title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .squat-redesign__workout {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .squat-redesign__config {
+    margin-right: -12px;
+    margin-left: -12px;
+  }
+
+  .squat-page--configuration .squat-config__row {
+    min-height: 94px;
+    margin: 0 14px;
+    grid-template-columns: 34px minmax(0, 1fr) 118px;
+    gap: 8px;
+  }
+
+  .squat-page--configuration .squat-config__icon {
+    font-size: 22px;
+  }
+
+  .squat-page--configuration .squat-config__copy small {
+    font-size: 10px;
+  }
+
+  .squat-page--configuration .squat-stepper {
+    width: 118px;
+    height: 42px;
+    grid-template-columns: 35px 1fr 35px;
+  }
+
+  .squat-redesign__tip {
+    margin-right: 0;
+    margin-left: 0;
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .squat-redesign__tabs-card {
+    padding: 11px;
+  }
+
+  .squat-key-reminders,
+  .squat-body-focus {
+    padding: 17px 14px;
+  }
+
+  .squat-muscle {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .squat-muscle__image {
+    width: 54px;
+    height: 61px;
+  }
+
+  .squat-redesign__start {
+    height: 59px;
+    padding: 0 19px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .exercise-benefits {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .exercise-benefits > div + div,
+  .exercise-benefits > div:nth-child(3),
+  .exercise-benefits > div:nth-child(4) {
+    padding-top: 12px;
+    border-top: 1px solid #e4e0dc;
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squat-preset,
+  .squat-tab-panel {
+    animation: none;
+    transition: none;
+  }
+}
