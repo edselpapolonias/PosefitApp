@@ -335,3 +335,6 @@
 [2026-09-10T16:55:37.510468] Login attempt: username=dashboard-user
 [2026-09-10T16:55:38.098164] Authentication result for dashboard-user: SUCCESS
 [2026-09-10T16:55:38.102435] Login session started for dashboard-user
+[2026-09-10T18:03:08.633409] Login attempt: username=admin
+[2026-09-10T18:03:09.661514] Authentication result for admin: SUCCESS
+[2026-09-10T18:03:09.768271] Login session started for admin

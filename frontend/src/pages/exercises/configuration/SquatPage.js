@@ -9,6 +9,7 @@ import './SquatPage.css';
 const squatExercise = {
   id: 'squat',
   name: 'Squat',
+  demoVideo: '/videos/how-to-perform/Squat.mp4',
   category: 'Lower Body',
   description: 'Build lower-body strength and improve balance and mobility.',
   photo: squatPhoto,

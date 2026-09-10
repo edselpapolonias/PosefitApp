@@ -1,0 +1,29 @@
+.exercise-demo, .exercise-demo * { box-sizing: border-box; }
+.exercise-demo { width: min(920px, calc(100% - 40px)); max-width: none; max-height: calc(100dvh - 40px); padding: 0; margin: auto; overflow: auto; border: 1px solid #f0e4db; border-radius: 18px; background: #fff; color: #101828; box-shadow: 0 22px 70px #10182840; font-family: 'Poppins', sans-serif; }
+.exercise-demo::backdrop { background: rgba(13, 22, 39, .65); }
+.exercise-demo__panel { padding: 22px; }
+.exercise-demo header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.exercise-demo header > div { min-width: 0; }
+.exercise-demo header span { color: #ff5a0a; font-size: 11px; font-weight: 600; letter-spacing: 1.2px; }
+.exercise-demo h2 { margin: 5px 0 0; font-size: clamp(19px, 2.2vw, 25px); font-weight: 700; line-height: 1.3; }
+.exercise-demo button { font: inherit; cursor: pointer; }
+.exercise-demo .exercise-demo__close { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; padding: 0; color: #ff5a0a; background: #fff3ea; border: 1px solid #ffdfc9; border-radius: 50%; font-size: 21px; }
+.exercise-demo__player { position: relative; display: grid; place-items: center; min-height: 140px; overflow: hidden; background: #131720; border-radius: 12px; }
+.exercise-demo video { display: block; width: 100%; height: auto; max-height: calc(100dvh - 235px); min-height: 100px; object-fit: contain; }
+.exercise-demo__status { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 20px; color: #fff; background: #131720; text-align: center; font-size: 15px; }
+.exercise-demo__controls { display: flex; align-items: center; gap: 15px; padding: 14px 0 0; }
+.exercise-demo__controls button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 12px; background: #fff3ea; border: 1px solid #ffdfc9; border-radius: 8px; color: #c94300; font-size: 13px; font-weight: 600; }
+.exercise-demo__controls input { min-width: 0; flex: 1; accent-color: #ff5a0a; cursor: pointer; }
+.exercise-demo__note { margin: 12px 0 0; color: #667085; font-size: 12px; text-align: center; }
+.exercise-demo button:hover { background: #ffe7d7; }
+.exercise-demo button:focus-visible, .exercise-demo input:focus-visible { outline: 2px solid #ff5a0a; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .exercise-demo { width: calc(100% - 20px); max-height: calc(100dvh - 20px); border-radius: 14px; }
+  .exercise-demo__panel { padding: 14px; }
+  .exercise-demo header { gap: 10px; margin-bottom: 14px; }
+  .exercise-demo header span { font-size: 9px; }
+  .exercise-demo__controls { gap: 8px; }
+  .exercise-demo__controls button { padding: 8px 10px; }
+  .exercise-demo__controls button:last-child span { display: none; }
+  .exercise-demo video { max-height: calc(100dvh - 220px); }
+}

@@ -9,6 +9,7 @@ import './PlankPage.css';
 const plankExercise = {
   id: 'plank',
   name: 'Plank',
+  demoVideo: '/videos/how-to-perform/Plank.mp4',
   pageClass: 'plank-page',
   category: 'Core',
   description: 'Improve core stability, posture, and overall body control with a proper plank.',

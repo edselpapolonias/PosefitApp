@@ -10,6 +10,7 @@ import './PushUpPage.css';
 const pushUpExercise = {
   id: 'push-up',
   name: 'Push-up',
+  demoVideo: '/videos/how-to-perform/Pushup.mp4',
   pageClass: 'push-up-page',
   category: 'Upper Body',
   description: 'Strengthen your chest, shoulders, arms, and core with proper push-up form.',

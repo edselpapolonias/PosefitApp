@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import WorkoutConfigRow from './WorkoutConfigRow';
+import ExerciseDemoModal from './ExerciseDemoModal';
 
 function ExerciseFact({ icon, title, children }) {
   return (
@@ -68,7 +69,7 @@ function Benefits({ benefits }) {
   );
 }
 
-function OverviewTab({ exercise }) {
+function OverviewTab({ exercise, onWatchDemo }) {
   return (
     <div className="squat-tab-panel squat-tab-panel--overview" role="tabpanel" id={`${exercise.id}-overview-panel`} aria-labelledby={`${exercise.id}-overview-tab`}>
       <div className="squat-overview-content">
@@ -78,7 +79,7 @@ function OverviewTab({ exercise }) {
         <div className="squat-about">
           <h2>About this Exercise</h2>
           <p>{exercise.about}</p>
-          <button type="button" onClick={() => document.getElementById(`${exercise.id}-reminders`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
+          <button type="button" onClick={onWatchDemo}>
             <i className="fa-solid fa-play" aria-hidden="true" />
             Watch Demonstration
           </button>
@@ -168,6 +169,7 @@ export default function ExerciseConfigurationPage({ exercise }) {
     step: 1,
   };
   const [activeTab, setActiveTab] = useState('overview');
+  const [showDemo, setShowDemo] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(exercise.presets[0].id);
   const [config, setConfig] = useState({
     sets: exercise.presets[0].sets,
@@ -267,7 +269,7 @@ export default function ExerciseConfigurationPage({ exercise }) {
                   </button>
                 ))}
               </div>
-              {activeTab === 'overview' ? <OverviewTab exercise={exercise} /> : <MusclesTab exercise={exercise} />}
+              {activeTab === 'overview' ? <OverviewTab exercise={exercise} onWatchDemo={() => setShowDemo(true)} /> : <MusclesTab exercise={exercise} />}
             </section>
 
             <button className="squat-start squat-redesign__start" id={`${exercise.id}-start-workout`} type="button" onClick={startWorkout}>
@@ -278,6 +280,7 @@ export default function ExerciseConfigurationPage({ exercise }) {
           </aside>
         </div>
       </main>
+      {showDemo && <ExerciseDemoModal key={exercise.id} exerciseName={exercise.name} videoSrc={exercise.demoVideo} onClose={() => setShowDemo(false)} />}
     </div>
   );
 }

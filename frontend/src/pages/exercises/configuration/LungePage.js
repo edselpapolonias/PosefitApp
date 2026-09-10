@@ -10,6 +10,7 @@ import './LungePage.css';
 const lungeExercise = {
   id: 'lunge',
   name: 'Lunge',
+  demoVideo: '/videos/how-to-perform/Lunge.mp4',
   pageClass: 'lunge-page',
   category: 'Lower Body',
   description: 'Build lower-body strength, improve balance, and enhance stability with proper lunge form.',

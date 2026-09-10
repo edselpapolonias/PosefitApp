@@ -9,6 +9,7 @@ import './LegRaisePage.css';
 const legRaiseExercise = {
   id: 'leg-raise',
   name: 'Leg Raise',
+  demoVideo: '/videos/how-to-perform/Leg%20Raise.mp4',
   pageClass: 'leg-raise-page',
   category: 'Core',
   description: 'Strengthen your core and hip flexors with controlled leg raises.',
