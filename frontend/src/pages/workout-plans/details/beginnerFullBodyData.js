@@ -76,17 +76,17 @@ export const beginnerScheduleByWeek = {
     ]),
   ],
   2: [
-    workout(2, 'DAY 1', 'Monday', 'Lower & Upper Body', '30–40 min', [
+    workout(2, 'DAY 4', 'Monday', 'Lower & Upper Body', '30–40 min', [
       repetition('squat', 3, 12),
       repetition('push-up', 3, 10),
       duration('plank', 3, 25),
     ]),
-    workout(2, 'DAY 2', 'Wednesday', 'Lower Body & Core', '30–40 min', [
+    workout(2, 'DAY 5', 'Wednesday', 'Lower Body & Core', '30–40 min', [
       repetition('lunge', 3, 8, true),
       repetition('leg-raise', 3, 12),
       duration('plank', 3, 25),
     ]),
-    workout(2, 'DAY 3', 'Friday', 'Full Body', '30–45 min', [
+    workout(2, 'DAY 6', 'Friday', 'Full Body', '30–45 min', [
       repetition('squat', 3, 12),
       repetition('push-up', 3, 10),
       repetition('lunge', 2, 10, true),
@@ -94,17 +94,17 @@ export const beginnerScheduleByWeek = {
     ]),
   ],
   3: [
-    workout(3, 'DAY 1', 'Monday', 'Lower & Upper Body', '30–40 min', [
+    workout(3, 'DAY 7', 'Monday', 'Lower & Upper Body', '30–40 min', [
       repetition('squat', 3, 15),
       repetition('push-up', 3, 10),
       duration('plank', 3, 30),
     ]),
-    workout(3, 'DAY 2', 'Wednesday', 'Lower Body & Core', '30–40 min', [
+    workout(3, 'DAY 8', 'Wednesday', 'Lower Body & Core', '30–40 min', [
       repetition('lunge', 3, 10, true),
       repetition('leg-raise', 3, 12),
       duration('plank', 3, 30),
     ]),
-    workout(3, 'DAY 3', 'Friday', 'Full Body', '30–45 min', [
+    workout(3, 'DAY 9', 'Friday', 'Full Body', '30–45 min', [
       repetition('squat', 3, 15),
       repetition('push-up', 3, 10),
       repetition('lunge', 3, 10, true),
@@ -112,17 +112,17 @@ export const beginnerScheduleByWeek = {
     ]),
   ],
   4: [
-    workout(4, 'DAY 1', 'Monday', 'Lower & Upper Body', '30–40 min', [
+    workout(4, 'DAY 10', 'Monday', 'Lower & Upper Body', '30–40 min', [
       repetition('squat', 3, 15),
       repetition('push-up', 3, 12),
       duration('plank', 3, 35),
     ]),
-    workout(4, 'DAY 2', 'Wednesday', 'Lower Body & Core', '30–40 min', [
+    workout(4, 'DAY 11', 'Wednesday', 'Lower Body & Core', '30–40 min', [
       repetition('lunge', 3, 12, true),
       repetition('leg-raise', 3, 15),
       duration('plank', 3, 35),
     ]),
-    workout(4, 'DAY 3', 'Friday', 'Full Body', '30–45 min', [
+    workout(4, 'DAY 12', 'Friday', 'Full Body', '30–45 min', [
       repetition('squat', 3, 15),
       repetition('push-up', 3, 12),
       repetition('lunge', 3, 12, true),

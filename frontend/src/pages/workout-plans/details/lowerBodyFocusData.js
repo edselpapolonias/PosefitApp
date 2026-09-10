@@ -82,51 +82,51 @@ export const lowerBodyScheduleByWeek = {
     ]),
   ],
   2: [
-    workout(2, 'DAY 1', 'Monday', 'Leg Strength & Core', '30\u201335 min', [
+    workout(2, 'DAY 4', 'Monday', 'Leg Strength & Core', '30\u201335 min', [
       repetition('squat', 3, 12),
       repetition('lunge', 3, 10, true),
       duration('plank', 3, 25),
     ]),
-    workout(2, 'DAY 2', 'Wednesday', 'Balance & Stability', '30\u201335 min', [
+    workout(2, 'DAY 5', 'Wednesday', 'Balance & Stability', '30\u201335 min', [
       repetition('lunge', 3, 10, true),
       repetition('squat', 3, 12),
       repetition('leg-raise', 3, 12),
     ]),
-    workout(2, 'DAY 3', 'Friday', 'Lower Body & Core', '35\u201340 min', [
+    workout(2, 'DAY 6', 'Friday', 'Lower Body & Core', '35\u201340 min', [
       repetition('squat', 3, 12),
       repetition('lunge', 3, 10, true),
       duration('plank', 3, 25),
     ]),
   ],
   3: [
-    workout(3, 'DAY 1', 'Monday', 'Leg Strength & Core', '35\u201340 min', [
+    workout(3, 'DAY 7', 'Monday', 'Leg Strength & Core', '35\u201340 min', [
       repetition('squat', 4, 12),
       repetition('lunge', 3, 10, true),
       duration('plank', 3, 30),
     ]),
-    workout(3, 'DAY 2', 'Wednesday', 'Balance & Stability', '35\u201340 min', [
+    workout(3, 'DAY 8', 'Wednesday', 'Balance & Stability', '35\u201340 min', [
       repetition('lunge', 3, 12, true),
       repetition('squat', 4, 12),
       repetition('leg-raise', 3, 15),
     ]),
-    workout(3, 'DAY 3', 'Friday', 'Lower Body & Core', '35\u201340 min', [
+    workout(3, 'DAY 9', 'Friday', 'Lower Body & Core', '35\u201340 min', [
       repetition('squat', 4, 12),
       repetition('lunge', 3, 12, true),
       duration('plank', 3, 30),
     ]),
   ],
   4: [
-    workout(4, 'DAY 1', 'Monday', 'Leg Strength & Core', '35\u201340 min', [
+    workout(4, 'DAY 10', 'Monday', 'Leg Strength & Core', '35\u201340 min', [
       repetition('squat', 4, 15),
       repetition('lunge', 3, 12, true),
       duration('plank', 3, 35),
     ]),
-    workout(4, 'DAY 2', 'Wednesday', 'Balance & Stability', '35\u201340 min', [
+    workout(4, 'DAY 11', 'Wednesday', 'Balance & Stability', '35\u201340 min', [
       repetition('lunge', 3, 12, true),
       repetition('squat', 4, 15),
       repetition('leg-raise', 3, 15),
     ]),
-    workout(4, 'DAY 3', 'Friday', 'Lower Body & Core', '35\u201340 min', [
+    workout(4, 'DAY 12', 'Friday', 'Lower Body & Core', '35\u201340 min', [
       repetition('squat', 4, 15),
       repetition('lunge', 3, 12, true),
       duration('plank', 3, 35),

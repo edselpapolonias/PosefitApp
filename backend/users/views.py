@@ -9,6 +9,7 @@ from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from .models import CustomUser, WorkoutSession
+from .dashboard_service import build_dashboard, record_login_day
 from .session_progress_service import (
     build_progress_comparison,
     find_previous_completed_session,
@@ -80,6 +81,7 @@ def login_view(request):
 
     if user:
         login(request, user)
+        record_login_day(user)
         log_debug(f"Login session started for {username}")
         return Response({
             'message': 'Login successful',
@@ -98,6 +100,12 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return Response({'message': 'Logged out'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard(request):
+    return Response(build_dashboard(request.user))
 
 
 @api_view(['GET'])

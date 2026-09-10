@@ -21,6 +21,18 @@ describe('Beginner Full Body plan details', () => {
     sessionStorage.clear();
   });
 
+  test('numbers workout days continuously across weeks', () => {
+    render(<BeginnerFullBodyDetails />);
+
+    [1, 2, 3, 4, 1].forEach((week) => {
+      fireEvent.click(screen.getByRole('tab', { name: `Week ${week}` }));
+      const panel = within(screen.getByRole('tabpanel'));
+      expect(panel.getAllByText(/^DAY \d+$/).map((label) => label.textContent)).toEqual(
+        [1, 2, 3].map((day) => `DAY ${(week - 1) * 3 + day}`),
+      );
+    });
+  });
+
   test('shows all five current exercises and reuses the Exercise Selection push-up image', () => {
     render(<BeginnerFullBodyDetails />);
 

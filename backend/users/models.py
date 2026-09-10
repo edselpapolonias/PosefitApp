@@ -10,6 +10,15 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+class LoginDay(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='login_days')
+    date = models.DateField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'date'], name='unique_login_day_per_user')]
+        ordering = ['date']
+
+
 class WorkoutSession(models.Model):
     METRIC_REPS = 'reps'
     METRIC_TIME = 'time'

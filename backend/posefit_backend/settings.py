@@ -124,6 +124,8 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
+# Dashboard calendar days use Philippine local time without changing session storage.
+DASHBOARD_TIME_ZONE = 'Asia/Manila'
 
 USE_I18N = True
 

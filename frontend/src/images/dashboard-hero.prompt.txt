@@ -1,0 +1,5 @@
+Asset: dashboard-hero.png
+Generated using the built-in image_gen tool.
+
+Prompt:
+Create one wide website hero background asset, 1536x512 landscape. Premium fitness app PoseFit, photographic warm sunrise with a young adult male athlete seen from behind wearing a plain black training t-shirt, positioned at 78% of width, waist up. Soft distant mountain ridges and peach sunrise glow at right. Entire left 60% is almost-white warm ivory negative space for dark heading overlay, seamlessly fading into the photograph. Subtle translucent organic pale peach shapes at edges. Athlete head entirely visible with room above. Lower edge fades into white. Restrained, clean, bright, airy. NO text, lettering, logos, UI, cards, icons, numbers, streaks or watermarks. This is only background artwork, not a dashboard screenshot.

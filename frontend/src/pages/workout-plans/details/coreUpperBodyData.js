@@ -86,51 +86,51 @@ export const coreUpperScheduleByWeek = {
     ]),
   ],
   2: [
-    workout(2, 1, 'DAY 1', 'Monday', 'Upper Body & Core', '25\u201335 min', [
+    workout(2, 1, 'DAY 4', 'Monday', 'Upper Body & Core', '25\u201335 min', [
       repetition('push-up', 3, 10),
       duration('plank', 3, 25),
       repetition('leg-raise', 3, 12),
     ]),
-    workout(2, 2, 'DAY 2', 'Wednesday', 'Core & Upper Body', '25\u201335 min', [
+    workout(2, 2, 'DAY 5', 'Wednesday', 'Core & Upper Body', '25\u201335 min', [
       repetition('leg-raise', 3, 12),
       repetition('push-up', 3, 10),
       duration('plank', 3, 25),
     ]),
-    workout(2, 3, 'DAY 3', 'Friday', 'Upper Body Endurance', '25\u201335 min', [
+    workout(2, 3, 'DAY 6', 'Friday', 'Upper Body Endurance', '25\u201335 min', [
       repetition('push-up', 3, 12),
       duration('plank', 3, 30),
       repetition('leg-raise', 3, 12),
     ]),
   ],
   3: [
-    workout(3, 1, 'DAY 1', 'Monday', 'Upper Body & Core', '30\u201340 min', [
+    workout(3, 1, 'DAY 7', 'Monday', 'Upper Body & Core', '30\u201340 min', [
       repetition('push-up', 4, 10),
       duration('plank', 3, 30),
       repetition('leg-raise', 3, 15),
     ]),
-    workout(3, 2, 'DAY 2', 'Wednesday', 'Core & Upper Body', '30\u201340 min', [
+    workout(3, 2, 'DAY 8', 'Wednesday', 'Core & Upper Body', '30\u201340 min', [
       repetition('leg-raise', 3, 15),
       repetition('push-up', 4, 10),
       duration('plank', 3, 30),
     ]),
-    workout(3, 3, 'DAY 3', 'Friday', 'Upper Body Endurance', '30\u201340 min', [
+    workout(3, 3, 'DAY 9', 'Friday', 'Upper Body Endurance', '30\u201340 min', [
       repetition('push-up', 4, 12),
       duration('plank', 3, 35),
       repetition('leg-raise', 3, 15),
     ]),
   ],
   4: [
-    workout(4, 1, 'DAY 1', 'Monday', 'Upper Body & Core', '30\u201340 min', [
+    workout(4, 1, 'DAY 10', 'Monday', 'Upper Body & Core', '30\u201340 min', [
       repetition('push-up', 4, 12),
       duration('plank', 3, 35),
       repetition('leg-raise', 4, 15),
     ]),
-    workout(4, 2, 'DAY 2', 'Wednesday', 'Core & Upper Body', '30\u201340 min', [
+    workout(4, 2, 'DAY 11', 'Wednesday', 'Core & Upper Body', '30\u201340 min', [
       repetition('leg-raise', 4, 15),
       repetition('push-up', 4, 12),
       duration('plank', 3, 35),
     ]),
-    workout(4, 3, 'DAY 3', 'Friday', 'Upper Body Endurance', '30\u201340 min', [
+    workout(4, 3, 'DAY 12', 'Friday', 'Upper Body Endurance', '30\u201340 min', [
       repetition('push-up', 4, 15),
       duration('plank', 3, 40),
       repetition('leg-raise', 4, 15),
