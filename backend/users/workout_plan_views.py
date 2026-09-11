@@ -62,6 +62,7 @@ def plan_data(plan):
         'remainingWorkouts': len(schedule) - len(completed), 'percentage': round(len(completed) / len(schedule) * 100),
         'activeWeek': max(1, min(4, (timezone.localdate(timezone=dashboard_timezone()) - plan.start_date).days // 7 + 1)),
         'activeDay': current['day'] if current else None, 'currentWorkoutId': current['id'] if current else None,
+        'daySessions': [_day_session_data(session) for session in plan.day_sessions.all()],
     }
 
 
@@ -124,6 +125,15 @@ def _day_session_data(day_session):
         'startedAt': day_session.started_at.isoformat(),
         'completedAt': day_session.completed_at.isoformat() if day_session.completed_at else None,
     }
+
+
+def active_plans_data(user):
+    plans = UserWorkoutPlan.objects.filter(
+        user=user,
+        status='active',
+        plan_id__in=PLAN_DEFINITIONS,
+    ).prefetch_related('day_sessions').order_by('activated_at', 'pk')
+    return [plan_data(plan) for plan in plans]
 
 
 @api_view(['POST'])
@@ -244,16 +254,18 @@ def finish_workout_day_session(request):
 @permission_classes([IsAuthenticated])
 def active_workout_plan(request):
     if request.method == 'GET':
-        plan = UserWorkoutPlan.objects.filter(user=request.user, status='active').first()
-        return Response({'plan': plan_data(plan) if plan and plan.plan_id in PLAN_DEFINITIONS else None})
+        plans = active_plans_data(request.user)
+        return Response({'plans': plans, 'plan': plans[0] if plans else None})
     requested_plan_id = request.data.get('planId')
     if requested_plan_id not in PLAN_DEFINITIONS:
         return Response({'error': 'This plan is not available for activation.'}, status=400)
     with transaction.atomic():
         CustomUser.objects.select_for_update().get(pk=request.user.pk)
-        plan = UserWorkoutPlan.objects.filter(user=request.user, status='active').first()
-        if plan and plan.plan_id != requested_plan_id:
-            return Response({'error': 'You already have an active workout plan. End it before starting this plan.'}, status=409)
+        plan = UserWorkoutPlan.objects.filter(
+            user=request.user,
+            plan_id=requested_plan_id,
+            status='active',
+        ).first()
         if not plan:
             today = timezone.localdate(timezone=dashboard_timezone())
             try:

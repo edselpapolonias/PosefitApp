@@ -6,7 +6,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from .dashboard_service import build_dashboard, record_login_day
-from .models import CustomUser, LoginDay, WorkoutSession
+from .models import CustomUser, LoginDay, UserWorkoutPlan, WorkoutPlanDaySession, WorkoutSession
 
 
 class DashboardTests(TestCase):
@@ -72,6 +72,40 @@ class DashboardTests(TestCase):
         response = client.get('/api/users/dashboard/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['firstName'], 'Alex')
+        self.assertEqual(response.data['activePlans'], [])
+
+    def test_endpoint_returns_ordered_active_plans_with_day_session_status(self):
+        beginner = UserWorkoutPlan.objects.create(
+            user=self.user, plan_id='beginner-full-body', start_date=self.now.date(),
+        )
+        core = UserWorkoutPlan.objects.create(
+            user=self.user, plan_id='core-upper-body', start_date=self.now.date(),
+        )
+        WorkoutPlanDaySession.objects.create(
+            user=self.user,
+            plan=core,
+            session_id=f'plan-{core.pk}-core-upper-week-1-monday',
+            workout_id='core-upper-week-1-monday',
+            week=1,
+            workout_day='Monday',
+            scheduled_date=self.now.date(),
+            exercises=[{
+                'exerciseId': 'push-up', 'setsRequired': 3, 'completedSets': 1, 'results': [],
+            }],
+        )
+
+        client = APIClient()
+        client.force_authenticate(self.user)
+        response = client.get('/api/users/dashboard/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([plan['id'] for plan in response.data['activePlans']], [beginner.plan_id, core.plan_id])
+        self.assertEqual(response.data['activePlans'][0]['daySessions'], [])
+        self.assertEqual(response.data['activePlans'][1]['daySessions'][0]['status'], 'active')
+        self.assertEqual(
+            response.data['activePlans'][1]['daySessions'][0]['workoutId'],
+            'core-upper-week-1-monday',
+        )
 
     def test_successful_login_records_one_local_day(self):
         client = APIClient()

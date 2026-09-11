@@ -49,7 +49,7 @@ export default function BeginnerFullBodyDetails() {
     let active = true;
     const controller = new AbortController();
     const version = loadVersionRef.current;
-    fetchActiveWorkoutPlan(controller.signal).then((plan) => {
+    fetchActiveWorkoutPlan(controller.signal, 'beginner-full-body').then((plan) => {
       if (active && version === loadVersionRef.current && plan?.id === 'beginner-full-body') setActivePlan(plan);
     }).catch(() => { /* Activation still offers retry and reports API failures in its dialog. */ });
     return () => { active = false; controller.abort(); };

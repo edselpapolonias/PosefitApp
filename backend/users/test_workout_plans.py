@@ -38,12 +38,23 @@ class WorkoutPlanTests(TestCase):
         self.assertIsNone(self.client.get(url).data['plan'])
         self.assertEqual(UserWorkoutPlan.objects.get().status, 'ended')
 
-    def test_other_active_plan_is_not_replaced(self):
-        previous = UserWorkoutPlan.objects.create(user=self.user, plan_id='other-plan', start_date=date(2026, 9, 14))
-        response = self.client.post('/api/users/workout-plans/active/', {'planId': 'beginner-full-body'}, format='json')
-        self.assertEqual(response.status_code, 409)
+    @patch('users.workout_plan_views.timezone.localdate', return_value=date(2026, 9, 11))
+    def test_different_active_plans_coexist_and_can_end_independently(self, _today):
+        previous = UserWorkoutPlan.objects.create(user=self.user, plan_id='lower-body-focus', start_date=date(2026, 9, 14))
+        response = self.client.post('/api/users/workout-plans/active/', {
+            'planId': 'beginner-full-body',
+            'startDate': '2026-09-14',
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
         previous.refresh_from_db()
         self.assertEqual(previous.status, 'active')
+        self.assertEqual(UserWorkoutPlan.objects.filter(user=self.user, status='active').count(), 2)
+        plans = self.client.get('/api/users/workout-plans/active/').data['plans']
+        self.assertEqual([plan['id'] for plan in plans], ['lower-body-focus', 'beginner-full-body'])
+
+        self.client.post('/api/users/workout-plans/end/', {'instanceId': response.data['plan']['instanceId']}, format='json')
+        remaining = self.client.get('/api/users/workout-plans/active/').data['plans']
+        self.assertEqual([plan['id'] for plan in remaining], ['lower-body-focus'])
 
     def test_authentication_and_ownership(self):
         self.assertIn(APIClient().post('/api/users/workout-plans/active/', {'planId': 'beginner-full-body'}).status_code, [401, 403])

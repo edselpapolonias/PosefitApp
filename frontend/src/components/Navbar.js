@@ -8,8 +8,6 @@ const navigationItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Exercises', path: '/exercises' },
   { label: 'Workout Plans', path: '/workout-plans' },
-  { label: 'History' },
-  { label: 'Progress' },
 ];
 
 function getStoredUser() {
@@ -114,20 +112,14 @@ export default function Navbar({ activeItem }) {
 
         <nav className="top-navbar__links" aria-label="Primary navigation">
           {navigationItems.map((item) => (
-            item.path ? (
-              <NavLink
-                key={item.label}
-                to={item.path}
-                onClick={(event) => handleNavigation(event, item.path)}
-                className={({ isActive }) => `top-navbar__link${isActive || activeItem === item.label ? ' top-navbar__link--active' : ''}`}
-              >
-                {item.label}
-              </NavLink>
-            ) : (
-              <span key={item.label} className={`top-navbar__link${activeItem === item.label ? ' top-navbar__link--active' : ''}`} aria-disabled="true">
-                {item.label}
-              </span>
-            )
+            <NavLink
+              key={item.label}
+              to={item.path}
+              onClick={(event) => handleNavigation(event, item.path)}
+              className={({ isActive }) => `top-navbar__link${isActive || activeItem === item.label ? ' top-navbar__link--active' : ''}`}
+            >
+              {item.label}
+            </NavLink>
           ))}
         </nav>
 

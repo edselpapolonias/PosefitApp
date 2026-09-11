@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Navbar from './Navbar';
 
@@ -22,6 +22,24 @@ test('repeated current-page clicks do not navigate and close the account menu', 
   expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('link', { name: 'Exercises' }));
   expect(mockNavigation).toHaveBeenCalledWith('/exercises');
+});
+
+test('renders only working destinations in the primary navigation', () => {
+  render(<Navbar activeItem="Dashboard" />);
+
+  const primaryNavigation = screen.getByRole('navigation', { name: 'Primary navigation' });
+  const links = within(primaryNavigation).getAllByRole('link');
+
+  expect(links.map((link) => link.textContent)).toEqual([
+    'Dashboard',
+    'Exercises',
+    'Workout Plans',
+  ]);
+  links.forEach((link) => {
+    expect(link).not.toHaveAttribute('aria-disabled', 'true');
+  });
+  expect(within(primaryNavigation).queryByText('History')).not.toBeInTheDocument();
+  expect(within(primaryNavigation).queryByText('Progress')).not.toBeInTheDocument();
 });
 
 test('parent navigation and modified clicks still work', () => {

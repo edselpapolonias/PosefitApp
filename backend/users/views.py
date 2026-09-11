@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from .models import CustomUser, WorkoutSession
 from .dashboard_service import build_dashboard, record_login_day
+from .workout_plan_views import active_plans_data
 from .session_progress_service import (
     build_progress_comparison,
     find_previous_completed_session,
@@ -105,7 +106,9 @@ def logout_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard(request):
-    return Response(build_dashboard(request.user))
+    data = build_dashboard(request.user)
+    data['activePlans'] = active_plans_data(request.user)
+    return Response(data)
 
 
 @api_view(['GET'])

@@ -13,7 +13,13 @@ class UserWorkoutPlan(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['user'], condition=models.Q(status='active'), name='one_active_plan_per_user')]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'plan_id'],
+                condition=models.Q(status='active'),
+                name='one_active_instance_per_user_plan',
+            ),
+        ]
 
 
 class WorkoutPlanDaySession(models.Model):

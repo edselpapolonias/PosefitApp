@@ -48,7 +48,7 @@ export default function CoreUpperBodyDetails() {
     let active = true;
     const controller = new AbortController();
     const version = loadVersionRef.current;
-    fetchActiveWorkoutPlan(controller.signal).then((plan) => {
+    fetchActiveWorkoutPlan(controller.signal, coreUpperBodyPlan.id).then((plan) => {
       if (active && version === loadVersionRef.current && plan?.id === coreUpperBodyPlan.id) setActivePlan(plan);
     }).catch(() => { /* Activation reports API failures in its dialog. */ });
     return () => { active = false; controller.abort(); };

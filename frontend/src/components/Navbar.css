@@ -239,7 +239,7 @@ a.top-navbar__link {
 
 .top-navbar__logout:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: default;
 }
 
 .top-navbar__logout-error {

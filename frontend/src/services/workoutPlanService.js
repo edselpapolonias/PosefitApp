@@ -2,9 +2,14 @@ import axios from 'axios';
 import { apiUrl } from './apiConfig';
 import { getCsrfToken } from './sessionHistoryService';
 
-export async function fetchActiveWorkoutPlan(signal) {
+export async function fetchActiveWorkoutPlans(signal) {
   const response = await axios.get(apiUrl('/api/users/workout-plans/active/'), { withCredentials: true, timeout: 15000, signal });
-  return response.data.plan;
+  return response.data.plans || (response.data.plan ? [response.data.plan] : []);
+}
+
+export async function fetchActiveWorkoutPlan(signal, planId) {
+  const plans = await fetchActiveWorkoutPlans(signal);
+  return planId ? plans.find((plan) => plan.id === planId) || null : plans[0] || null;
 }
 
 async function post(path, data) {
@@ -13,10 +18,6 @@ async function post(path, data) {
 }
 
 export async function startWorkoutPlan(planId, startDate) {
-  // Do not silently replace an older locally activated plan of another type.
-  let stored;
-  try { stored = JSON.parse(sessionStorage.getItem('posefitActiveWorkoutPlan')); } catch { /* No valid legacy plan. */ }
-  if (stored?.id && stored.id !== planId) throw new Error('You already have an active workout plan. End it before starting this plan.');
   const response = await post('/api/users/workout-plans/active/', { planId, startDate });
   return response.data.plan;
 }
