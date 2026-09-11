@@ -1,10 +1,19 @@
 from django.urls import path
 from . import views
-from .workout_plan_views import active_workout_plan, end_workout_plan
+from .workout_plan_views import (
+    active_workout_plan,
+    complete_workout_day_set,
+    end_workout_plan,
+    finish_workout_day_session,
+    start_workout_day_session,
+)
 
 urlpatterns = [
     path('workout-plans/active/', active_workout_plan),
     path('workout-plans/end/', end_workout_plan),
+    path('workout-plans/day-sessions/start/', start_workout_day_session),
+    path('workout-plans/day-sessions/set-complete/', complete_workout_day_set),
+    path('workout-plans/day-sessions/finish/', finish_workout_day_session),
     path('dashboard/', views.dashboard),
     path('register/', views.register),
     path('login/', views.login_view),

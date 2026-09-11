@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from django.test import SimpleTestCase, TestCase
@@ -11,7 +11,81 @@ from .coach_feedback_service import (
     normalize_exercise_request,
 )
 from .session_progress_service import build_progress_comparison
-from .models import CustomUser, WorkoutSession
+from .models import CustomUser, UserWorkoutPlan, WorkoutPlanDaySession, WorkoutSession
+
+
+class WorkoutPlanDaySessionApiTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(username='circuit-user', password='password123')
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.plan = UserWorkoutPlan.objects.create(
+            user=self.user, plan_id='beginner-full-body', start_date=date(2026, 9, 14)
+        )
+        self.session_id = f'plan-{self.plan.pk}-week-1-monday'
+        self.exercises = [
+            {'exerciseId': 'squat', 'name': 'Squat', 'metricType': 'reps', 'setsRequired': 3, 'repsPerSet': 10},
+            {'exerciseId': 'push-up', 'name': 'Push-up', 'metricType': 'reps', 'setsRequired': 3, 'repsPerSet': 8},
+            {'exerciseId': 'plank', 'name': 'Plank', 'metricType': 'time', 'setsRequired': 2, 'durationPerSet': 20},
+        ]
+        response = self.client.post('/api/users/workout-plans/day-sessions/start/', {
+            'id': self.session_id,
+            'planInstanceId': self.plan.pk,
+            'workoutId': 'week-1-monday',
+            'week': 1,
+            'workoutDay': 'Monday',
+            'scheduledDate': '2026-09-14',
+            'exercises': self.exercises,
+        }, format='json')
+        self.assertEqual(response.status_code, 200)
+
+    def complete_set(self, exercise_id, number):
+        prescription = next(item for item in self.exercises if item['exerciseId'] == exercise_id)
+        result = {
+            'id': f'{exercise_id}-{number}',
+            'status': 'completed',
+            'accuracy': 90,
+            'duration': 12,
+            'formIssues': [],
+            'correctReps': prescription.get('repsPerSet'),
+            'totalHoldTime': prescription.get('durationPerSet'),
+        }
+        return self.client.post('/api/users/workout-plans/day-sessions/set-complete/', {
+            'sessionId': self.session_id,
+            'exerciseId': exercise_id,
+            'sessionResult': result,
+        }, format='json')
+
+    def test_round_order_skips_exhausted_exercises_and_finishes_once(self):
+        sequence = ['squat', 'push-up', 'plank', 'squat', 'push-up', 'plank', 'squat', 'push-up']
+        early = self.client.post('/api/users/workout-plans/day-sessions/finish/', {'sessionId': self.session_id}, format='json')
+        self.assertEqual(early.status_code, 409)
+        for number, exercise_id in enumerate(sequence):
+            response = self.complete_set(exercise_id, number)
+            self.assertEqual(response.status_code, 200)
+        day_session = WorkoutPlanDaySession.objects.get(session_id=self.session_id)
+        self.assertEqual([item['completedSets'] for item in day_session.exercises], [3, 3, 2])
+        self.assertEqual(day_session.current_exercise_index, -1)
+        completed = self.client.post('/api/users/workout-plans/day-sessions/finish/', {'sessionId': self.session_id}, format='json')
+        self.assertEqual(completed.status_code, 200)
+        self.assertEqual(completed.data['plan']['completedWorkoutIds'], ['week-1-monday'])
+        again = self.client.post('/api/users/workout-plans/day-sessions/finish/', {'sessionId': self.session_id}, format='json')
+        self.assertEqual(again.data['plan']['completedWorkouts'], 1)
+
+    def test_rejects_out_of_order_or_incomplete_sets_and_accepts_retries(self):
+        out_of_order = self.complete_set('push-up', 1)
+        self.assertEqual(out_of_order.status_code, 409)
+        incomplete = self.client.post('/api/users/workout-plans/day-sessions/set-complete/', {
+            'sessionId': self.session_id,
+            'exerciseId': 'squat',
+            'sessionResult': {'id': 'short-squat', 'status': 'completed', 'correctReps': 9},
+        }, format='json')
+        self.assertEqual(incomplete.status_code, 400)
+        completed = self.complete_set('squat', 1)
+        self.assertEqual(completed.status_code, 200)
+        retry = self.complete_set('squat', 1)
+        self.assertEqual(retry.status_code, 200)
+        self.assertEqual(retry.data['session']['exercises'][0]['completedSets'], 1)
 
 
 class CoachFeedbackServiceTests(SimpleTestCase):

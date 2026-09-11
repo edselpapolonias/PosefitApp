@@ -138,6 +138,7 @@ export function createSessionResult(data = {}) {
         config: data.config && typeof data.config === 'object' ? data.config : {},
         analysis: data.analysis && typeof data.analysis === 'object' ? data.analysis : {},
         feedback: normalizeSessionFeedback(data.feedback),
+        workoutContext: data.workoutContext?.source === 'workout-plan' ? data.workoutContext : null,
     };
 }
 

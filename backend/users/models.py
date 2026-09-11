@@ -15,6 +15,31 @@ class UserWorkoutPlan(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=['user'], condition=models.Q(status='active'), name='one_active_plan_per_user')]
 
+
+class WorkoutPlanDaySession(models.Model):
+    STATUS_ACTIVE = 'active'
+    STATUS_COMPLETED = 'completed'
+
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='workout_plan_day_sessions')
+    plan = models.ForeignKey(UserWorkoutPlan, on_delete=models.CASCADE, related_name='day_sessions')
+    session_id = models.CharField(max_length=180)
+    workout_id = models.CharField(max_length=100)
+    week = models.PositiveSmallIntegerField()
+    workout_day = models.CharField(max_length=20)
+    scheduled_date = models.DateField()
+    exercises = models.JSONField(default=list)
+    current_exercise_index = models.IntegerField(default=0)
+    status = models.CharField(max_length=12, default=STATUS_ACTIVE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'session_id'], name='unique_plan_day_session_per_user'),
+            models.UniqueConstraint(fields=['plan', 'workout_id'], name='unique_workout_day_per_plan'),
+        ]
+
 class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

@@ -18,6 +18,7 @@ import { formatTime } from '../../../utils/formatters';
 import { speak } from '../../../utils/speechFeedback';
 import './SquatCameraPage.css';
 import './PlankCameraPage.css';
+import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 
 function readStoredWorkoutConfig() {
   try {
@@ -45,9 +46,10 @@ export default function PlankCameraPage() {
   const [searchParams] = useSearchParams();
   const storedConfig = readStoredWorkoutConfig();
   const navigationConfig = location.state?.workoutConfig || {};
-  const totalSets = firstPositiveInteger(navigationConfig.sets, searchParams.get('sets'), storedConfig.sets);
-  const holdTimeSetting = firstPositiveInteger(navigationConfig.hold, searchParams.get('hold'), storedConfig.hold);
-  const restTimeSetting = firstPositiveInteger(navigationConfig.rest, searchParams.get('rest'), storedConfig.rest);
+  const workoutContext = resolveWorkoutContext(location.state?.workoutContext, searchParams.get('workoutSession'), 'plank');
+  const totalSets = workoutContext ? 1 : firstPositiveInteger(navigationConfig.sets, searchParams.get('sets'), storedConfig.sets);
+  const holdTimeSetting = firstPositiveInteger(workoutContext?.target?.duration, navigationConfig.holdTime, navigationConfig.hold, searchParams.get('hold'), storedConfig.hold);
+  const restTimeSetting = firstPositiveInteger(workoutContext?.target?.rest, navigationConfig.rest, searchParams.get('rest'), storedConfig.rest);
   const hasWorkoutConfig = Boolean(totalSets && holdTimeSetting && restTimeSetting);
 
   const videoRef = useRef(null);
@@ -213,10 +215,11 @@ export default function PlankCameraPage() {
         validHoldSeconds: Math.floor(totalValidMsRef.current / 1000),
         evaluatedSeconds: Math.floor(totalEvaluatedMsRef.current / 1000),
       },
+      workoutContext,
     }));
 
     navigate('/session-summary', { replace: true, state: { sessionResult } });
-  }, [clearCanvas, holdTimeSetting, navigate, restTimeSetting, sessionTime, totalSets]);
+  }, [clearCanvas, holdTimeSetting, navigate, restTimeSetting, sessionTime, totalSets, workoutContext]);
 
   const completeCurrentSet = useCallback(() => {
     if (setCompletingRef.current) return;
@@ -565,7 +568,10 @@ export default function PlankCameraPage() {
       ? 'resting'
       : isStarted && sessionPhase === PLANK_SESSION_STATES.PLANK_ACTIVE && classification === 'good'
         ? 'active'
-        : 'waiting';
+      : 'waiting';
+  const displayedSet = workoutContext?.currentSet || currentSet;
+  const displayedTotalSets = workoutContext?.totalSets || totalSets;
+  const backPath = workoutContext?.detailsRoute || '/exercises/plank';
   const feedbackColor = sessionPhase === PLANK_SESSION_STATES.PLANK_ACTIVE
     ? currentColor.hex
     : sessionPhase === PLANK_SESSION_STATES.VALIDATING_POSITION
@@ -575,7 +581,7 @@ export default function PlankCameraPage() {
   return (
     <div className="camera-session camera-session--plank">
       <header className="camera-session__header">
-        <button className="camera-session__back" type="button" onClick={() => navigate('/exercises/plank')}>
+        <button className="camera-session__back" type="button" onClick={() => navigate(backPath)}>
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           Back
         </button>
@@ -584,7 +590,7 @@ export default function PlankCameraPage() {
           <span className="camera-session__exercise-icon" aria-hidden="true"><i className="fa-solid fa-stopwatch" /></span>
           <span>
             <h1>Plank</h1>
-            <small>Set {currentSet} of {totalSets} · {holdTimeSetting}s hold</small>
+            <small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {holdTimeSetting}s hold</small>
           </span>
         </div>
 
@@ -623,8 +629,8 @@ export default function PlankCameraPage() {
         <aside className="camera-session__progress" style={plankStyles.sidePanel}>
           <div className="camera-session__metric camera-session__metric--primary" style={plankStyles.panelCard}>
             <p style={plankStyles.panelLabel}>SET</p>
-            <p style={plankStyles.panelBigValue}>{currentSet}</p>
-            <p style={plankStyles.panelSmallValue}>OF {totalSets}</p>
+            <p style={plankStyles.panelBigValue}>{displayedSet}</p>
+            <p style={plankStyles.panelSmallValue}>OF {displayedTotalSets}</p>
           </div>
           <div className="camera-session__metric camera-session__metric--primary" style={plankStyles.panelCard}>
             <p style={plankStyles.panelLabel}>VALID HOLD</p>
@@ -667,7 +673,7 @@ export default function PlankCameraPage() {
           {workoutComplete && (
             <div className="camera-session__complete-overlay">
               <span aria-hidden="true"><i className="fa-solid fa-trophy" /></span>
-              <h2>Workout Complete</h2>
+              <h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2>
               <p>Great work. Preparing your session summary…</p>
             </div>
           )}
@@ -699,7 +705,7 @@ export default function PlankCameraPage() {
                   <h2 style={plankStyles.overlayTitle}>Ready to plank?</h2>
                   <div className="camera-session__plan">
                     <span><strong>{holdTimeSetting}s</strong> hold</span>
-                    <span><strong>{totalSets}</strong> sets</span>
+                    <span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : totalSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span>
                     <span><strong>{restTimeSetting}s</strong> rest</span>
                   </div>
                   <div className="camera-session__position-guide" style={plankStyles.positionGuide}>

@@ -17,6 +17,40 @@
   padding: 18px 24px 22px;
 }
 
+.session-summary__plan-context {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 13px;
+  padding: 16px 20px;
+  border: 1px solid rgba(150, 53, 232, 0.2);
+  border-radius: 16px;
+  background: #faf5ff;
+}
+
+.session-summary__plan-context div { display: grid; gap: 3px; }
+.session-summary__plan-context div:last-child { text-align: right; }
+.session-summary__plan-context span { color: #7c3aed; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.session-summary__plan-context strong { color: #332341; font-size: 0.92rem; }
+
+.session-summary__workout-progress { padding: 22px; }
+.session-summary__workout-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.session-summary__workout-progress-heading span { color: #7c3aed; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.session-summary__workout-progress-heading h2 { margin: 4px 0 0; }
+.session-summary__workout-progress-heading > strong { color: #7c3aed; padding: 8px 12px; border-radius: 999px; background: #f3e8ff; white-space: nowrap; }
+.session-summary__workout-exercises { display: grid; gap: 8px; margin: 18px 0; }
+.session-summary__workout-exercises > div { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #f8fafc; color: #64748b; }
+.session-summary__workout-exercises > div.is-complete { color: #15803d; background: #f0fdf4; }
+.session-summary__next-button { width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 13px 18px; border: 0; border-radius: 12px; color: #fff; background: #7c3aed; font-weight: 800; cursor: pointer; }
+.session-summary__next-button:disabled { cursor: wait; opacity: 0.7; }
+.session-summary__workout-error { color: #b91c1c; font-weight: 600; }
+
+@media (max-width: 640px) {
+  .session-summary__plan-context { flex-direction: column; gap: 12px; }
+  .session-summary__plan-context div:last-child { text-align: left; }
+  .session-summary__workout-progress-heading { align-items: flex-start; flex-direction: column; }
+}
+
 .session-summary__breadcrumb {
   min-height: 30px;
   margin-bottom: 10px;

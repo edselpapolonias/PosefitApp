@@ -19,6 +19,7 @@ import { speak } from '../../../utils/speechFeedback';
 import { holdFeedback, HOLD_FAILURE_REASON } from '../../../exercises/repHold';
 import './SquatCameraPage.css';
 import './LegRaiseCameraPage.css';
+import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 
 function readConfig() {
   try { return JSON.parse(sessionStorage.getItem('posefitLegRaiseWorkoutConfig')) || {}; } catch { return {}; }
@@ -42,9 +43,10 @@ export default function LegRaiseCameraPage() {
   const [params] = useSearchParams();
   const saved = readConfig();
   const incoming = location.state?.workoutConfig || {};
-  const targetSets = positive(incoming.sets, params.get('sets'), saved.sets);
-  const targetReps = positive(incoming.reps, params.get('reps'), saved.reps);
-  const restSeconds = positive(incoming.rest, params.get('rest'), saved.rest);
+  const workoutContext = resolveWorkoutContext(location.state?.workoutContext, params.get('workoutSession'), 'leg-raise');
+  const targetSets = workoutContext ? 1 : positive(incoming.sets, params.get('sets'), saved.sets);
+  const targetReps = positive(workoutContext?.target?.reps, incoming.reps, params.get('reps'), saved.reps);
+  const restSeconds = positive(workoutContext?.target?.rest, incoming.rest, params.get('rest'), saved.rest);
   const hasConfig = Boolean(targetSets && targetReps && restSeconds);
 
   const videoRef = useRef(null);
@@ -183,9 +185,10 @@ export default function LegRaiseCameraPage() {
         hipFlexionRange: [LEG_RAISE_HIP.effectiveMin, LEG_RAISE_HIP.effectiveMax],
         kneeExtensionMin: LEG_RAISE_KNEE.extensionMin,
       },
+      workoutContext,
     }));
     navigate('/session-summary', { replace: true, state: { sessionResult } });
-  }, [navigate, restSeconds, sessionTime, stopResources, targetReps, targetSets]);
+  }, [navigate, restSeconds, sessionTime, stopResources, targetReps, targetSets, workoutContext]);
 
   const completeSet = useCallback(() => {
     if (completingRef.current) return;
@@ -356,12 +359,26 @@ export default function LegRaiseCameraPage() {
   const sessionAccuracy = accuracy(correctRef.current, incorrectCount);
   const status = complete ? 'Complete' : resting ? 'Resting' : !started ? 'Ready' : position === 'ready' ? 'Tracking' : 'Positioning';
   const tone = complete ? 'complete' : resting ? 'resting' : position === 'ready' ? 'active' : 'waiting';
+  const displayedSet = workoutContext?.currentSet || currentSet;
+  const displayedTotalSets = workoutContext?.totalSets || targetSets;
+  const backPath = workoutContext?.detailsRoute || '/exercises/leg-raise';
   return (
     <div className="camera-session camera-session--leg-raise">
-      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate('/exercises/leg-raise')}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person" /></span><span><h1>Leg Raise</h1><small>Set {currentSet} of {targetSets} · {targetReps} reps</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
+      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate(backPath)}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person" /></span><span><h1>Leg Raise</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
       <main className="camera-session__workspace" style={styles.workspace}>
-        <aside className="camera-session__progress" style={styles.panel}><Metric label="SET" value={currentSet} detail={`OF ${targetSets}`} primary /><div className="camera-session__metric camera-session__metric--primary" style={styles.card}><p style={styles.label}>VALID REPS</p><p style={styles.big}>{setCompletedReps}</p><p style={styles.small}>OF {targetReps}</p><div className="camera-session__progress-track"><span style={{ width: `${Math.min(setCompletedReps / targetReps * 100, 100)}%` }} /></div></div><Metric label="TOTAL VALID" value={totalCompletedReps} /><Metric label={resting ? 'REST LEFT' : 'REST BETWEEN SETS'} value={formatTime(resting ? restCountdown : restSeconds)} /><Metric label="FORM ACCURACY" value={started ? `${sessionAccuracy}%` : '—'} /></aside>
-        <section className="camera-session__camera" style={styles.camera}><video ref={videoRef} style={styles.media} playsInline muted /><canvas ref={canvasRef} style={{ ...styles.media, position: 'absolute', inset: 0 }} />{resting && <div className="camera-session__rest-overlay"><span className="camera-session__rest-check"><i className="fa-solid fa-check" /></span><p className="camera-session__rest-eyebrow">Set {currentSet} Complete</p><h2>Rest</h2><time>{formatTime(restCountdown)}</time><p>Next: Set {currentSet + 1} of {targetSets}</p></div>}{complete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>Workout Complete</h2><p>Preparing your session summary…</p></div>}{started && !resting && !complete && position !== 'ready' && <div className="camera-session__readiness"><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}{started && position === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}{!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Leg Raises?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{targetSets}</strong> sets</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Lie sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text="Start with both legs straight and low" /></div>{cameraError && <p className="camera-session__camera-error">{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}</section>
+        <aside className="camera-session__progress" style={styles.panel}>
+          <Metric label="SET" value={displayedSet} detail={`OF ${displayedTotalSets}`} primary />
+          <div className="camera-session__metric camera-session__metric--primary" style={styles.card}><p style={styles.label}>VALID REPS</p><p style={styles.big}>{setCompletedReps}</p><p style={styles.small}>OF {targetReps}</p><div className="camera-session__progress-track"><span style={{ width: `${Math.min(setCompletedReps / targetReps * 100, 100)}%` }} /></div></div>
+          <Metric label="TOTAL VALID" value={totalCompletedReps} /><Metric label={resting ? 'REST LEFT' : 'REST BETWEEN SETS'} value={formatTime(resting ? restCountdown : restSeconds)} /><Metric label="FORM ACCURACY" value={started ? `${sessionAccuracy}%` : '—'} />
+        </aside>
+        <section className="camera-session__camera" style={styles.camera}>
+          <video ref={videoRef} style={styles.media} playsInline muted /><canvas ref={canvasRef} style={{ ...styles.media, position: 'absolute', inset: 0 }} />
+          {resting && <div className="camera-session__rest-overlay"><span className="camera-session__rest-check"><i className="fa-solid fa-check" /></span><p className="camera-session__rest-eyebrow">Set {currentSet} Complete</p><h2>Rest</h2><time>{formatTime(restCountdown)}</time><p>Next: Set {currentSet + 1} of {targetSets}</p></div>}
+          {complete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
+          {started && !resting && !complete && position !== 'ready' && <div className="camera-session__readiness"><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}
+          {started && position === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}
+          {!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Leg Raises?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Lie sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text="Start with both legs straight and low" /></div>{cameraError && <p className="camera-session__camera-error">{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
+        </section>
         <aside className="camera-session__insights" style={styles.panel}><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>LIVE FEEDBACK</p>{started ? <div className="camera-session__feedback" style={{ ...styles.feedback, color: color.hex, borderColor: color.hex, background: `${color.hex}12` }}><strong>{feedback}</strong><small>{feedbackDetail}</small></div> : <p style={styles.inactive}>Start session to see feedback</p>}</div><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>FORM ANGLES</p><Row label="Visible side" value={activeSide} /><Row label="Hip flexion" value={position === 'ready' ? `${hipFlexion}°` : '—'} /><Row label="Knee" value={position === 'ready' ? `${kneeAngle}°` : '—'} /></div><div className="camera-session__insight-card camera-session__legend" style={styles.card}><p style={styles.label}>MOVEMENT</p><Row label="Phase" value={phase.replace('_', ' ')} /><Row label="Raised target" value={`${LEG_RAISE_HIP.effectiveMin}°–${LEG_RAISE_HIP.effectiveMax}°`} /><Row label="Knee extension" value={`≥ ${LEG_RAISE_KNEE.extensionMin}°`} /></div>{started && <button className="camera-session__end-button" type="button" onClick={() => finish('ended')}><i className="fa-solid fa-stop" />End Session</button>}</aside>
       </main>
     </div>

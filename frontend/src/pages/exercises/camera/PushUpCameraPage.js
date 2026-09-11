@@ -18,6 +18,7 @@ import { formatTime } from '../../../utils/formatters';
 import { speak } from '../../../utils/speechFeedback';
 import './SquatCameraPage.css';
 import './PushUpCameraPage.css';
+import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 
 function storedConfig() {
   try {
@@ -46,9 +47,10 @@ export default function PushUpCameraPage() {
   const [searchParams] = useSearchParams();
   const saved = storedConfig();
   const incoming = location.state?.workoutConfig || {};
-  const targetSets = positiveInteger(incoming.sets, searchParams.get('sets'), saved.sets);
-  const targetReps = positiveInteger(incoming.reps, searchParams.get('reps'), saved.reps);
-  const restSeconds = positiveInteger(incoming.rest, searchParams.get('rest'), saved.rest);
+  const workoutContext = resolveWorkoutContext(location.state?.workoutContext, searchParams.get('workoutSession'), 'push-up');
+  const targetSets = workoutContext ? 1 : positiveInteger(incoming.sets, searchParams.get('sets'), saved.sets);
+  const targetReps = positiveInteger(workoutContext?.target?.reps, incoming.reps, searchParams.get('reps'), saved.reps);
+  const restSeconds = positiveInteger(workoutContext?.target?.rest, incoming.rest, searchParams.get('rest'), saved.rest);
   const hasConfig = Boolean(targetSets && targetReps && restSeconds);
 
   const videoRef = useRef(null);
@@ -211,9 +213,10 @@ export default function PushUpCameraPage() {
           maxArmDifference: PUSH_UP_ALIGNMENT.maxArmDifference,
         },
       },
+      workoutContext,
     }));
     navigate('/session-summary', { replace: true, state: { sessionResult } });
-  }, [navigate, restSeconds, sessionTime, stopResources, targetReps, targetSets]);
+  }, [navigate, restSeconds, sessionTime, stopResources, targetReps, targetSets, workoutContext]);
 
   const completeSet = useCallback(() => {
     if (setCompletingRef.current) return;
@@ -445,16 +448,19 @@ export default function PushUpCameraPage() {
   const currentAccuracy = accuracy(totalCorrectReps, incorrectCount);
   const sessionStatus = workoutComplete ? 'Complete' : isResting ? 'Resting' : !isStarted ? 'Ready' : positionStatus === 'ready' ? 'Tracking' : 'Positioning';
   const statusTone = workoutComplete ? 'complete' : isResting ? 'resting' : positionStatus === 'ready' ? 'active' : 'waiting';
+  const displayedSet = workoutContext?.currentSet || currentSet;
+  const displayedTotalSets = workoutContext?.totalSets || targetSets;
+  const backPath = workoutContext?.detailsRoute || '/exercises/push-up';
 
   return (
     <div className="camera-session camera-session--push-up">
       <header className="camera-session__header">
-        <button className="camera-session__back" type="button" onClick={() => navigate('/exercises/push-up')}>
+        <button className="camera-session__back" type="button" onClick={() => navigate(backPath)}>
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />Back
         </button>
         <div className="camera-session__title">
           <span className="camera-session__exercise-icon"><i className="fa-solid fa-person" /></span>
-          <span><h1>Push Up</h1><small>Set {currentSet} of {targetSets} · {targetReps} reps</small></span>
+          <span><h1>Push Up</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps</small></span>
         </div>
         <span className={`camera-session__status camera-session__status--${statusTone}`}><span />{sessionStatus}</span>
         <div className="camera-session__actions">
@@ -475,7 +481,7 @@ export default function PushUpCameraPage() {
 
       <main className="camera-session__workspace" style={styles.workspace}>
         <aside className="camera-session__progress" style={styles.sidePanel}>
-          <Metric label="SET" value={currentSet} detail={`OF ${targetSets}`} primary />
+          <Metric label="SET" value={displayedSet} detail={`OF ${displayedTotalSets}`} primary />
           <div className="camera-session__metric camera-session__metric--primary" style={styles.card}>
             <p style={styles.label}>REPS</p><p style={styles.bigValue}>{repsInSet}</p><p style={styles.smallValue}>OF {targetReps}</p>
             <div className="camera-session__progress-track"><span style={{ width: `${Math.min((repsInSet / targetReps) * 100, 100)}%` }} /></div>
@@ -489,10 +495,10 @@ export default function PushUpCameraPage() {
           <video ref={videoRef} style={styles.media} playsInline muted />
           <canvas ref={canvasRef} style={{ ...styles.media, position: 'absolute', inset: 0 }} />
           {isResting && <div className="camera-session__rest-overlay"><span className="camera-session__rest-check"><i className="fa-solid fa-check" /></span><p className="camera-session__rest-eyebrow">Set {currentSet} Complete</p><h2>Rest</h2><time>{formatTime(restCountdown)}</time><p>Next: Set {currentSet + 1} of {targetSets}</p></div>}
-          {workoutComplete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>Workout Complete</h2><p>Preparing your session summary…</p></div>}
+          {workoutComplete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {isStarted && !isResting && !workoutComplete && positionStatus !== 'ready' && <div className={`camera-session__readiness camera-session__readiness--${positionStatus}`}><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}
           {isStarted && positionStatus === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}
-          {!isStarted && <div className="camera-session__prestart" style={styles.prestart}>{isLoading ? <div style={{ textAlign: 'center' }}><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Push Ups?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{targetSets}</strong> sets</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Position the camera at your side" /><Guide icon="fa-person" text="Keep your full body inside the frame" /><Guide icon="fa-arrows-left-right" text="Start with arms fully extended" /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
+          {!isStarted && <div className="camera-session__prestart" style={styles.prestart}>{isLoading ? <div style={{ textAlign: 'center' }}><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Push Ups?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Position the camera at your side" /><Guide icon="fa-person" text="Keep your full body inside the frame" /><Guide icon="fa-arrows-left-right" text="Start with arms fully extended" /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
         </section>
 
         <aside className="camera-session__insights" style={styles.sidePanel}>

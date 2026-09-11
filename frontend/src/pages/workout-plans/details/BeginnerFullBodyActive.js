@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../../../components/Navbar';
 import pushUpPhoto from '../../../images/exercise-card-push-up.png';
 import { activePlanSchedule, activePlanProgress, addDays, localDateKey } from './beginnerActivePlan';
+import { startOrResumeWorkoutDay, workoutStepNavigation } from '../../../services/workoutDaySessionService';
 import './BeginnerFullBodyActive.css';
 
 const shortDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -19,6 +20,16 @@ export default function BeginnerFullBodyActive({ plan, onEndPlan, ending = false
   const [selectedWeek, setSelectedWeek] = useState(Math.max(1, Math.min(4, Number(plan.activeWeek) || currentWeek)));
   const selected = weeks[selectedWeek - 1];
   const progress = activePlanProgress(plan, weeks);
+
+  const startWorkout = (workout) => {
+    const session = startOrResumeWorkoutDay(plan, workout);
+    const destination = workoutStepNavigation(session);
+    if (!destination) return;
+    navigate(
+      { pathname: destination.pathname, search: destination.search },
+      { state: destination.state },
+    );
+  };
 
   return <div className="beginner-active">
     <Navbar activeItem="Workout Plans" />
@@ -51,7 +62,7 @@ export default function BeginnerFullBodyActive({ plan, onEndPlan, ending = false
                 <div className="beginner-active__day"><span>{workout.label.replace('DAY', 'Day')}</span><h3>{workout.day}</h3><time dateTime={localDateKey(workout.date)}>{fullDate(workout.date)}</time></div>
                 <div className="beginner-active__exercises">{workout.exercises.map((exercise) => <div key={exercise.exerciseId}><img src={exercise.icon} alt="" /><strong>{exercise.name}</strong><span>{exercise.prescription}</span></div>)}</div>
                 <div className="beginner-active__workout-action">
-                  <button type="button" className={ready ? 'is-ready' : ''} disabled={!ready}><Icon name={completed ? 'fa-check' : ready ? 'fa-play' : 'fa-lock'} />{completed ? 'Completed' : ready ? 'Start Workout' : 'Upcoming'}</button>
+                  <button type="button" className={ready ? 'is-ready' : ''} disabled={!ready} onClick={() => ready && startWorkout(workout)}><Icon name={completed ? 'fa-check' : ready ? 'fa-play' : 'fa-lock'} />{completed ? 'Completed' : ready ? 'Start Workout' : 'Upcoming'}</button>
                   <p><Icon name="fa-clock" />Est. time: {workout.estimate}</p>
                 </div>
               </article>;

@@ -22,6 +22,7 @@ import {
     saveLatestSessionResult,
 } from '../../../services/summaryService';
 import './SquatCameraPage.css';
+import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 
 function readStoredWorkoutConfig() {
     try {
@@ -48,17 +49,20 @@ export default function SquatCameraPage() {
     // Workout settings flow from SquatPage navigation state, URL params, or its session backup.
     const storedWorkoutConfig = readStoredWorkoutConfig();
     const navigationWorkoutConfig = location.state?.workoutConfig || {};
-    const totalSets = firstPositiveInteger(
+    const workoutContext = resolveWorkoutContext(location.state?.workoutContext, searchParams.get('workoutSession'), 'squat');
+    const totalSets = workoutContext ? 1 : firstPositiveInteger(
         navigationWorkoutConfig.sets,
         searchParams.get('sets'),
         storedWorkoutConfig.sets
     );
     const totalReps = firstPositiveInteger(
+        workoutContext?.target?.reps,
         navigationWorkoutConfig.reps,
         searchParams.get('reps'),
         storedWorkoutConfig.reps
     );
     const restTimeSetting = firstPositiveInteger(
+        workoutContext?.target?.rest,
         navigationWorkoutConfig.rest,
         searchParams.get('rest'),
         storedWorkoutConfig.rest
@@ -312,13 +316,14 @@ export default function SquatCameraPage() {
                 repAngles: [...repAnglesRef.current],
                 badReps: [...badRepsRef.current],
             },
+            workoutContext,
         }));
 
         navigate('/session-summary', {
             replace: true,
             state: { sessionResult },
         });
-    }, [clearOverlayCanvas, navigate, restTimeSetting, sessionTime, totalReps, totalSets]);
+    }, [clearOverlayCanvas, navigate, restTimeSetting, sessionTime, totalReps, totalSets, workoutContext]);
 
     // Complete Current Set
     const completeCurrentSet = useCallback(() => {
@@ -719,6 +724,9 @@ export default function SquatCameraPage() {
             : isStarted && bodyReadiness === 'ready'
                 ? 'active'
                 : 'waiting';
+    const displayedSet = workoutContext?.currentSet || currentSet;
+    const displayedTotalSets = workoutContext?.totalSets || totalSets;
+    const backPath = workoutContext?.detailsRoute || '/exercises/squat';
 
     return (
         <div className="camera-session">
@@ -726,7 +734,7 @@ export default function SquatCameraPage() {
                 <button
                     className="camera-session__back"
                     type="button"
-                    onClick={() => navigate('/exercises/squat')}
+                    onClick={() => navigate(backPath)}
                 >
                     <i className="fa-solid fa-arrow-left" aria-hidden="true" />
                     Back
@@ -738,7 +746,7 @@ export default function SquatCameraPage() {
                     </span>
                     <span>
                         <h1>Squat</h1>
-                        <small>Set {currentSet} of {totalSets} · {totalReps} reps</small>
+                        <small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {totalReps} reps</small>
                     </span>
                 </div>
 
@@ -779,8 +787,8 @@ export default function SquatCameraPage() {
                 <aside className="camera-session__progress" style={leftPanelStyle}>
                     <div className="camera-session__metric camera-session__metric--primary" style={styles.panelCard}>
                         <p style={styles.panelLabel}>SET</p>
-                        <p style={styles.panelBigValue}>{currentSet}</p>
-                        <p style={styles.panelSmallValue}>OF {totalSets}</p>
+                        <p style={styles.panelBigValue}>{displayedSet}</p>
+                        <p style={styles.panelSmallValue}>OF {displayedTotalSets}</p>
                     </div>
                     <div className="camera-session__metric camera-session__metric--primary" style={styles.panelCard}>
                         <p style={styles.panelLabel}>REPS</p>
@@ -828,7 +836,7 @@ export default function SquatCameraPage() {
                     {workoutComplete && (
                         <div className="camera-session__complete-overlay">
                             <span aria-hidden="true"><i className="fa-solid fa-trophy" /></span>
-                            <h2>Workout Complete</h2>
+                            <h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2>
                             <p>Great work. Preparing your session summary…</p>
                         </div>
                     )}
@@ -868,7 +876,7 @@ export default function SquatCameraPage() {
                                     <h2 style={styles.overlayTitle}>Ready to squat?</h2>
                                     <div className="camera-session__plan">
                                         <span><strong>{totalReps}</strong> reps</span>
-                                        <span><strong>{totalSets}</strong> sets</span>
+                                        <span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : totalSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span>
                                         <span><strong>{restTimeSetting}s</strong> rest</span>
                                     </div>
                                     <div className="camera-session__position-guide" style={styles.positionGuide}>

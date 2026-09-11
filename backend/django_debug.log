@@ -368,3 +368,6 @@
 [2026-09-11T12:20:35.514091] Login attempt: username=progress-user
 [2026-09-11T12:20:35.987344] Authentication result for progress-user: SUCCESS
 [2026-09-11T12:20:35.993799] Login session started for progress-user
+[2026-09-11T15:54:19.272824] Login attempt: username=admin
+[2026-09-11T15:54:20.854501] Authentication result for admin: SUCCESS
+[2026-09-11T15:54:20.983304] Login session started for admin

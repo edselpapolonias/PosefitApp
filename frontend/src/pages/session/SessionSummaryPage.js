@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { fetchSessionCoachFeedback } from '../../services/aiCoachService';
@@ -11,6 +11,11 @@ import {
   updateStoredSessionFeedback,
 } from '../../services/summaryService';
 import { formatTime } from '../../utils/formatters';
+import {
+  finishWorkoutDay,
+  recordWorkoutSetResult,
+  workoutProgress,
+} from '../../services/workoutDaySessionService';
 import squatImage from '@bryllim/workout-guide/assets/bodyweight-squat/frame-2.png';
 import pushUpImage from '@bryllim/workout-guide/assets/push-up/frame-2.png';
 import plankImage from '@bryllim/workout-guide/assets/plank/frame-2.png';
@@ -206,6 +211,10 @@ export default function SessionSummaryPage() {
   const [comparison, setComparison] = useState(() => incomingComparison || null);
   const [comparisonLoading, setComparisonLoading] = useState(Boolean(sessionResult && !incomingComparison));
   const [comparisonError, setComparisonError] = useState('');
+  const [workoutOutcome, setWorkoutOutcome] = useState(null);
+  const [workoutActionError, setWorkoutActionError] = useState('');
+  const [finishingWorkout, setFinishingWorkout] = useState(false);
+  const recordedWorkoutResultRef = useRef(null);
 
   useEffect(() => {
     if (!incomingResult) return;
@@ -266,6 +275,13 @@ export default function SessionSummaryPage() {
     };
   }, [sessionResult]);
 
+  useEffect(() => {
+    if (!sessionResult?.workoutContext) return;
+    if (recordedWorkoutResultRef.current === sessionResult.id) return;
+    recordedWorkoutResultRef.current = sessionResult.id;
+    setWorkoutOutcome(recordWorkoutSetResult(sessionResult));
+  }, [sessionResult]);
+
   if (!sessionResult) {
     return (
       <div className="session-summary-page">
@@ -281,18 +297,44 @@ export default function SessionSummaryPage() {
   }
 
   const isTimeBased = sessionResult.metricType === 'time';
+  const workoutContext = sessionResult.workoutContext;
   const exerciseId = sessionResult.exercise.id;
   const exerciseName = sessionResult.exercise.name;
   const exerciseImage = exerciseImages[exerciseId] || squatImage;
   const userName = getStoredUserName();
   const completed = sessionResult.status === 'completed';
   const completedAt = formatCompletedDate(sessionResult.completedAt);
-  const totalSetsGoal = sessionResult.config?.totalSets || sessionResult.setResults.length || sessionResult.setsCompleted;
-  const repsGoal = totalSetsGoal && sessionResult.config?.repsPerSet
-    ? totalSetsGoal * sessionResult.config.repsPerSet
+  const totalSetsGoal = workoutContext?.totalSets || sessionResult.config?.totalSets || sessionResult.setResults.length || sessionResult.setsCompleted;
+  const repsGoal = sessionResult.config?.repsPerSet
+    ? (workoutContext ? sessionResult.config.repsPerSet : totalSetsGoal * sessionResult.config.repsPerSet)
     : null;
   const holdGoal = sessionResult.config?.holdSecondsPerSet || sessionResult.config?.holdTime || null;
   const overallResult = resultLabel(sessionResult.accuracy);
+  const completedSetNumber = workoutContext?.currentSet || sessionResult.setsCompleted;
+  const planProgress = workoutProgress(workoutOutcome?.session);
+  const nextContext = workoutOutcome?.next?.workoutContext;
+
+  const continueWorkout = async () => {
+    setWorkoutActionError('');
+    if (workoutOutcome?.complete) {
+      setFinishingWorkout(true);
+      try {
+        await workoutOutcome.syncPromise;
+        const { session } = await finishWorkoutDay(workoutContext.workoutSessionId);
+        navigate(session.detailsRoute || workoutContext.detailsRoute || '/workout-plans', { replace: true });
+      } catch (failure) {
+        setWorkoutActionError(failure.response?.data?.error || failure.message || 'Unable to finish this workout. Please try again.');
+        setFinishingWorkout(false);
+      }
+      return;
+    }
+    if (workoutOutcome?.next) {
+      navigate(
+        { pathname: workoutOutcome.next.pathname, search: workoutOutcome.next.search },
+        { state: workoutOutcome.next.state },
+      );
+    }
+  };
 
   const metrics = isTimeBased
     ? [
@@ -300,7 +342,7 @@ export default function SessionSummaryPage() {
           icon: 'fa-stopwatch',
           value: formatTime(sessionResult.totalHoldTime),
           label: 'Total Hold Time',
-          detail: holdGoal ? `Goal: ${formatTime(holdGoal * totalSetsGoal)}` : 'Recorded hold time',
+          detail: holdGoal ? `Goal: ${formatTime(holdGoal * (workoutContext ? 1 : totalSetsGoal))}` : 'Recorded hold time',
         },
         {
           icon: 'fa-clock',
@@ -310,9 +352,9 @@ export default function SessionSummaryPage() {
         },
         {
           icon: 'fa-layer-group',
-          value: `${sessionResult.setsCompleted} / ${totalSetsGoal || sessionResult.setsCompleted}`,
-          label: 'Sets Completed',
-          detail: totalSetsGoal ? `Goal: ${totalSetsGoal} sets` : null,
+          value: workoutContext ? `${completedSetNumber} / ${totalSetsGoal}` : `${sessionResult.setsCompleted} / ${totalSetsGoal || sessionResult.setsCompleted}`,
+          label: workoutContext ? 'Plan Set' : 'Sets Completed',
+          detail: workoutContext ? `Round ${workoutContext.currentRound}` : totalSetsGoal ? `Goal: ${totalSetsGoal} sets` : null,
         },
         {
           icon: 'fa-bullseye',
@@ -338,9 +380,9 @@ export default function SessionSummaryPage() {
         },
         {
           icon: 'fa-layer-group',
-          value: `${sessionResult.setsCompleted} / ${totalSetsGoal || sessionResult.setsCompleted}`,
-          label: 'Sets Completed',
-          detail: totalSetsGoal ? `Goal: ${totalSetsGoal} sets` : null,
+          value: workoutContext ? `${completedSetNumber} / ${totalSetsGoal}` : `${sessionResult.setsCompleted} / ${totalSetsGoal || sessionResult.setsCompleted}`,
+          label: workoutContext ? 'Plan Set' : 'Sets Completed',
+          detail: workoutContext ? `Round ${workoutContext.currentRound}` : totalSetsGoal ? `Goal: ${totalSetsGoal} sets` : null,
         },
         {
           icon: 'fa-bullseye',
@@ -353,18 +395,31 @@ export default function SessionSummaryPage() {
 
   return (
     <div className="session-summary-page">
-      <Navbar activeItem="Exercises" />
+      <Navbar activeItem={workoutContext ? 'Workout Plans' : 'Exercises'} />
       <main className="session-summary">
         <nav className="session-summary__breadcrumb" aria-label="Breadcrumb">
-          <button type="button" onClick={() => navigate('/exercises')}>
+          <button type="button" onClick={() => navigate(workoutContext?.detailsRoute || '/exercises')}>
             <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-            Exercises
+            {workoutContext ? workoutContext.planName : 'Exercises'}
           </button>
           <i className="fa-solid fa-chevron-right" aria-hidden="true" />
           <button type="button" onClick={() => navigate(`/exercises/${exerciseId}`)}>{exerciseName}</button>
           <i className="fa-solid fa-chevron-right" aria-hidden="true" />
           <span>Summary</span>
         </nav>
+
+        {workoutContext && (
+          <section className="session-summary__plan-context" aria-label="Workout plan set">
+            <div>
+              <span>{workoutContext.planName}</span>
+              <strong>Week {workoutContext.week} · {workoutContext.workoutLabel || workoutContext.workoutDay}</strong>
+            </div>
+            <div>
+              <span>{completed ? 'Set completed' : 'Set ended'}</span>
+              <strong>{exerciseName} · Set {workoutContext.currentSet} of {workoutContext.totalSets} · Round {workoutContext.currentRound}</strong>
+            </div>
+          </section>
+        )}
 
         <section className="session-summary__top">
           <div className="session-summary__exercise-column">
@@ -430,7 +485,7 @@ export default function SessionSummaryPage() {
                       const goal = isTimeBased ? holdGoal : sessionResult.config?.repsPerSet;
                       return (
                         <tr key={set.setNum || index}>
-                          <td>{set.setNum || index + 1}</td>
+                          <td>{workoutContext ? workoutContext.currentSet : set.setNum || index + 1}</td>
                           <td>{achieved}{goal ? ` / ${isTimeBased ? formatTime(goal) : goal}` : ''}</td>
                           {!isTimeBased && <td>{set.badReps || 0}</td>}
                           <td className={`session-breakdown__accuracy session-breakdown__accuracy--${setResult.tone}`}>{setAccuracy}%</td>
@@ -490,10 +545,30 @@ export default function SessionSummaryPage() {
           />
         </div>
 
-        <button className="session-summary__dashboard-button" type="button" onClick={() => navigate('/dashboard')}>
+        {workoutContext && workoutOutcome && (
+          <section className="session-summary-card session-summary__workout-progress">
+            <div className="session-summary__workout-progress-heading">
+              <div><span>Workout Progress</span><h2>{workoutOutcome.complete ? 'All sets completed' : `Up next: ${nextContext?.currentExercise ? workoutOutcome.session.exercises[nextContext.currentExerciseIndex].name : exerciseName}`}</h2></div>
+              {!workoutOutcome.complete && nextContext && <strong>{nextContext.target.metricType === 'time' ? `${nextContext.target.duration} sec` : `${nextContext.target.reps} reps`}</strong>}
+            </div>
+            <div className="session-summary__workout-exercises">
+              {planProgress.map((item) => <div key={item.exerciseId} className={item.completedSets === item.setsRequired ? 'is-complete' : ''}>
+                <i className={`fa-solid ${item.completedSets === item.setsRequired ? 'fa-circle-check' : 'fa-circle'}`} aria-hidden="true" />
+                <span>{item.name}</span><strong>{item.completedSets}/{item.setsRequired}</strong>
+              </div>)}
+            </div>
+            {workoutActionError && <p className="session-summary__workout-error" role="alert">{workoutActionError}</p>}
+            <button className="session-summary__next-button" type="button" disabled={finishingWorkout} onClick={continueWorkout}>
+              {finishingWorkout ? 'Finishing Workout…' : workoutOutcome.complete ? 'Finish Workout' : `${completed ? 'Next Exercise' : 'Resume Set'}: ${workoutOutcome.session.exercises[nextContext.currentExerciseIndex].name}`}
+              <i className={`fa-solid ${workoutOutcome.complete ? 'fa-flag-checkered' : 'fa-arrow-right'}`} aria-hidden="true" />
+            </button>
+          </section>
+        )}
+
+        {!workoutContext && <button className="session-summary__dashboard-button" type="button" onClick={() => navigate('/dashboard')}>
           Back to Dashboard
           <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-        </button>
+        </button>}
 
         <p className="session-summary__artwork-credit">
           Exercise artwork by{' '}

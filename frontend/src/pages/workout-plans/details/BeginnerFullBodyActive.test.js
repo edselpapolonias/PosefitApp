@@ -5,6 +5,11 @@ import BeginnerFullBodyDetails from './BeginnerFullBodyDetails';
 import { beginnerFullBodyPlan, beginnerScheduleByWeek } from './beginnerFullBodyData';
 import { activePlanSchedule, activePlanProgress, localDateKey } from './beginnerActivePlan';
 
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: { csrf_token: 'test' } })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+}));
+
 const mockNavigate = jest.fn();
 let mockPersisted = null;
 jest.mock('../../../services/workoutPlanService', () => ({
@@ -40,7 +45,10 @@ test('activation, static actions, synchronized calendar and restoration', async 
   expect(screen.getByText(/Active Plan/)).toBeInTheDocument();
   const stored = mockPersisted;
   fireEvent.click(screen.getByRole('button', { name: 'Start Workout' }));
-  expect(mockNavigate).not.toHaveBeenCalled();
+  expect(mockNavigate).toHaveBeenCalledWith(
+    { pathname: '/exercises/squat/start', search: expect.stringContaining('workoutSession=') },
+    { state: expect.objectContaining({ workoutConfig: expect.objectContaining({ sets: 1, reps: 10 }) }) },
+  );
   expect(mockPersisted).toBe(stored);
   [1, 2, 3, 4].forEach((week) => {
     fireEvent.click(screen.getByRole('tab', { name: new RegExp(`^Week ${week} `) }));
