@@ -43,4 +43,34 @@ test('does not advance an incomplete set and ignores duplicate results', () => {
   session = recordWorkoutSetResult(result(context, 'complete')).session;
   recordWorkoutSetResult(result(context, 'complete'));
   expect(session.exercises[0].completedSets).toBe(1);
+  expect(startOrResumeWorkoutDay(plan, workout).exercises[0].completedSets).toBe(1);
+});
+
+test('requires the prescribed Lunge repetitions on both legs', () => {
+  const lungeWorkout = {
+    id: 'lower-body-week-1-tuesday',
+    week: 1,
+    day: 'Tuesday',
+    label: 'DAY 1',
+    date: '2026-09-22',
+    exercises: [{
+      exerciseId: 'lunge', name: 'Lunge', type: 'reps', sets: 1, reps: 8, restTime: 60, perLeg: true,
+    }],
+  };
+  let session = startOrResumeWorkoutDay({ ...plan, id: 'lower-body-focus' }, lungeWorkout);
+  const context = workoutStepNavigation(session).workoutContext;
+
+  recordWorkoutSetResult({
+    ...result(context, 'one-leg-short'),
+    correctReps: 16,
+    analysis: { perLegCounts: { left: 8, right: 7 } },
+  });
+  expect(getWorkoutStep(session).exercise.completedSets).toBe(0);
+
+  session = recordWorkoutSetResult({
+    ...result(context, 'both-legs-complete'),
+    correctReps: 16,
+    analysis: { perLegCounts: { left: 8, right: 8 } },
+  }).session;
+  expect(getWorkoutStep(session)).toBeNull();
 });

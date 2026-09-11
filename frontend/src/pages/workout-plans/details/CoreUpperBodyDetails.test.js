@@ -120,7 +120,7 @@ describe('Core & Upper Body plan details', () => {
     ]);
   });
 
-  test('prepares Core & Upper data for Start This Plan and keeps its own saved state', () => {
+  test('prepares Core & Upper data and omits the Save Plan action', () => {
     render(<CoreUpperBodyDetails />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Week 4' }));
@@ -133,11 +133,6 @@ describe('Core & Upper Body plan details', () => {
       exerciseId: 'push-up', sets: 4, reps: 12, restTime: 60,
     }));
     expect(mockNavigate).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Save Plan' }));
-    expect(localStorage.getItem('posefitSavedCoreUpperPlan')).toBe('true');
-    expect(localStorage.getItem('posefitSavedBeginnerPlan')).toBeNull();
-    expect(localStorage.getItem('posefitSavedLowerBodyPlan')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Plan Saved' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: /Save Plan|Plan Saved/ })).not.toBeInTheDocument();
   });
 });

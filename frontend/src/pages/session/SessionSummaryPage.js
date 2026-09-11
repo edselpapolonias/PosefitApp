@@ -114,6 +114,11 @@ function comparisonRatio(completed, target, formatter = (value) => value) {
     : `${completedValue} / ${formatter(target)}`;
 }
 
+function comparisonRepTarget(snapshot) {
+  const reps = snapshot?.target?.repsPerSet;
+  return reps === null || reps === undefined ? '—' : `${reps}${snapshot.target.perLeg ? ' each leg' : ''}`;
+}
+
 function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
   const difference = Number(comparison?.differencePercentagePoints || 0);
   const magnitude = Math.abs(difference);
@@ -135,7 +140,7 @@ function ProgressComparisonCard({ comparison, loading, error, exerciseName }) {
         ]
       : [
           { label: 'Form Accuracy', current: comparisonValue(current.accuracy, '%'), previous: comparisonValue(previous.accuracy, '%') },
-          { label: 'Target Reps', current: comparisonValue(current.target?.repsPerSet), previous: comparisonValue(previous.target?.repsPerSet) },
+          { label: 'Target Reps', current: comparisonRepTarget(current), previous: comparisonRepTarget(previous) },
           { label: 'Target Sets', current: comparisonValue(current.target?.sets), previous: comparisonValue(previous.target?.sets) },
           { label: 'Completed Reps', current: comparisonRatio(current.completed?.reps, current.target?.totalReps), previous: comparisonRatio(previous.completed?.reps, previous.target?.totalReps) },
           { label: 'Completed Sets', current: comparisonRatio(current.completed?.sets, current.target?.sets), previous: comparisonRatio(previous.completed?.sets, previous.target?.sets) },
@@ -305,6 +310,7 @@ export default function SessionSummaryPage() {
   const completed = sessionResult.status === 'completed';
   const completedAt = formatCompletedDate(sessionResult.completedAt);
   const totalSetsGoal = workoutContext?.totalSets || sessionResult.config?.totalSets || sessionResult.setResults.length || sessionResult.setsCompleted;
+  const isPerLeg = Boolean(workoutContext?.target?.perLeg || sessionResult.config?.perLeg);
   const repsGoal = sessionResult.config?.repsPerSet
     ? (workoutContext ? sessionResult.config.repsPerSet : totalSetsGoal * sessionResult.config.repsPerSet)
     : null;
@@ -369,7 +375,7 @@ export default function SessionSummaryPage() {
           icon: 'fa-rotate',
           value: sessionResult.totalReps,
           label: 'Total Reps',
-          detail: repsGoal ? `Goal: ${repsGoal} reps` : null,
+          detail: repsGoal ? `Goal: ${repsGoal} reps${isPerLeg ? ' each leg' : ''}` : null,
           secondaryDetail: `${sessionResult.correctReps} correct / ${sessionResult.incorrectReps} incorrect`,
         },
         {
@@ -481,12 +487,14 @@ export default function SessionSummaryPage() {
                       const setResult = resultLabel(setAccuracy);
                       const achieved = isTimeBased
                         ? formatTime(set.holdTime ?? set.duration)
-                        : (set.completedReps ?? set.goodReps ?? 0);
+                        : isPerLeg
+                          ? `${set.perLegReps?.left ?? sessionResult.analysis?.perLegCounts?.left ?? 0} left / ${set.perLegReps?.right ?? sessionResult.analysis?.perLegCounts?.right ?? 0} right`
+                          : (set.completedReps ?? set.goodReps ?? 0);
                       const goal = isTimeBased ? holdGoal : sessionResult.config?.repsPerSet;
                       return (
                         <tr key={set.setNum || index}>
                           <td>{workoutContext ? workoutContext.currentSet : set.setNum || index + 1}</td>
-                          <td>{achieved}{goal ? ` / ${isTimeBased ? formatTime(goal) : goal}` : ''}</td>
+                          <td>{achieved}{goal ? isPerLeg ? ` (Goal: ${goal} each)` : ` / ${isTimeBased ? formatTime(goal) : goal}` : ''}</td>
                           {!isTimeBased && <td>{set.badReps || 0}</td>}
                           <td className={`session-breakdown__accuracy session-breakdown__accuracy--${setResult.tone}`}>{setAccuracy}%</td>
                           <td><span className={`session-breakdown__result session-breakdown__result--${setResult.tone}`}>{setResult.label}</span></td>
@@ -549,7 +557,7 @@ export default function SessionSummaryPage() {
           <section className="session-summary-card session-summary__workout-progress">
             <div className="session-summary__workout-progress-heading">
               <div><span>Workout Progress</span><h2>{workoutOutcome.complete ? 'All sets completed' : `Up next: ${nextContext?.currentExercise ? workoutOutcome.session.exercises[nextContext.currentExerciseIndex].name : exerciseName}`}</h2></div>
-              {!workoutOutcome.complete && nextContext && <strong>{nextContext.target.metricType === 'time' ? `${nextContext.target.duration} sec` : `${nextContext.target.reps} reps`}</strong>}
+              {!workoutOutcome.complete && nextContext && <strong>{nextContext.target.metricType === 'time' ? `${nextContext.target.duration} sec` : `${nextContext.target.reps} reps${nextContext.target.perLeg ? ' each leg' : ''}`}</strong>}
             </div>
             <div className="session-summary__workout-exercises">
               {planProgress.map((item) => <div key={item.exerciseId} className={item.completedSets === item.setsRequired ? 'is-complete' : ''}>

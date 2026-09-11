@@ -44,6 +44,8 @@ export default function LungeCameraPage() {
   const workoutContext = resolveWorkoutContext(location.state?.workoutContext, params.get('workoutSession'), 'lunge');
   const targetSets = workoutContext ? 1 : positive(incoming.sets, params.get('sets'), saved.sets);
   const targetReps = positive(workoutContext?.target?.reps, incoming.reps, params.get('reps'), saved.reps);
+  const requiresPerLeg = Boolean(workoutContext?.target?.perLeg);
+  const prescribedRepsTotal = requiresPerLeg ? targetReps * 2 : targetReps;
   const restSeconds = positive(workoutContext?.target?.rest, incoming.rest, params.get('rest'), saved.rest);
   const hasConfig = Boolean(targetSets && targetReps && restSeconds);
 
@@ -65,6 +67,7 @@ export default function LungeCameraPage() {
   const setCompletedRepsRef = useRef(0);
   const setCorrectRef = useRef(0);
   const setIncorrectRef = useRef(0);
+  const perLegRepsRef = useRef({ left: 0, right: 0 });
   const completedRepsRef = useRef(0);
   const correctRef = useRef(0);
   const incorrectRef = useRef([]);
@@ -83,6 +86,7 @@ export default function LungeCameraPage() {
   const [setCompletedReps, setSetCompletedReps] = useState(0);
   const [totalCompletedReps, setTotalCompletedReps] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
+  const [perLegReps, setPerLegReps] = useState({ left: 0, right: 0 });
   const [resting, setResting] = useState(false);
   const [restCountdown, setRestCountdown] = useState(0);
   const [complete, setComplete] = useState(false);
@@ -151,6 +155,7 @@ export default function LungeCameraPage() {
         completedReps: setCorrectRef.current,
         goodReps: setCorrectRef.current,
         badReps: setIncorrectRef.current,
+        perLegReps: { ...perLegRepsRef.current },
         duration: setStartRef.current ? Math.floor((Date.now() - setStartRef.current) / 1000) : 0,
       });
     }
@@ -158,7 +163,7 @@ export default function LungeCameraPage() {
     incorrectRef.current.forEach((rep) => rep.reasons.forEach((reason) => { issueCounts[reason] = (issueCounts[reason] || 0) + 1; }));
     const duration = sessionStartRef.current ? Math.floor((Date.now() - sessionStartRef.current) / 1000) : sessionTime;
     const incorrect = incorrectRef.current.length;
-    const completedSets = setsRef.current.filter((set) => set.goodReps >= targetReps).length;
+    const completedSets = setsRef.current.filter((set) => set.goodReps >= prescribedRepsTotal).length;
     stopResources();
     const sessionResult = saveLatestSessionResult(createSessionResult({
       exercise: { id: 'lunge', name: 'Lunge' }, metricType: 'reps', status, duration,
@@ -169,12 +174,12 @@ export default function LungeCameraPage() {
       accuracy: accuracy(correctRef.current, incorrect),
       formIssues: Object.entries(issueCounts).map(([type, count]) => ({ type, count })),
       setResults: [...setsRef.current],
-      config: { repsPerSet: targetReps, totalSets: targetSets, restSeconds },
-      analysis: { repAngles: [...anglesRef.current], badReps: [...incorrectRef.current], targetKneeAngle: LUNGE_DEPTH.target, acceptedDepth: [LUNGE_DEPTH.goodMin, LUNGE_DEPTH.goodMax] },
+      config: { repsPerSet: targetReps, totalSets: targetSets, restSeconds, perLeg: requiresPerLeg },
+      analysis: { repAngles: [...anglesRef.current], badReps: [...incorrectRef.current], perLegCounts: { ...perLegRepsRef.current }, targetKneeAngle: LUNGE_DEPTH.target, acceptedDepth: [LUNGE_DEPTH.goodMin, LUNGE_DEPTH.goodMax] },
       workoutContext,
     }));
     navigate('/session-summary', { replace: true, state: { sessionResult } });
-  }, [navigate, restSeconds, sessionTime, stopResources, targetReps, targetSets, workoutContext]);
+  }, [navigate, prescribedRepsTotal, requiresPerLeg, restSeconds, sessionTime, stopResources, targetReps, targetSets, workoutContext]);
 
   const completeSet = useCallback(() => {
     if (completingRef.current) return;
@@ -186,6 +191,7 @@ export default function LungeCameraPage() {
       completedReps: setCorrectRef.current,
       goodReps: setCorrectRef.current,
       badReps: setIncorrectRef.current,
+      perLegReps: { ...perLegRepsRef.current },
       duration: setStartRef.current ? Math.floor((Date.now() - setStartRef.current) / 1000) : 0,
     });
     if (setRef.current >= targetSets) {
@@ -209,8 +215,10 @@ export default function LungeCameraPage() {
         setCompletedRepsRef.current = 0;
         setCorrectRef.current = 0;
         setIncorrectRef.current = 0;
+        perLegRepsRef.current = { left: 0, right: 0 };
         setCurrentSet(setRef.current);
         setSetCompletedReps(0);
+        setPerLegReps({ left: 0, right: 0 });
         setStartRef.current = Date.now();
         completingRef.current = false;
         restingRef.current = false;
@@ -233,22 +241,32 @@ export default function LungeCameraPage() {
     setPhase(rising ? 'ascending' : analysis.phase === 'transition' ? 'descending' : analysis.phase);
     if (!result.event) return;
     if (result.event.type === 'correct') {
+      const workingLeg = result.event.workingLeg === 'right' ? 'right' : 'left';
       correctRef.current += 1;
       setCorrectRef.current += 1;
       completedRepsRef.current += 1;
       setCompletedRepsRef.current += 1;
+      perLegRepsRef.current[workingLeg] += 1;
+      setPerLegReps({ ...perLegRepsRef.current });
       setTotalCompletedReps(completedRepsRef.current);
       setSetCompletedReps(setCompletedRepsRef.current);
       anglesRef.current.push(Math.round(result.event.minimumAngle));
-      if (!mutedRef.current) speak(`Rep ${setCompletedRepsRef.current} of ${targetReps}.`, true);
-      if (setCompletedRepsRef.current >= targetReps) completeSet();
+      if (!mutedRef.current) {
+        speak(requiresPerLeg
+          ? `${workingLeg} leg ${perLegRepsRef.current[workingLeg]} of ${targetReps}.`
+          : `Rep ${setCompletedRepsRef.current} of ${targetReps}.`, true);
+      }
+      const targetComplete = requiresPerLeg
+        ? perLegRepsRef.current.left >= targetReps && perLegRepsRef.current.right >= targetReps
+        : setCompletedRepsRef.current >= targetReps;
+      if (targetComplete) completeSet();
     } else {
       incorrectRef.current.push({ angle: Math.round(result.event.minimumAngle), reasons: result.event.reasons, classification: 'bad', set: setRef.current, leg: result.event.workingLeg });
       setIncorrectRef.current += 1;
       setIncorrectCount(incorrectRef.current.length);
       if (!mutedRef.current) speak(result.event.reasons[0], true);
     }
-  }, [completeSet, targetReps]);
+  }, [completeSet, requiresPerLeg, targetReps]);
 
   const drawAngle = useCallback((context, point, angle, color, width, height) => {
     context.beginPath(); context.arc(point.x * width, point.y * height, 28, 0, Math.PI * 2);
@@ -328,14 +346,17 @@ export default function LungeCameraPage() {
   const tone = complete ? 'complete' : resting ? 'resting' : position === 'ready' ? 'active' : 'waiting';
   const displayedSet = workoutContext?.currentSet || currentSet;
   const displayedTotalSets = workoutContext?.totalSets || targetSets;
+  const completedTargetReps = requiresPerLeg
+    ? Math.min(perLegReps.left, targetReps) + Math.min(perLegReps.right, targetReps)
+    : setCompletedReps;
   const backPath = workoutContext?.detailsRoute || '/exercises/lunge';
   return (
     <div className="camera-session camera-session--lunge">
-      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate(backPath)}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person-walking" /></span><span><h1>Lunge</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
+      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate(backPath)}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person-walking" /></span><span><h1>Lunge</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps{requiresPerLeg ? ' each leg' : ''}</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
       <main className="camera-session__workspace" style={styles.workspace}>
         <aside className="camera-session__progress" style={styles.panel}>
           <Metric label="SET" value={displayedSet} detail={`OF ${displayedTotalSets}`} primary />
-          <div className="camera-session__metric camera-session__metric--primary" style={styles.card}><p style={styles.label}>VALID REPS</p><p style={styles.big}>{setCompletedReps}</p><p style={styles.small}>OF {targetReps}</p><div className="camera-session__progress-track"><span style={{ width: `${Math.min(setCompletedReps / targetReps * 100, 100)}%` }} /></div></div>
+          <div className="camera-session__metric camera-session__metric--primary" style={styles.card}><p style={styles.label}>VALID REPS</p><p style={styles.big}>{requiresPerLeg ? `${perLegReps.left}L · ${perLegReps.right}R` : setCompletedReps}</p><p style={styles.small}>OF {targetReps}{requiresPerLeg ? ' EACH LEG' : ''}</p><div className="camera-session__progress-track"><span style={{ width: `${Math.min(completedTargetReps / prescribedRepsTotal * 100, 100)}%` }} /></div></div>
           <Metric label="TOTAL VALID" value={totalCompletedReps} /><Metric label={resting ? 'REST LEFT' : 'REST BETWEEN SETS'} value={formatTime(resting ? restCountdown : restSeconds)} /><Metric label="FORM ACCURACY" value={started ? `${sessionAccuracy}%` : '—'} />
         </aside>
         <section className="camera-session__camera" style={styles.camera}>
@@ -344,7 +365,7 @@ export default function LungeCameraPage() {
           {complete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {started && !resting && !complete && position !== 'ready' && <div className="camera-session__readiness"><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}
           {started && position === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}
-          {!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person-walking" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Lunges?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Stand sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text="Step forward with either leg" /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
+          {!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person-walking" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Lunges?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps{requiresPerLeg ? ' each leg' : ''}</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Stand sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text={requiresPerLeg ? `Complete ${targetReps} valid reps on each leg` : 'Step forward with either leg'} /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
         </section>
         <aside className="camera-session__insights" style={styles.panel}><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>LIVE FEEDBACK</p>{started ? <div className="camera-session__feedback" style={{ ...styles.feedback, color: color.hex, borderColor: color.hex, background: `${color.hex}12` }}><strong>{feedback}</strong><small>{feedbackDetail}</small></div> : <p style={styles.inactive}>Start session to see feedback</p>}</div><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>LUNGE DEPTH</p><Row label="Working leg" value={frontLeg} /><Row label="Front knee" value={position === 'ready' ? `${kneeAngle}°` : '—'} /><Row label="Target" value="~90°" /></div><div className="camera-session__insight-card camera-session__legend" style={styles.card}><p style={styles.label}>MOVEMENT</p><Row label="Phase" value={phase} /><Row label="Accepted depth" value={`${LUNGE_DEPTH.goodMin}°–${LUNGE_DEPTH.goodMax}°`} /></div>{started && <button className="camera-session__end-button" type="button" onClick={() => finish('ended')}><i className="fa-solid fa-stop" />End Session</button>}</aside>
       </main>

@@ -10,6 +10,16 @@ export function addDays(date, days) {
   return next;
 }
 
+const workoutDayOffsets = {
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4,
+  Saturday: 5,
+  Sunday: 6,
+};
+
 export function planMonday(value = new Date()) {
   const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(`${value}T12:00:00`) : new Date(value);
@@ -18,13 +28,16 @@ export function planMonday(value = new Date()) {
   return addDays(valid, -((valid.getDay() + 6) % 7));
 }
 
-export function activePlanSchedule(plan) {
+export function activePlanSchedule(plan, scheduleByWeek = beginnerScheduleByWeek) {
   const start = planMonday(plan.startDate);
-  return Object.values(beginnerScheduleByWeek).map((workouts, index) => ({
+  return Object.values(scheduleByWeek).map((workouts, index) => ({
     week: index + 1,
     start: addDays(start, index * 7),
     end: addDays(start, index * 7 + 6),
-    workouts: workouts.map((workout, day) => ({ ...workout, date: addDays(start, index * 7 + day * 2) })),
+    workouts: workouts.map((workout, day) => ({
+      ...workout,
+      date: addDays(start, index * 7 + (workoutDayOffsets[workout.day] ?? day * 2)),
+    })),
   }));
 }
 

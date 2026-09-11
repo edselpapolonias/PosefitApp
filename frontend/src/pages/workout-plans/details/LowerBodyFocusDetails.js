@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../../components/Navbar';
 import lungePhoto from '../../../images/exercise-card-lunge.png';
@@ -7,8 +7,12 @@ import {
   lowerBodyFocusPlan,
   lowerBodyProgression,
   lowerBodyScheduleByWeek,
+  lowerBodyWorkoutDays,
 } from './lowerBodyFocusData';
 import { PlanFact, WorkoutDayCard } from '../../../components/workout-plans/PlanDetailsShared';
+import StartPlanDialog from '../../../components/workout-plans/StartPlanDialog';
+import { ActiveWorkoutPlan } from './BeginnerFullBodyActive';
+import { endWorkoutPlan, fetchActiveWorkoutPlan, startLowerBodyPlan } from '../../../services/workoutPlanService';
 import './BeginnerFullBodyDetails.css';
 import './LowerBodyFocusDetails.css';
 
@@ -28,37 +32,100 @@ const expectations = [
 
 export default function LowerBodyFocusDetails() {
   const navigate = useNavigate();
+  const [activePlan, setActivePlan] = useState(null);
   const scheduleRef = useRef(null);
   const [activeWeek, setActiveWeek] = useState(1);
-  const [saved, setSaved] = useState(() => localStorage.getItem('posefitSavedLowerBodyPlan') === 'true');
   const activeSchedule = lowerBodyScheduleByWeek[activeWeek];
   const activeProgression = lowerBodyProgression[activeWeek - 1];
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [ending, setEnding] = useState(false);
+  const submittingRef = useRef(false);
+  const loadVersionRef = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const version = loadVersionRef.current;
+    fetchActiveWorkoutPlan(controller.signal).then((plan) => {
+      if (active && version === loadVersionRef.current && plan?.id === lowerBodyFocusPlan.id) setActivePlan(plan);
+    }).catch(() => { /* Activation reports API failures in its dialog. */ });
+    return () => { active = false; controller.abort(); };
+  }, []);
 
   const selectWeek = (week) => {
     if (lowerBodyScheduleByWeek[week]) setActiveWeek(week);
   };
 
-  const toggleSaved = () => {
-    setSaved((current) => {
-      const next = !current;
-      localStorage.setItem('posefitSavedLowerBodyPlan', String(next));
-      return next;
-    });
+  const preparePlan = () => {
+    loadVersionRef.current += 1;
+    setError('');
+    setConfirming(true);
   };
 
-  const preparePlan = () => {
-    sessionStorage.setItem('posefitActiveWorkoutPlan', JSON.stringify({
-      ...lowerBodyFocusPlan,
-      activeWeek,
-      activeDay: activeSchedule[0].day,
-      activeWorkout: activeSchedule[0],
-    }));
-    scheduleRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  const confirmPlan = async (startDate) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const plan = await startLowerBodyPlan(startDate);
+      if (!plan?.instanceId || plan.id !== lowerBodyFocusPlan.id) throw new Error('Unable to start the plan. Please try again.');
+      setActivePlan(plan);
+      setConfirming(false);
+    } catch (failure) {
+      setError(failure.response?.data?.error || (failure.message?.startsWith('You already') ? failure.message : 'Unable to start the plan. Please try again.'));
+    } finally {
+      submittingRef.current = false;
+      setBusy(false);
+    }
   };
+
+  const endPlan = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setEnding(true);
+    setError('');
+    try {
+      await endWorkoutPlan(activePlan);
+      setActivePlan(null);
+      setActiveWeek(1);
+    } catch {
+      setError('Unable to end the plan. Please try again.');
+    } finally {
+      submittingRef.current = false;
+      setEnding(false);
+    }
+  };
+
+  if (activePlan) return <ActiveWorkoutPlan
+    plan={activePlan}
+    onEndPlan={endPlan}
+    ending={ending}
+    error={error}
+    scheduleByWeek={lowerBodyScheduleByWeek}
+    title="Lower Body Focus"
+    heroPhoto={lungePhoto}
+    heroAlt="Athlete demonstrating a forward lunge"
+    slogan={<>Build Strength<br />From the Ground Up</>}
+    quote={<>&ldquo;Strong legs build<br />a strong foundation.&rdquo;</>}
+    description="Build stronger legs and glutes with progressive Squat and Lunge training, supported by core exercises for balance and stability."
+    facts={['3 Days/Week', '30–40 min', '4 Weeks', lowerBodyFocusPlan.level]}
+    motivation={<>&ldquo;Every strong step<br />starts with a solid<br />foundation.&rdquo;</>}
+  />;
 
   return (
     <div className="beginner-detail-page beginner-full-body-detail-page lower-body-detail-page">
       <Navbar activeItem="Workout Plans" />
+      {confirming && <StartPlanDialog
+        busy={busy}
+        error={error}
+        onCancel={() => setConfirming(false)}
+        onConfirm={confirmPlan}
+        planName="Lower Body Focus"
+        workoutDays={lowerBodyWorkoutDays}
+      />}
 
       <main className="beginner-detail-page__main">
         <button className="beginner-detail-page__back" type="button" onClick={() => navigate('/workout-plans')}>
@@ -148,10 +215,6 @@ export default function LowerBodyFocusDetails() {
                 <div><i className="fa-solid fa-circle-check" aria-hidden="true" /><span><strong>Your Body</strong><small>No equipment needed</small></span></div>
               </div>
               <button className="beginner-start-button" type="button" onClick={preparePlan}><i className="fa-solid fa-play" aria-hidden="true" />Start This Plan</button>
-              <button className={`beginner-save-button${saved ? ' beginner-save-button--saved' : ''}`} type="button" aria-pressed={saved} onClick={toggleSaved}>
-                <i className={`${saved ? 'fa-solid' : 'fa-regular'} fa-bookmark`} aria-hidden="true" />
-                {saved ? 'Plan Saved' : 'Save Plan'}
-              </button>
             </section>
 
             <section className="beginner-sidebar-card beginner-expect-card">

@@ -1,10 +1,27 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import LowerBodyFocusDetails from './LowerBodyFocusDetails';
 import { lowerBodyScheduleByWeek } from './lowerBodyFocusData';
 
 const mockNavigate = jest.fn();
+let mockPersisted = null;
+let mockStartDate = null;
+
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: { csrf_token: 'test' } })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+}));
+
+jest.mock('../../../services/workoutPlanService', () => ({
+  fetchActiveWorkoutPlan: () => Promise.resolve(mockPersisted),
+  startLowerBodyPlan: (startDate) => {
+    mockStartDate = startDate;
+    mockPersisted = { id: 'lower-body-focus', name: 'Lower Body Focus', instanceId: 2, startDate, activeWeek: 1, completedWorkoutIds: [] };
+    return Promise.resolve(mockPersisted);
+  },
+  endWorkoutPlan: () => { mockPersisted = null; return Promise.resolve(); },
+}));
 
 jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
@@ -14,11 +31,18 @@ jest.mock('../../../components/Navbar', () => function MockNavbar({ activeItem }
   return <div data-testid="navbar">{activeItem}</div>;
 });
 
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+});
+
 describe('Lower Body Focus plan details', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     localStorage.clear();
     sessionStorage.clear();
+    mockPersisted = null;
+    mockStartDate = null;
   });
 
   test('numbers workout days continuously across weeks', () => {
@@ -104,6 +128,7 @@ describe('Lower Body Focus plan details', () => {
           }
         });
       });
+      expect(workouts.map(({ day }) => day)).toEqual(['Tuesday', 'Thursday', 'Saturday']);
     });
 
     expect(lowerBodyScheduleByWeek[1][1].exercises.map(({ exerciseId }) => exerciseId)).toEqual([
@@ -111,23 +136,43 @@ describe('Lower Body Focus plan details', () => {
     ]);
   });
 
-  test('prepares Lower Body data for Start This Plan and keeps its own saved state', () => {
+  test('opens its confirmation without activation and previews Tuesday, Thursday, and Saturday', async () => {
     render(<LowerBodyFocusDetails />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Week 4' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start This Plan' }));
+    expect(screen.getByRole('heading', { name: 'Start Lower Body Focus?' })).toBeInTheDocument();
+    expect(screen.getByText(/Workouts are scheduled every Tuesday, Thursday, and Saturday/)).toBeInTheDocument();
+    expect(mockPersisted).toBeNull();
+    expect([...document.querySelectorAll('.start-plan-dialog__preview strong')].map((item) => item.textContent)).toEqual(['TUE', 'THU', 'SAT']);
+    expect([...document.querySelectorAll('.start-plan-dialog__preview time')].map((item) => new Date(`${item.dateTime}T12:00:00`).getDay())).toEqual([2, 4, 6]);
 
-    const activePlan = JSON.parse(sessionStorage.getItem('posefitActiveWorkoutPlan'));
-    expect(activePlan.id).toBe('lower-body-focus');
-    expect(activePlan.activeWeek).toBe(4);
-    expect(activePlan.activeWorkout.exercises[0]).toEqual(expect.objectContaining({
-      exerciseId: 'squat', sets: 4, reps: 15, restTime: 60,
-    }));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('heading', { name: 'Start Lower Body Focus?' })).not.toBeInTheDocument();
+    expect(mockPersisted).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save Plan' }));
-    expect(localStorage.getItem('posefitSavedLowerBodyPlan')).toBe('true');
-    expect(localStorage.getItem('posefitSavedBeginnerPlan')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Plan Saved' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Start This Plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Plan' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'End Plan' })).toBeInTheDocument());
+    expect(new Date(`${mockStartDate}T12:00:00`).getDay()).toBe(1);
+    expect(screen.getByLabelText('Plan details')).toHaveTextContent('3 Days/Week30–40 min4 WeeksIntermediate');
+    expect(screen.getByRole('heading', { name: 'Lower Body Focus' })).toBeInTheDocument();
+    expect(screen.getByText('0 of 12 workouts completed')).toBeInTheDocument();
+
+    const calendar = screen.getByRole('heading', { name: 'Weekly Calendar' }).closest('section');
+    expect([...calendar.querySelectorAll('.is-workout time')].map((item) => new Date(`${item.dateTime}T12:00:00`).getDay())).toEqual([2, 4, 6]);
+    const dayOne = screen.getByRole('article', { name: 'DAY 1, Tuesday' });
+    expect(within(dayOne).getByText('3 sets × 8 reps each leg')).toBeInTheDocument();
+    fireEvent.click(within(dayOne).getByRole('button', { name: 'Start Workout' }));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      { pathname: '/exercises/squat/start', search: expect.stringContaining('workoutSession=') },
+      { state: expect.objectContaining({ workoutConfig: expect.objectContaining({ sets: 1, reps: 10 }) }) },
+    );
+  });
+
+  test('shows Start This Plan without a Save Plan action', () => {
+    render(<LowerBodyFocusDetails />);
+
+    expect(screen.getByRole('button', { name: 'Start This Plan' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Save Plan|Plan Saved/ })).not.toBeInTheDocument();
   });
 });

@@ -10,8 +10,26 @@ export function earliestMonday(now = new Date()) {
   return addDays(day, (8 - day.getDay()) % 7);
 }
 
+export const BEGINNER_WORKOUT_DAYS = [
+  { label: 'MON', name: 'Monday', offset: 0 },
+  { label: 'WED', name: 'Wednesday', offset: 2 },
+  { label: 'FRI', name: 'Friday', offset: 4 },
+];
+
+function listDays(days) {
+  const names = days.map(({ name }) => name);
+  return `${names.slice(0, -1).join(', ')}, and ${names.at(-1)}`;
+}
+
 // Same native-dialog lifecycle as the exercise demonstration modal.
-export default function StartPlanDialog({ busy, error, onCancel, onConfirm }) {
+export default function StartPlanDialog({
+  busy,
+  error,
+  onCancel,
+  onConfirm,
+  planName = 'Beginner Full Body',
+  workoutDays = BEGINNER_WORKOUT_DAYS,
+}) {
   const ref = useRef(null);
   const [selected, setSelected] = useState(earliestMonday);
   const [dateError, setDateError] = useState('');
@@ -41,21 +59,21 @@ export default function StartPlanDialog({ busy, error, onCancel, onConfirm }) {
     <div className="start-plan-dialog__content" aria-busy={busy}>
       <button className="start-plan-dialog__close" aria-label="Close confirmation" disabled={busy} onClick={cancel}><i className="fa-solid fa-xmark" aria-hidden="true" /></button>
       <span className="start-plan-dialog__icon"><i className="fa-regular fa-calendar-check" aria-hidden="true" /></span>
-      <h2 id={titleId}>Start Beginner Full Body?</h2>
+      <h2 id={titleId}>Start {planName}?</h2>
       <p id={descriptionId}>You're about to begin this 4-week workout plan. Your progress will be tracked as you complete each scheduled workout.</p>
       <p className="start-plan-dialog__facts">3 Days/Week <span>•</span> 4 Weeks <span>•</span> 12 Workouts</p>
       <section className="start-plan-dialog__dates" aria-labelledby="plan-date-title">
         <h3 id="plan-date-title">Choose Your Start Date</h3>
-        <p>Choose the Monday you want to begin. Workouts are scheduled every Monday, Wednesday, and Friday.</p>
+        <p>Choose the Monday that starts your plan week. Workouts are scheduled every {listDays(workoutDays)}.</p>
         <div className="start-plan-dialog__selector">
           <button aria-label="Earlier Monday" disabled={busy || localDateKey(selected) <= localDateKey(minimum)} onClick={() => setSelected(addDays(selected, -7))}>&lsaquo;</button>
           <time dateTime={localDateKey(selected)} aria-live="polite">{selected.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</time>
           <button aria-label="Later Monday" disabled={busy} onClick={() => setSelected(addDays(selected, 7))}>&rsaquo;</button>
         </div>
         <p>Your first week</p>
-        <div className="start-plan-dialog__preview" aria-live="polite">{['MON', 'WED', 'FRI'].map((day, index) => {
-          const date = addDays(selected, index * 2);
-          return <div key={day}><strong>{day}</strong><time dateTime={localDateKey(date)}>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</time></div>;
+        <div className="start-plan-dialog__preview" aria-live="polite">{workoutDays.map(({ label, offset }) => {
+          const date = addDays(selected, offset);
+          return <div key={label}><strong>{label}</strong><time dateTime={localDateKey(date)}>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</time></div>;
         })}</div>
         {dateError && <p role="alert" className="start-plan-dialog__error">{dateError}</p>}
       </section>

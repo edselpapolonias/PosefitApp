@@ -80,3 +80,30 @@ test('a completed plan set shows circuit progress and navigates to the next exer
     { state: mockWorkoutOutcome.next.state },
   );
 });
+
+test('shows an each-leg Lunge target and both recorded leg counts', () => {
+  mockSession = {
+    ...mockSession,
+    exercise: { id: 'lunge', name: 'Lunge' },
+    status: 'completed',
+    metricType: 'reps',
+    correctReps: 16,
+    incorrectReps: 0,
+    totalReps: 16,
+    setsCompleted: 1,
+    setResults: [{ setNum: 1, goodReps: 16, perLegReps: { left: 8, right: 8 } }],
+    config: { repsPerSet: 8, totalSets: 1, perLeg: true },
+    analysis: { perLegCounts: { left: 8, right: 8 } },
+    workoutContext: {
+      source: 'workout-plan', workoutSessionId: 'lower-day-1', planName: 'Lower Body Focus',
+      detailsRoute: '/workout-plans/lower-body-focus', week: 1, workoutLabel: 'DAY 1',
+      currentExercise: 'lunge', currentExerciseIndex: 1, currentSet: 1, totalSets: 3,
+      currentRound: 1, target: { metricType: 'reps', reps: 8, perLeg: true },
+    },
+  };
+
+  render(<SessionSummaryPage />);
+
+  expect(screen.getByText('Goal: 8 reps each leg')).toBeInTheDocument();
+  expect(screen.getByText('8 left / 8 right (Goal: 8 each)')).toBeInTheDocument();
+});

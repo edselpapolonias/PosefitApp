@@ -30,20 +30,11 @@ export default function CoreUpperBodyDetails() {
   const navigate = useNavigate();
   const scheduleRef = useRef(null);
   const [activeWeek, setActiveWeek] = useState(1);
-  const [saved, setSaved] = useState(() => localStorage.getItem('posefitSavedCoreUpperPlan') === 'true');
   const activeSchedule = coreUpperScheduleByWeek[activeWeek];
   const activeProgression = coreUpperProgression[activeWeek - 1];
 
   const selectWeek = (week) => {
     if (coreUpperScheduleByWeek[week]) setActiveWeek(week);
-  };
-
-  const toggleSaved = () => {
-    setSaved((current) => {
-      const next = !current;
-      localStorage.setItem('posefitSavedCoreUpperPlan', String(next));
-      return next;
-    });
   };
 
   const preparePlan = () => {
@@ -148,10 +139,6 @@ export default function CoreUpperBodyDetails() {
                 <div><i className="fa-solid fa-circle-check" aria-hidden="true" /><span><strong>Your Body</strong><small>No equipment needed</small></span></div>
               </div>
               <button className="beginner-start-button" type="button" onClick={preparePlan}><i className="fa-solid fa-play" aria-hidden="true" />Start This Plan</button>
-              <button className={`beginner-save-button${saved ? ' beginner-save-button--saved' : ''}`} type="button" aria-pressed={saved} onClick={toggleSaved}>
-                <i className={`${saved ? 'fa-solid' : 'fa-regular'} fa-bookmark`} aria-hidden="true" />
-                {saved ? 'Plan Saved' : 'Save Plan'}
-              </button>
             </section>
 
             <section className="beginner-sidebar-card beginner-expect-card">

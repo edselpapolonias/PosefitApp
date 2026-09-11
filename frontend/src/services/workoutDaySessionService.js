@@ -92,12 +92,12 @@ export function getWorkoutStep(session) {
   };
 }
 
-function sessionIdFor(plan, workout) {
+export function workoutDaySessionId(plan, workout) {
   return `plan-${plan.instanceId || plan.id}-${workout.id}`;
 }
 
 export function startOrResumeWorkoutDay(plan, workout) {
-  const id = sessionIdFor(plan, workout);
+  const id = workoutDaySessionId(plan, workout);
   const stored = readWorkoutDaySession(id);
   if (stored?.status === 'active' && stored.exercises?.length) return stored;
 
@@ -183,6 +183,10 @@ export function resolveWorkoutContext(incomingContext, sessionId, expectedExerci
 function targetReached(result, exercise) {
   if (result?.status !== 'completed') return false;
   if (exercise.metricType === 'time') return Number(result.totalHoldTime) >= exercise.durationPerSet;
+  if (exercise.perLeg) {
+    const counts = result.analysis?.perLegCounts;
+    return Number(counts?.left) >= exercise.repsPerSet && Number(counts?.right) >= exercise.repsPerSet;
+  }
   return Number(result.correctReps) >= exercise.repsPerSet;
 }
 
@@ -209,6 +213,7 @@ export function recordWorkoutSetResult(sessionResult) {
     accuracy: sessionResult.accuracy,
     duration: sessionResult.duration,
     formIssues: sessionResult.formIssues,
+    analysis: sessionResult.analysis,
     completedAt: sessionResult.completedAt,
   });
   exercise.completedSets = completedSet;
@@ -268,6 +273,7 @@ export async function finishWorkoutDay(sessionId) {
             accuracy: savedResult.accuracy,
             duration: savedResult.duration,
             formIssues: savedResult.formIssues,
+            analysis: savedResult.analysis,
             completedAt: savedResult.completedAt,
           },
         });

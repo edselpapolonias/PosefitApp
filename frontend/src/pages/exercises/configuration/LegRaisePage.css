@@ -4,7 +4,8 @@
 }
 
 .leg-raise-page .squat-overview-content__photo img {
-  object-position: 53% center;
+  object-fit: contain;
+  object-position: center;
 }
 
 .leg-raise-page .squat-redesign__tabs-card {

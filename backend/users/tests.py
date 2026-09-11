@@ -270,6 +270,25 @@ class ProgressComparisonTests(SimpleTestCase):
         self.assertEqual(comparison['current']['completed']['reps'], 34)
         self.assertIn('same workout configuration', comparison['message'])
 
+    def test_each_leg_lunge_configuration_counts_both_sides(self):
+        comparison = build_progress_comparison(
+            session_result(
+                100,
+                configuration={'repsPerSet': 8, 'totalSets': 1, 'perLeg': True},
+                total_reps=16,
+            ),
+            session_result(
+                100,
+                'session-previous',
+                configuration={'repsPerSet': 8, 'totalSets': 1, 'perLeg': True},
+                total_reps=16,
+            ),
+        )
+
+        self.assertTrue(comparison['sameConfiguration'])
+        self.assertTrue(comparison['current']['target']['perLeg'])
+        self.assertEqual(comparison['current']['target']['totalReps'], 16)
+
     def test_accuracy_decrease_is_contextualized_when_volume_is_higher(self):
         comparison = build_progress_comparison(
             session_result(

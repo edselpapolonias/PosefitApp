@@ -26,6 +26,7 @@ def _session_snapshot(session):
     configuration = session.configuration if isinstance(getattr(session, 'configuration', None), dict) else {}
     metric_type = getattr(session, 'metric_type', WorkoutSession.METRIC_REPS)
     target_sets = _configuration_value(configuration, 'totalSets', 'targetSets', 'sets')
+    per_leg = bool(configuration.get('perLeg'))
     completed_sets = _non_negative_integer(getattr(session, 'sets_completed', None)) or 0
     total_reps = _non_negative_integer(getattr(session, 'total_reps', None))
     correct_reps = _non_negative_integer(getattr(session, 'correct_reps', None))
@@ -55,7 +56,7 @@ def _session_snapshot(session):
             'reps',
         )
         if target_reps_per_set is not None and target_sets is not None:
-            target_total_reps = target_reps_per_set * target_sets
+            target_total_reps = target_reps_per_set * target_sets * (2 if per_leg else 1)
 
     return {
         'sessionId': session.session_id,
@@ -71,6 +72,7 @@ def _session_snapshot(session):
             'repsPerSet': target_reps_per_set,
             'sets': target_sets,
             'totalReps': target_total_reps,
+            'perLeg': per_leg,
             'holdSecondsPerSet': target_hold_seconds_per_set,
             'totalHoldTime': target_total_hold_time,
         },
@@ -87,7 +89,7 @@ def _configuration_signature(snapshot):
     if snapshot['metricType'] == WorkoutSession.METRIC_TIME:
         signature = (target['holdSecondsPerSet'], target['sets'])
     else:
-        signature = (target['repsPerSet'], target['sets'])
+        signature = (target['repsPerSet'], target['sets'], target['perLeg'])
     return signature if all(value is not None for value in signature) else None
 
 

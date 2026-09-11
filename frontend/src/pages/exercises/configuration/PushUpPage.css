@@ -4,7 +4,8 @@
 }
 
 .push-up-page .squat-overview-content__photo img {
-  object-position: 53% center;
+  object-fit: contain;
+  object-position: center;
 }
 
 .push-up-page .squat-redesign__tabs-card {

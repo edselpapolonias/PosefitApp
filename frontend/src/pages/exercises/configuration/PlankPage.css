@@ -4,7 +4,8 @@
 }
 
 .plank-page .squat-overview-content__photo img {
-  object-position: 52% center;
+  object-fit: contain;
+  object-position: center;
 }
 
 .plank-page .squat-redesign__tabs-card {

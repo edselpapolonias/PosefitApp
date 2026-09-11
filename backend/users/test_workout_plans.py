@@ -65,3 +65,84 @@ class WorkoutPlanTests(TestCase):
         plan = response.data['plan']
         self.assertEqual(plan['startDate'], '2026-10-05')
         self.assertEqual(plan['schedule'][-1]['date'], '2026-10-30')
+
+    @patch('users.workout_plan_views.timezone.localdate', return_value=date(2026, 9, 15))
+    def test_lower_body_uses_tuesday_thursday_saturday_and_its_own_ids(self, _today):
+        response = self.client.post('/api/users/workout-plans/active/', {
+            'planId': 'lower-body-focus',
+            'startDate': '2026-09-21',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        plan = response.data['plan']
+        self.assertEqual(plan['name'], 'Lower Body Focus')
+        self.assertEqual(plan['completedWorkouts'], 0)
+        self.assertEqual(plan['remainingWorkouts'], 12)
+        self.assertEqual([item['day'] for item in plan['schedule']], ['Tuesday', 'Thursday', 'Saturday'] * 4)
+        self.assertEqual(
+            [date.fromisoformat(item['date']).weekday() for item in plan['schedule']],
+            [1, 3, 5] * 4,
+        )
+        self.assertEqual(plan['schedule'][0]['id'], 'lower-body-week-1-tuesday')
+        self.assertEqual(plan['schedule'][-1]['id'], 'lower-body-week-4-saturday')
+        self.assertEqual(plan['schedule'][0]['date'], '2026-09-22')
+        self.assertEqual(plan['schedule'][-1]['date'], '2026-10-17')
+
+    def test_lower_body_day_session_requires_each_leg_target(self):
+        plan = UserWorkoutPlan.objects.create(
+            user=self.user,
+            plan_id='lower-body-focus',
+            start_date=date(2026, 9, 21),
+        )
+        session_id = f'plan-{plan.pk}-lower-body-week-1-tuesday'
+        started = self.client.post('/api/users/workout-plans/day-sessions/start/', {
+            'id': session_id,
+            'planInstanceId': plan.pk,
+            'workoutId': 'lower-body-week-1-tuesday',
+            'week': 1,
+            'workoutDay': 'Tuesday',
+            'scheduledDate': '2026-09-22',
+            'exercises': [{
+                'exerciseId': 'lunge',
+                'name': 'Lunge',
+                'metricType': 'reps',
+                'setsRequired': 1,
+                'repsPerSet': 8,
+                'perLeg': True,
+            }],
+        }, format='json')
+        self.assertEqual(started.status_code, 200)
+
+        incomplete = self.client.post('/api/users/workout-plans/day-sessions/set-complete/', {
+            'sessionId': session_id,
+            'exerciseId': 'lunge',
+            'sessionResult': {
+                'id': 'lunge-one-leg',
+                'status': 'completed',
+                'correctReps': 16,
+                'analysis': {'perLegCounts': {'left': 8, 'right': 7}},
+            },
+        }, format='json')
+        self.assertEqual(incomplete.status_code, 400)
+
+        completed = self.client.post('/api/users/workout-plans/day-sessions/set-complete/', {
+            'sessionId': session_id,
+            'exerciseId': 'lunge',
+            'sessionResult': {
+                'id': 'lunge-both-legs',
+                'status': 'completed',
+                'correctReps': 16,
+                'analysis': {'perLegCounts': {'left': 8, 'right': 8}},
+            },
+        }, format='json')
+        self.assertEqual(completed.status_code, 200)
+        self.assertEqual(completed.data['session']['exercises'][0]['completedSets'], 1)
+
+        finished = self.client.post('/api/users/workout-plans/day-sessions/finish/', {
+            'sessionId': session_id,
+        }, format='json')
+        self.assertEqual(finished.status_code, 200)
+        self.assertEqual(finished.data['plan']['completedWorkoutIds'], ['lower-body-week-1-tuesday'])
+        self.assertEqual(finished.data['plan']['completedWorkouts'], 1)
+        self.assertEqual(finished.data['plan']['remainingWorkouts'], 11)
+        self.assertEqual(finished.data['plan']['percentage'], 8)

@@ -8,23 +8,48 @@ from .models import CustomUser, UserWorkoutPlan, WorkoutPlanDaySession
 from .dashboard_service import dashboard_timezone
 
 
+PLAN_DEFINITIONS = {
+    'beginner-full-body': {
+        'name': 'Beginner Full Body',
+        'workout_id_prefix': 'week-',
+        'workout_days': (('Monday', 0), ('Wednesday', 2), ('Friday', 4)),
+    },
+    'lower-body-focus': {
+        'name': 'Lower Body Focus',
+        'workout_id_prefix': 'lower-body-week-',
+        'workout_days': (('Tuesday', 1), ('Thursday', 3), ('Saturday', 5)),
+    },
+}
+
+
 def first_monday(day):
     return day + timedelta(days=(-day.weekday()) % 7)
 
 
+def plan_schedule(plan):
+    definition = PLAN_DEFINITIONS[plan.plan_id]
+    return [
+        {
+            'id': f"{definition['workout_id_prefix']}{week}-{day.lower()}",
+            'week': week,
+            'day': day,
+            'date': (plan.start_date + timedelta(days=(week - 1) * 7 + offset)).isoformat(),
+        }
+        for week in range(1, 5)
+        for day, offset in definition['workout_days']
+    ]
+
+
 def plan_data(plan):
     # Dates and progress reference the existing definition; no exercise prescriptions are copied.
-    schedule = [
-        {'id': f'week-{week}-{day}', 'week': week, 'day': day.title(),
-         'date': (plan.start_date + timedelta(days=(week - 1) * 7 + offset)).isoformat()}
-        for week in range(1, 5) for day, offset in [('monday', 0), ('wednesday', 2), ('friday', 4)]
-    ]
+    definition = PLAN_DEFINITIONS[plan.plan_id]
+    schedule = plan_schedule(plan)
     valid_ids = {workout['id'] for workout in schedule}
     completed = list(dict.fromkeys(item for item in plan.completed_workout_ids if item in valid_ids))
     current = next((item for item in schedule if item['id'] not in completed), None)
     return {
         'id': plan.plan_id, 'instanceId': plan.pk, 'userId': plan.user_id,
-        'name': 'Beginner Full Body', 'status': plan.status,
+        'name': definition['name'], 'status': 'completed' if plan.completed_at else plan.status,
         'activatedAt': plan.activated_at.isoformat(), 'startDate': plan.start_date.isoformat(),
         'completedAt': plan.completed_at.isoformat() if plan.completed_at else None,
         'durationWeeks': 4, 'totalWorkouts': len(schedule), 'schedule': schedule,
@@ -112,8 +137,11 @@ def start_workout_day_session(request):
     week = _positive_integer(data.get('week'))
     workout_id = str(data.get('workoutId') or '').strip()
     exercises = _normalize_exercises(data.get('exercises'))
-    expected_date = plan.start_date + timedelta(days=(week - 1) * 7 + {'Monday': 0, 'Wednesday': 2, 'Friday': 4}.get(data.get('workoutDay'), -1000)) if week else None
-    if not workout_id or not exercises or week not in range(1, 5) or scheduled_date != expected_date:
+    definition = PLAN_DEFINITIONS.get(plan.plan_id)
+    day_offset = dict(definition['workout_days']).get(data.get('workoutDay')) if definition else None
+    expected_date = plan.start_date + timedelta(days=(week - 1) * 7 + day_offset) if week and day_offset is not None else None
+    expected_id = f"{definition['workout_id_prefix']}{week}-{str(data.get('workoutDay')).lower()}" if definition and week else None
+    if not exercises or week not in range(1, 5) or workout_id != expected_id or scheduled_date != expected_date:
         return Response({'error': 'The scheduled workout data is invalid.'}, status=400)
     session_id = str(data.get('id') or '')[:180]
     if not session_id:
@@ -157,7 +185,12 @@ def complete_workout_day_set(request):
             return Response({'error': 'This is not the current exercise in the workout circuit.'}, status=409)
         exercise = exercises[index]
         target_value = result.get('totalHoldTime') if exercise['metricType'] == 'time' else result.get('correctReps')
-        if result.get('status') != 'completed' or not result_id or (_positive_integer(target_value) or 0) < (exercise.get('durationPerSet') or exercise.get('repsPerSet')):
+        target = exercise.get('durationPerSet') or exercise.get('repsPerSet')
+        target_complete = (_positive_integer(target_value) or 0) >= target
+        if exercise.get('perLeg'):
+            per_leg_counts = result.get('analysis', {}).get('perLegCounts', {}) if isinstance(result.get('analysis'), dict) else {}
+            target_complete = all((_positive_integer(per_leg_counts.get(leg)) or 0) >= target for leg in ('left', 'right'))
+        if result.get('status') != 'completed' or not result_id or not target_complete:
             return Response({'error': 'The prescribed set target has not been completed.'}, status=400)
         exercise['completedSets'] += 1
         exercise['results'].append({
@@ -168,6 +201,7 @@ def complete_workout_day_set(request):
             'accuracy': result.get('accuracy'),
             'duration': result.get('duration'),
             'formIssues': result.get('formIssues') if isinstance(result.get('formIssues'), list) else [],
+            'analysis': result.get('analysis') if isinstance(result.get('analysis'), dict) else {},
             'completedAt': result.get('completedAt'),
         })
         day_session.current_exercise_index = _next_exercise_index(exercises, index)
@@ -206,13 +240,14 @@ def finish_workout_day_session(request):
 def active_workout_plan(request):
     if request.method == 'GET':
         plan = UserWorkoutPlan.objects.filter(user=request.user, status='active').first()
-        return Response({'plan': plan_data(plan) if plan else None})
-    if request.data.get('planId') != 'beginner-full-body':
+        return Response({'plan': plan_data(plan) if plan and plan.plan_id in PLAN_DEFINITIONS else None})
+    requested_plan_id = request.data.get('planId')
+    if requested_plan_id not in PLAN_DEFINITIONS:
         return Response({'error': 'This plan is not available for activation.'}, status=400)
     with transaction.atomic():
         CustomUser.objects.select_for_update().get(pk=request.user.pk)
         plan = UserWorkoutPlan.objects.filter(user=request.user, status='active').first()
-        if plan and plan.plan_id != 'beginner-full-body':
+        if plan and plan.plan_id != requested_plan_id:
             return Response({'error': 'You already have an active workout plan. End it before starting this plan.'}, status=409)
         if not plan:
             today = timezone.localdate(timezone=dashboard_timezone())
@@ -222,7 +257,7 @@ def active_workout_plan(request):
                 return Response({'error': 'Please choose a valid Monday start date.'}, status=400)
             if selected.weekday() != 0 or selected < today:
                 return Response({'error': 'Please choose today or a future Monday.'}, status=400)
-            plan = UserWorkoutPlan.objects.create(user=request.user, plan_id='beginner-full-body', start_date=selected)
+            plan = UserWorkoutPlan.objects.create(user=request.user, plan_id=requested_plan_id, start_date=selected)
         return Response({'plan': plan_data(plan)})
 
 
