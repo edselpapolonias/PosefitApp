@@ -1,15 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../../components/Navbar';
 import pushUpPhoto from '../../../images/exercise-card-push-up.png';
 import {
   beginnerExercises,
-  beginnerFullBodyPlan,
   beginnerScheduleByWeek,
   planProgression,
 } from './beginnerFullBodyData';
 import { PlanFact, WorkoutDayCard } from '../../../components/workout-plans/PlanDetailsShared';
 import './BeginnerFullBodyDetails.css';
+import BeginnerFullBodyActive from './BeginnerFullBodyActive';
+import StartPlanDialog from '../../../components/workout-plans/StartPlanDialog';
+import { fetchActiveWorkoutPlan, startBeginnerPlan, endWorkoutPlan } from '../../../services/workoutPlanService';
 
 const planFacts = [
   { icon: 'fa-calendar-days', value: '3 Days/Week', label: 'Schedule' },
@@ -27,9 +29,9 @@ const expectations = [
 
 export default function BeginnerFullBodyDetails() {
   const navigate = useNavigate();
+  const [activePlan, setActivePlan] = useState(null);
   const scheduleRef = useRef(null);
   const [activeWeek, setActiveWeek] = useState(1);
-  const [saved, setSaved] = useState(() => localStorage.getItem('posefitSavedBeginnerPlan') === 'true');
   const activeSchedule = beginnerScheduleByWeek[activeWeek];
   const activeProgression = planProgression[activeWeek - 1];
 
@@ -37,27 +39,52 @@ export default function BeginnerFullBodyDetails() {
     if (beginnerScheduleByWeek[week]) setActiveWeek(week);
   };
 
-  const toggleSaved = () => {
-    setSaved((current) => {
-      const next = !current;
-      localStorage.setItem('posefitSavedBeginnerPlan', String(next));
-      return next;
-    });
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [ending, setEnding] = useState(false);
+  const submittingRef = useRef(false);
+  const loadVersionRef = useRef(0);
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const version = loadVersionRef.current;
+    fetchActiveWorkoutPlan(controller.signal).then((plan) => {
+      if (active && version === loadVersionRef.current && plan?.id === 'beginner-full-body') setActivePlan(plan);
+    }).catch(() => { /* Activation still offers retry and reports API failures in its dialog. */ });
+    return () => { active = false; controller.abort(); };
+  }, []);
+
+  const preparePlan = () => { loadVersionRef.current += 1; setError(''); setConfirming(true); };
+  const confirmPlan = async (startDate) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setBusy(true); setError('');
+    try {
+      const plan = await startBeginnerPlan(startDate);
+      if (!plan?.instanceId || plan.id !== 'beginner-full-body') throw new Error('Unable to start the plan. Please try again.');
+      setActivePlan(plan);
+      setConfirming(false);
+    } catch (failure) {
+      setError(failure.response?.data?.error || (failure.message?.startsWith('You already') ? failure.message : 'Unable to start the plan. Please try again.'));
+    } finally { submittingRef.current = false; setBusy(false); }
+  };
+  const endPlan = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true; setEnding(true); setError('');
+    try {
+      await endWorkoutPlan(activePlan);
+      setActivePlan(null); setActiveWeek(1);
+    } catch { setError('Unable to end the plan. Please try again.'); }
+    finally { submittingRef.current = false; setEnding(false); }
   };
 
-  const preparePlan = () => {
-    sessionStorage.setItem('posefitActiveWorkoutPlan', JSON.stringify({
-      ...beginnerFullBodyPlan,
-      activeWeek,
-      activeDay: activeSchedule[0].day,
-      activeWorkout: activeSchedule[0],
-    }));
-    scheduleRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-  };
+  if (activePlan) return <BeginnerFullBodyActive plan={activePlan} onEndPlan={endPlan} ending={ending} error={error} />;
 
   return (
     <div className="beginner-detail-page beginner-full-body-detail-page">
       <Navbar activeItem="Workout Plans" />
+      {confirming && <StartPlanDialog busy={busy} error={error} onCancel={() => setConfirming(false)} onConfirm={confirmPlan} />}
 
       <main className="beginner-detail-page__main">
         <button className="beginner-detail-page__back" type="button" onClick={() => navigate('/workout-plans')}>
@@ -147,10 +174,7 @@ export default function BeginnerFullBodyDetails() {
                 <div><i className="fa-solid fa-circle-check" aria-hidden="true" /><span><strong>Your Body</strong><small>No equipment needed</small></span></div>
               </div>
               <button className="beginner-start-button" type="button" onClick={preparePlan}><i className="fa-solid fa-play" aria-hidden="true" />Start This Plan</button>
-              <button className={`beginner-save-button${saved ? ' beginner-save-button--saved' : ''}`} type="button" aria-pressed={saved} onClick={toggleSaved}>
-                <i className={`${saved ? 'fa-solid' : 'fa-regular'} fa-bookmark`} aria-hidden="true" />
-                {saved ? 'Plan Saved' : 'Save Plan'}
-              </button>
+
             </section>
 
             <section className="beginner-sidebar-card beginner-expect-card">

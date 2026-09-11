@@ -24,7 +24,7 @@ function storeCsrfToken(token) {
     }
 }
 
-async function getCsrfToken() {
+export async function getCsrfToken() {
     const storedToken = readStoredCsrfToken();
     if (storedToken) return storedToken;
 

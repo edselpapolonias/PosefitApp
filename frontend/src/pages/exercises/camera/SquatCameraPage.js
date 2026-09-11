@@ -14,6 +14,8 @@ import {
 } from '../../../exercises/squat';
 import { formatTime } from '../../../utils/formatters';
 import { speak } from '../../../utils/speechFeedback';
+import { createRepHold, holdFeedback, HOLD_FAILURE_REASON } from '../../../exercises/repHold';
+import { advanceSquatHold, squatAttemptReasons } from '../../../exercises/squat/squatHoldValidation';
 import {
     buildReasonCounts,
     createSessionResult,
@@ -89,8 +91,9 @@ export default function SquatCameraPage() {
 
     const repCountRef = useRef(0);
     const phaseRef = useRef('standing');
-    // Track whether the bottom of this rep was a "good" classification
+    // Track whether this rep completed a continuous valid bottom hold.
     const repWasGoodRef = useRef(false);
+    const holdRef = useRef(createRepHold());
     const repAnglesRef = useRef([]);   // avg angles logged per rep for chart
     const timerRef = useRef(null);
     const restTimerRef = useRef(null);
@@ -102,6 +105,7 @@ export default function SquatCameraPage() {
     const badRepsRef = useRef([]);          // { angle, reasons[], classification }
     const deepestAngleRef = useRef(180);    // deepest angle in current squat cycle
     const hadAttemptRef = useRef(false);    // did the user descend enough to count?
+    const additionalIssuesRef = useRef([]); // Reporting only; never changes rep validity.
     const formIssuesRef = useRef({});       // form issues detected during cycle
 
     // Workout Set/Rep/Rest Tracking
@@ -150,7 +154,13 @@ export default function SquatCameraPage() {
     }, []);
 
     const resetSquatCycleTracking = useCallback(() => {
+        if (hadAttemptRef.current) {
+            const reasons = determineIncorrectReason(deepestAngleRef.current, formIssuesRef.current)
+                .filter((reason) => reason !== 'Poor form detected');
+            additionalIssuesRef.current.push({ reasons: [...reasons, 'Squat was not completed by returning to standing'] });
+        }
         phaseRef.current = 'standing';
+        holdRef.current = createRepHold();
         repWasGoodRef.current = false;
         deepestAngleRef.current = 180;
         hadAttemptRef.current = false;
@@ -193,6 +203,11 @@ export default function SquatCameraPage() {
         if (prevSnapshot.isBilateralMode !== nextSnapshot.isBilateralMode) setIsBilateralMode(nextSnapshot.isBilateralMode);
         if (prevSnapshot.activeSide !== nextSnapshot.activeSide) setActiveSide(nextSnapshot.activeSide);
     }, []);
+    useEffect(() => {
+        const resetHiddenHold = () => { if (document.hidden) resetSquatCycleTracking(); };
+        document.addEventListener('visibilitychange', resetHiddenHold);
+        return () => document.removeEventListener('visibilitychange', resetHiddenHold);
+    }, [resetSquatCycleTracking]);
     // Timer
     useEffect(() => {
         if (isStarted) {
@@ -264,7 +279,13 @@ export default function SquatCameraPage() {
         const finalDuration = sessionStartRef.current
             ? Math.floor((Date.now() - sessionStartRef.current) / 1000)
             : sessionTime;
-        const reasonCounts = buildReasonCounts(badRepsRef.current);
+        const reportAttempts = [...badRepsRef.current, ...additionalIssuesRef.current];
+        if (hadAttemptRef.current) {
+            const reasons = determineIncorrectReason(deepestAngleRef.current, formIssuesRef.current)
+                .filter((reason) => reason !== 'Poor form detected');
+            reportAttempts.push({ reasons: [...reasons, 'Squat was not completed by returning to standing'] });
+        }
+        const reasonCounts = buildReasonCounts(reportAttempts);
         const correctReps = repCountRef.current;
         const incorrectReps = badRepsRef.current.length;
         const completedSets = setResultsRef.current.filter(
@@ -348,6 +369,16 @@ export default function SquatCameraPage() {
         const prevPhase = phaseRef.current;
         const newPhase = analysis.phase;
 
+        // Reset flags at the very start of a new descent from standing
+        if (prevPhase === 'standing' && (newPhase === 'descending' || newPhase === 'bottom')) {
+            repWasGoodRef.current = false;
+            holdRef.current = createRepHold();
+            deepestAngleRef.current = 180;
+            hadAttemptRef.current = false;
+            formIssuesRef.current = {};
+        }
+
+
         // Track if this is a squat attempt (user went at least to descending)
         if (newPhase === 'descending' || newPhase === 'bottom') {
             hadAttemptRef.current = true;
@@ -358,9 +389,10 @@ export default function SquatCameraPage() {
             deepestAngleRef.current = analysis.avgAngle;
         }
 
-        // Any frame at the bottom with good form marks this rep as valid.
-        if (newPhase === 'bottom' && analysis.overallClass === 'good') {
-            repWasGoodRef.current = true;
+        holdRef.current = advanceSquatHold(holdRef.current, analysis);
+        if (holdRef.current.qualified) repWasGoodRef.current = true;
+        if (analysis.phase === 'bottom' && analysis.overallClass === 'good' && holdRef.current.startedAt !== null) {
+            analysis.feedbackDetail = holdFeedback(holdRef.current);
         }
 
         // Detect form issues continuously during the squat
@@ -375,6 +407,9 @@ export default function SquatCameraPage() {
         const reachedStanding = newPhase === 'standing' && prevPhase !== 'standing';
         if (reachedStanding && hadAttemptRef.current) {
             if (repWasGoodRef.current) {
+                const detectedReasons = determineIncorrectReason(deepestAngleRef.current, formIssuesRef.current)
+                    .filter((reason) => reason !== 'Poor form detected');
+                if (detectedReasons.length) additionalIssuesRef.current.push({ reasons: detectedReasons });
                 // ✓ GOOD REP — count it
                 repCountRef.current += 1;
                 setRepCount(repCountRef.current);
@@ -388,14 +423,20 @@ export default function SquatCameraPage() {
 
                 // Check if set is complete
                 if (repsInSetRef.current >= totalReps) {
+                    hadAttemptRef.current = false;
                     completeCurrentSet();
                 }
             } else {
                 // ✗ INCORRECT REP — store with reasons
-                const reasons = determineIncorrectReason(
+                const reasons = squatAttemptReasons(holdRef.current, determineIncorrectReason(
                     deepestAngleRef.current,
                     formIssuesRef.current
-                );
+                ));
+                if (reasons[0] === HOLD_FAILURE_REASON) {
+                    analysis.feedback = HOLD_FAILURE_REASON;
+                    analysis.feedbackDetail = 'Maintain the bottom position continuously before standing.';
+                }
+                if (reasons[0] === HOLD_FAILURE_REASON && !voiceMutedRef.current) speak(HOLD_FAILURE_REASON, true);
                 badRepsRef.current.push({
                     angle: Math.round(deepestAngleRef.current),
                     reasons,
@@ -406,14 +447,7 @@ export default function SquatCameraPage() {
             }
 
             // Reset cycle tracking for next rep
-            repWasGoodRef.current = false;
-            deepestAngleRef.current = 180;
-            hadAttemptRef.current = false;
-            formIssuesRef.current = {};
-        }
-
-        // Reset flags at the very start of a new descent from standing
-        if (prevPhase === 'standing' && (newPhase === 'descending' || newPhase === 'bottom')) {
+            holdRef.current = createRepHold();
             repWasGoodRef.current = false;
             deepestAngleRef.current = 180;
             hadAttemptRef.current = false;
@@ -467,6 +501,7 @@ export default function SquatCameraPage() {
             setBodyReadiness(readiness);
         }
 
+        if (readiness !== 'ready') resetSquatCycleTracking();
         if (readiness === 'no_person') {
             if (!voiceMutedRef.current) {
                 speak('No person detected. Please step into the frame.');
@@ -504,7 +539,7 @@ export default function SquatCameraPage() {
             const cue = getVoiceCue(analysis);
             if (cue) speak(cue);
         }
-        if (!analysis) return;
+        if (!analysis) { resetSquatCycleTracking(); return; }
 
         const skelColor = CLASS_COLORS[analysis.overallClass].skeleton;
 
@@ -545,7 +580,7 @@ export default function SquatCameraPage() {
 
         processRep(analysis);
         syncLiveState(analysis);
-    }, [clearOverlayCanvas, processRep, syncLiveState]);
+    }, [clearOverlayCanvas, processRep, syncLiveState, resetSquatCycleTracking]);
     // Start Camera
     const startCamera = useCallback(async () => {
         setIsLoading(true);

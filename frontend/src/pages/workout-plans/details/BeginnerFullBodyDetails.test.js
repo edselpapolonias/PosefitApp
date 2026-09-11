@@ -1,10 +1,13 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import BeginnerFullBodyDetails from './BeginnerFullBodyDetails';
 import { beginnerScheduleByWeek } from './beginnerFullBodyData';
 
 const mockNavigate = jest.fn();
+const mockStart = jest.fn();
+jest.mock('../../../services/workoutPlanService', () => ({ fetchActiveWorkoutPlan: () => Promise.resolve(null), startBeginnerPlan: (...args) => mockStart(...args), endWorkoutPlan: () => Promise.resolve() }));
+beforeAll(() => { HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); }; HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); }; });
 
 jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
@@ -111,24 +114,16 @@ describe('Beginner Full Body plan details', () => {
     }));
   });
 
-  test('prepares the selected week for the plan flow and preserves save behavior', () => {
+  test('confirmation activates week one only after persistence succeeds', async () => {
+    mockStart.mockResolvedValue({ id: 'beginner-full-body', instanceId: 1, startDate: '2026-09-14', activeWeek: 1, completedWorkoutIds: [] });
     render(<BeginnerFullBodyDetails />);
-
     fireEvent.click(screen.getByRole('tab', { name: 'Week 3' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start This Plan' }));
-
-    const activePlan = JSON.parse(sessionStorage.getItem('posefitActiveWorkoutPlan'));
-    expect(activePlan.id).toBe('beginner-full-body');
-    expect(activePlan.activeWeek).toBe(3);
-    expect(activePlan.activeDay).toBe('Monday');
-    expect(activePlan.activeWorkout.exercises[0]).toEqual(expect.objectContaining({
-      exerciseId: 'squat', sets: 3, reps: 15, restTime: 60,
-    }));
+    expect(mockStart).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Start Plan' }));
+    await waitFor(() => expect(screen.getByText(/Active Plan/)).toBeInTheDocument());
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-week', '1');
+    expect(screen.getByText('0 of 12 workouts completed')).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
-
-    const saveButton = screen.getByRole('button', { name: 'Save Plan' });
-    fireEvent.click(saveButton);
-    expect(localStorage.getItem('posefitSavedBeginnerPlan')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Plan Saved' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

@@ -292,7 +292,6 @@ export default function SessionSummaryPage() {
     ? totalSetsGoal * sessionResult.config.repsPerSet
     : null;
   const holdGoal = sessionResult.config?.holdSecondsPerSet || sessionResult.config?.holdTime || null;
-  const topIssue = sessionResult.formIssues[0];
   const overallResult = resultLabel(sessionResult.accuracy);
 
   const metrics = isTimeBased
@@ -468,14 +467,17 @@ export default function SessionSummaryPage() {
                   </div>
                 )}
 
-                <div className="session-feedback__issue">
-                  <strong>Most Detected Issue</strong>
-                  <p>
-                    {topIssue
-                      ? <>{topIssue.type} <span>· {topIssue.count} {topIssue.count === 1 ? 'occurrence' : 'occurrences'}</span></>
-                      : 'No significant form issues detected'}
-                  </p>
-                </div>
+                {sessionResult.formIssues.length ? sessionResult.formIssues.map((issue) => (
+                  <div className="session-feedback__issue" key={issue.issueId}>
+                    <strong>{issue.label}</strong>
+                    <p>{sessionResult.feedback?.issueFeedback?.find((item) => item.issueId === issue.issueId)?.advice || issue.advice}</p>
+                    <p><span>{issue.count} {issue.count === 1 ? 'occurrence' : 'occurrences'}</span></p>
+                  </div>
+                )) : (
+                  <div className="session-feedback__issue">
+                    <p>Great form! No significant form issues were detected during this session.</p>
+                  </div>
+                )}
               </div>
             </div>
           </section>

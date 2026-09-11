@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { apiUrl } from '../services/apiConfig';
 import './Navbar.css';
 
@@ -22,6 +22,14 @@ function getStoredUser() {
 
 export default function Navbar({ activeItem }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const handleNavigation = (event, path) => {
+    // Keep modified clicks (new tab/window) and parent-page navigation intact.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (location.pathname === path && !location.search && !location.hash) event.preventDefault();
+    setAccountMenuOpen(false);
+    setLogoutError('');
+  };
   const accountMenuRef = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -92,7 +100,7 @@ export default function Navbar({ activeItem }) {
   return (
     <header className="top-navbar">
       <div className="top-navbar__inner">
-        <NavLink className="top-navbar__brand" to="/dashboard" aria-label="PoseFit dashboard">
+        <NavLink className="top-navbar__brand" to="/dashboard" onClick={(event) => handleNavigation(event, '/dashboard')} aria-label="PoseFit dashboard">
           <span className="top-navbar__brand-icon" aria-hidden="true">
             <i className="fa-solid fa-person-running" />
           </span>
@@ -110,6 +118,7 @@ export default function Navbar({ activeItem }) {
               <NavLink
                 key={item.label}
                 to={item.path}
+                onClick={(event) => handleNavigation(event, item.path)}
                 className={({ isActive }) => `top-navbar__link${isActive || activeItem === item.label ? ' top-navbar__link--active' : ''}`}
               >
                 {item.label}

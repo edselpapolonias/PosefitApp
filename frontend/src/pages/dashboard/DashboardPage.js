@@ -65,7 +65,7 @@ function PlanPreview() {
       <span className="dashboard-preview-label">Plan preview</span>
       <h3>{previewPlan.title}</h3><p className="dashboard-next__day">{previewWorkout.label.replace('DAY', 'Day')} of 12 · {previewWorkout.day}</p>
       <div className="dashboard-next__exercises">{previewExercises.map((exercise) => <div key={exercise.id}>
-        <img src={previewPhotos[exercise.id]} alt="" /><div><strong>{exercise.name}</strong><p>{exercise.prescription}</p></div>
+        <img decoding="async" src={previewPhotos[exercise.id]} alt="" /><div><strong>{exercise.name}</strong><p>{exercise.prescription}</p></div>
       </div>)}</div>
       <div className="dashboard-next__estimate"><i className="fa-regular fa-clock" aria-hidden="true" /><div><span>Estimated Time</span><strong>{previewWorkout.estimate}</strong></div></div>
       <button className="dashboard-start" disabled title="Workout execution from the dashboard is not available yet"><i className="fa-solid fa-play" aria-hidden="true" />Start Workout</button>

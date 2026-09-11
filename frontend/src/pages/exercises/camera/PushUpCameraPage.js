@@ -70,6 +70,7 @@ export default function PushUpCameraPage() {
   const incorrectInSetRef = useRef(0);
   const correctRepsRef = useRef(0);
   const incorrectRepsRef = useRef([]);
+  const interruptedIssuesRef = useRef([]);
   const goodAnglesRef = useRef([]);
   const setResultsRef = useRef([]);
   const cycleRef = useRef(createPushUpCycleState());
@@ -180,7 +181,7 @@ export default function PushUpCameraPage() {
       ? Math.floor((Date.now() - sessionStartRef.current) / 1000)
       : sessionTime;
     const issueCounts = {};
-    incorrectRepsRef.current.forEach((rep) => rep.reasons.forEach((reason) => {
+    [...incorrectRepsRef.current, ...interruptedIssuesRef.current].forEach((rep) => rep.reasons.forEach((reason) => {
       issueCounts[reason] = (issueCounts[reason] || 0) + 1;
     }));
     const incorrectCount = incorrectRepsRef.current.length;
@@ -324,6 +325,8 @@ export default function PushUpCameraPage() {
     setPositionStatus(position.status);
     if (position.activeSide) setActiveSide(position.activeSide);
     if (position.status !== 'ready') {
+      const interrupted = finalizePushUpCycle(cycleRef.current);
+      if (interrupted) interruptedIssuesRef.current.push(interrupted);
       cycleRef.current = createPushUpCycleState();
       setPhase('waiting');
       setElbowAngle(0);

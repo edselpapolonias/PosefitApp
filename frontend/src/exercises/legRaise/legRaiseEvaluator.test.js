@@ -21,8 +21,8 @@ function pose({ hidden = false, frontFacing = false } = {}) {
 function run(frames) {
   let state = createLegRaiseCycleState();
   const events = [];
-  frames.forEach((analysis) => {
-    const result = advanceLegRaiseCycle(state, analysis);
+  frames.forEach((analysis, index) => {
+    const result = advanceLegRaiseCycle(state, analysis, index * 500);
     state = result.state;
     if (result.event) events.push(result.event);
   });

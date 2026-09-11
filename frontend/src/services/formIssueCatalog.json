@@ -1,0 +1,209 @@
+{
+  "squat": [
+    {
+      "issueId": "squat:insufficient-depth",
+      "label": "Incomplete Squat Depth",
+      "advice": "Reach the required bottom position before returning to standing.",
+      "aliases": [
+        "Squat depth too shallow",
+        "Not deep enough",
+        "Go lower.",
+        "Squat deeper.",
+        "Insufficient depth."
+      ]
+    },
+    {
+      "issueId": "squat:excessive-depth",
+      "label": "Excessive Squat Depth",
+      "advice": "Rise slightly to stay within the required bottom position.",
+      "aliases": [
+        "Too deep - risk of injury",
+        "Slightly too deep"
+      ]
+    },
+    {
+      "issueId": "squat:uneven-legs",
+      "label": "Uneven Leg Movement",
+      "advice": "Keep both knees bending evenly throughout the movement.",
+      "aliases": [
+        "Uneven leg movement"
+      ]
+    },
+    {
+      "issueId": "squat:short-hold",
+      "label": "Bottom Hold Too Short",
+      "advice": "Hold the valid bottom position for at least one second before rising.",
+      "aliases": [
+        "Hold for one second."
+      ]
+    },
+    {
+      "issueId": "squat:incomplete-return",
+      "label": "Incomplete Squat",
+      "advice": "Return to standing to complete the movement.",
+      "aliases": [
+        "Squat was not completed by returning to standing"
+      ]
+    },
+    {
+      "issueId": "squat:poor-form",
+      "label": "Form Needs Attention",
+      "advice": "Use the real-time form cues to keep the movement controlled.",
+      "aliases": [
+        "Poor form detected"
+      ]
+    }
+  ],
+  "push-up": [
+    {
+      "issueId": "push-up:insufficient-depth",
+      "label": "Incomplete Push-up Depth",
+      "advice": "Reach the required bottom position before pushing back up.",
+      "aliases": [
+        "Incomplete Push Up depth"
+      ]
+    },
+    {
+      "issueId": "push-up:body-alignment",
+      "label": "Body Alignment",
+      "advice": "Keep your shoulders, hips, and ankles aligned throughout the movement.",
+      "aliases": [
+        "Body alignment outside 160°–180°"
+      ]
+    },
+    {
+      "issueId": "push-up:arm-symmetry",
+      "label": "Uneven Arm Movement",
+      "advice": "Bend and straighten both arms evenly.",
+      "aliases": [
+        "Arm angle difference exceeded 30°"
+      ]
+    },
+    {
+      "issueId": "push-up:incomplete-return",
+      "label": "Incomplete Arm Extension",
+      "advice": "Return to the fully raised starting position to complete the repetition.",
+      "aliases": [
+        "Arms not fully extended above 150°"
+      ]
+    }
+  ],
+  "plank": [
+    {
+      "issueId": "plank:hips-low",
+      "label": "Hips Too Low",
+      "advice": "Raise your hips slightly to restore body alignment.",
+      "aliases": [
+        "Hips or lower back too low"
+      ]
+    },
+    {
+      "issueId": "plank:hips-high",
+      "label": "Hips Too High",
+      "advice": "Lower your hips slightly to restore body alignment.",
+      "aliases": [
+        "Hips or back too high"
+      ]
+    }
+  ],
+  "lunge": [
+    {
+      "issueId": "lunge:insufficient-depth",
+      "label": "Shallow or Unstable Lunge",
+      "advice": "Reach a stable valid bottom position before returning to the start.",
+      "aliases": [
+        "Lunge depth was too shallow or unstable"
+      ]
+    },
+    {
+      "issueId": "lunge:excessive-depth",
+      "label": "Excessive Lunge Depth",
+      "advice": "Reduce your depth to stay in the valid bottom range.",
+      "aliases": [
+        "Lunge depth was excessive"
+      ]
+    },
+    {
+      "issueId": "lunge:incomplete-return",
+      "label": "Incomplete Lunge",
+      "advice": "Return to the starting position to complete the repetition.",
+      "aliases": [
+        "Lunge was not completed by returning to the start position"
+      ]
+    },
+    {
+      "issueId": "lunge:camera-orientation",
+      "label": "Camera Orientation Changed",
+      "advice": "Maintain a side view so your movement stays visible.",
+      "aliases": [
+        "Camera orientation became unsuitable during the Lunge"
+      ]
+    },
+    {
+      "issueId": "lunge:landmarks-lost",
+      "label": "Body Moved Out of View",
+      "advice": "Keep the required body landmarks visible throughout the movement.",
+      "aliases": [
+        "Required landmarks were lost during the Lunge"
+      ]
+    }
+  ],
+  "leg-raise": [
+    {
+      "issueId": "leg-raise:unstable-raised-position",
+      "label": "Raised Position Not Reached",
+      "advice": "Reach a stable valid raised position with straight legs.",
+      "aliases": [
+        "Leg Raise did not reach a stable 30°–60° hip-flexion position"
+      ]
+    },
+    {
+      "issueId": "leg-raise:bent-knees",
+      "label": "Bent Knees",
+      "advice": "Keep your knees extended throughout the raise and lowering.",
+      "aliases": [
+        "Knees bent during the Leg Raise"
+      ]
+    },
+    {
+      "issueId": "leg-raise:excessive-elevation",
+      "label": "Legs Raised Too High",
+      "advice": "Keep the raised position within the required target range.",
+      "aliases": [
+        "Legs were raised above the 60° target range"
+      ]
+    },
+    {
+      "issueId": "leg-raise:short-hold",
+      "label": "Raised Hold Too Short",
+      "advice": "Hold the valid raised position for at least one second before lowering.",
+      "aliases": [
+        "Hold for one second."
+      ]
+    },
+    {
+      "issueId": "leg-raise:incomplete-return",
+      "label": "Incomplete Leg Raise",
+      "advice": "Lower back to the starting position to complete the repetition.",
+      "aliases": [
+        "Leg Raise was not completed by returning to the lowered position"
+      ]
+    },
+    {
+      "issueId": "leg-raise:camera-orientation",
+      "label": "Camera Orientation Changed",
+      "advice": "Maintain a side view so your movement stays visible.",
+      "aliases": [
+        "Camera orientation became unsuitable during the Leg Raise"
+      ]
+    },
+    {
+      "issueId": "leg-raise:landmarks-lost",
+      "label": "Body Moved Out of View",
+      "advice": "Keep the required body landmarks visible throughout the movement.",
+      "aliases": [
+        "Required landmarks were lost during the Leg Raise"
+      ]
+    }
+  ]
+}

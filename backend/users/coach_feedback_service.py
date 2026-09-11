@@ -105,6 +105,22 @@ def normalize_exercise_request(data):
     duration = _safe_int(summary.get('duration', summary.get('sessionDuration', 0)), 0)
 
     mistakes = _normalize_reason_counts(summary.get('mistakes') or summary.get('incorrectReasonCounts') or summary.get('incorrectReasons') or {})
+    # Structured detector output is authoritative; retain the legacy mistakes map.
+    issues = {}
+    for item in summary.get('formIssues', []) if isinstance(summary.get('formIssues'), list) else []:
+        if not isinstance(item, dict):
+            continue
+        issue_id = str(item.get('issueId') or '').strip()[:160]
+        label = str(item.get('label') or item.get('type') or '').strip()[:120]
+        count = max(0, _safe_int(item.get('count')))
+        if issue_id and label and count:
+            issues[issue_id] = {
+                'issueId': issue_id, 'label': label,
+                'count': count + issues.get(issue_id, {}).get('count', 0),
+            }
+    form_issues = sorted(issues.values(), key=lambda item: -item['count'])
+    if form_issues:
+        mistakes = {item['label']: item['count'] for item in form_issues}
     most_frequent_issue = max(mistakes, key=mistakes.get) if mistakes else None
 
     normalized_summary = {
@@ -119,6 +135,7 @@ def normalize_exercise_request(data):
         'totalHoldTime': _safe_int(summary.get('totalHoldTime', 0), 0),
         'setResults': _normalize_set_results(summary.get('setResults') or summary.get('setSummaries') or []),
         'mistakes': mistakes,
+        'formIssues': form_issues,
         'mostFrequentFormIssue': most_frequent_issue,
         'angleStats': _normalize_angle_stats(summary),
         'sessionMeta': {
@@ -136,19 +153,20 @@ def normalize_exercise_request(data):
 
 def _build_system_instruction():
     return (
-        'You are the feedback-writing layer for PoseFit. PoseFit has already analyzed the exercise '
-        'using MediaPipe and fixed joint-angle rules. Treat every supplied statistic as final and do '
-        'not recalculate, override, or reinterpret whether a repetition was correct. Use only facts in '
-        'the supplied JSON. Never invent form issues, injuries, pain, medical conditions, joint problems, '
-        'or measurements. Mention a form issue only when it appears in summary.mistakes with a count '
-        'greater than zero. Generate one concise and natural exercise form feedback paragraph based only '
-        'on the provided session data. Write 2 to 4 beginner-friendly sentences. Start by briefly evaluating '
-        'the overall performance, acknowledge what went well, and only when an actual form issue exists, '
-        'explain the most important or most frequent issue and give one practical correction. If mistakes '
-        'is empty, provide positive reinforcement and encourage the user to maintain the same controlled '
-        'form. Do not use headings, bullet points, markdown, lists, or separate sections. Do not mention a '
-        '"most detected issue" label in the paragraph. Keep the paragraph under 90 words. Do not provide '
-        'medical advice or diagnoses.'
+        'You are the feedback-writing layer for PoseFit. All supplied detector results and statistics '
+        'are final. Never decide or reinterpret which issues occurred, rep validity, or accuracy. '
+        'Write a concise overall feedbackParagraph using only supplied performance statistics. '
+        'Do not diagnose form issues in that paragraph. For EVERY entry in summary.formIssues, '
+        'return one issueFeedback item with the exact issueId and a concise, actionable advice sentence. '
+        'Address all supplied issues in descending occurrence count, including less frequent issues. '
+        'Only explain the issue identified by that entry; never introduce other alignment, posture, '
+        'joint, or technique problems. Never invent measurements, pain, injuries or medical conditions. '
+        'Do not add IDs, labels or counts. The detector owns these fields. '
+        'If formIssues is empty but legacy summary.mistakes is populated, briefly address ALL those '
+        'recorded mistakes in the paragraph. If both are empty, give positive reinforcement and '
+        'return an empty issueFeedback list. Keep each advice sentence under 30 words, and the '
+        'overall paragraph under 90 words. Use plain beginner-friendly language, without markdown '
+        'or medical advice.'
     )
 
 
@@ -184,9 +202,17 @@ def _build_request_body(payload):
             'responseSchema': {
                 'type': 'OBJECT',
                 'properties': {
-                    'feedbackParagraph': {'type': 'STRING'}
+                    'feedbackParagraph': {'type': 'STRING'},
+                    'issueFeedback': {
+                        'type': 'ARRAY',
+                        'items': {
+                            'type': 'OBJECT',
+                            'properties': {'issueId': {'type': 'STRING'}, 'advice': {'type': 'STRING'}},
+                            'required': ['issueId', 'advice'],
+                        },
+                    }
                 },
-                'required': ['feedbackParagraph']
+                'required': ['feedbackParagraph', 'issueFeedback']
             }
         },
     }
@@ -307,9 +333,20 @@ def _normalize_feedback(feedback, _payload):
     if not paragraph:
         raise GeminiServiceError('Gemini feedback was missing its feedback paragraph.', error_type='invalid_response')
 
-    return {
-        'feedbackParagraph': paragraph,
-    }
+    result = {'feedbackParagraph': paragraph}
+    allowed = {item['issueId'] for item in _payload['summary'].get('formIssues', [])}
+    advice_by_id = {}
+    for item in feedback.get('issueFeedback', []) if isinstance(feedback.get('issueFeedback'), list) else []:
+        if isinstance(item, dict) and item.get('issueId') in allowed:
+            advice = _shorten_feedback_text(item.get('advice'), max_sentences=1, max_words=30)
+            if advice:
+                advice_by_id.setdefault(item['issueId'], advice)
+    if allowed:
+        result['issueFeedback'] = [
+            {'issueId': item['issueId'], 'advice': advice_by_id[item['issueId']]}
+            for item in _payload['summary']['formIssues'] if item['issueId'] in advice_by_id
+        ]
+    return result
 
 
 def generate_exercise_coach_feedback(data):

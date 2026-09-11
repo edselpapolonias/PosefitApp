@@ -1,4 +1,5 @@
 import { LEG_RAISE_STABILITY } from './legRaiseThresholds';
+import { advanceRepHold, createRepHold, HOLD_FAILURE_REASON } from '../repHold';
 
 export function createLegRaiseCycleState() {
   return {
@@ -14,6 +15,7 @@ export function createLegRaiseCycleState() {
     validRaisedConfirmed: false,
     kneeIssue: false,
     excessiveElevation: false,
+    hold: createRepHold(),
   };
 }
 
@@ -31,10 +33,11 @@ function reasonsFor(state) {
   if (!state.validRaisedConfirmed) reasons.push('Leg Raise did not reach a stable 30°–60° hip-flexion position');
   if (state.kneeIssue) reasons.push('Knees bent during the Leg Raise');
   if (state.excessiveElevation) reasons.push('Legs were raised above the 60° target range');
+  if (reasons.length === 0 && !state.hold.qualified) reasons.push(HOLD_FAILURE_REASON);
   return reasons;
 }
 
-export function advanceLegRaiseCycle(previous, analysis) {
+export function advanceLegRaiseCycle(previous, analysis, now = performance.now()) {
   const state = { ...previous };
 
   if (!state.armed) {
@@ -52,6 +55,8 @@ export function advanceLegRaiseCycle(previous, analysis) {
     state.phase = 'raising';
   }
   if (!state.attemptStarted) return { state: { ...state, phase: 'lowered' }, event: null };
+
+  state.hold = advanceRepHold(state.hold, analysis.position === 'valid_raised' && analysis.legExtended, now);
 
   state.maximumHipFlexion = Math.max(state.maximumHipFlexion, analysis.hipFlexion);
   state.invalidKneeFrames = analysis.legExtended ? 0 : state.invalidKneeFrames + 1;
@@ -75,7 +80,7 @@ export function advanceLegRaiseCycle(previous, analysis) {
   state.returnLoweredFrames += 1;
   if (state.returnLoweredFrames < LEG_RAISE_STABILITY.loweredFrames) return { state, event: null };
   const reasons = reasonsFor(state);
-  const correct = state.validRaisedConfirmed && reasons.length === 0;
+  const correct = state.validRaisedConfirmed && state.hold.qualified && reasons.length === 0;
   return {
     state: armedState(),
     event: {

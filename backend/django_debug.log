@@ -338,3 +338,33 @@
 [2026-09-10T18:03:08.633409] Login attempt: username=admin
 [2026-09-10T18:03:09.661514] Authentication result for admin: SUCCESS
 [2026-09-10T18:03:09.768271] Login session started for admin
+[2026-09-10T21:37:30.402940] Login attempt: username=admin
+[2026-09-10T21:37:31.906075] Authentication result for admin: SUCCESS
+[2026-09-10T21:37:32.110030] Login session started for admin
+[2026-09-10T22:58:24.462613] Login attempt: username=progress-user
+[2026-09-10T22:58:25.140016] Authentication result for progress-user: SUCCESS
+[2026-09-10T22:58:25.146537] Login session started for progress-user
+[2026-09-10T22:58:26.541314] Login attempt: username=progress-user
+[2026-09-10T22:58:27.205339] Authentication result for progress-user: SUCCESS
+[2026-09-10T22:58:27.216313] Login session started for progress-user
+[2026-09-10T22:59:46.926270] Login attempt: username=progress-user
+[2026-09-10T22:59:47.737944] Authentication result for progress-user: SUCCESS
+[2026-09-10T22:59:47.747025] Login session started for progress-user
+[2026-09-10T22:59:49.333635] Login attempt: username=progress-user
+[2026-09-10T22:59:50.141339] Authentication result for progress-user: SUCCESS
+[2026-09-10T22:59:50.150716] Login session started for progress-user
+[2026-09-11T11:54:24.708338] Login attempt: username=admin
+[2026-09-11T11:54:25.797298] Authentication result for admin: SUCCESS
+[2026-09-11T11:54:26.128212] Login session started for admin
+[2026-09-11T11:57:13.665266] Login attempt: username=admin
+[2026-09-11T11:57:14.621241] Authentication result for admin: SUCCESS
+[2026-09-11T11:57:14.693546] Login session started for admin
+[2026-09-11T11:59:29.996015] Login attempt: username=admin
+[2026-09-11T11:59:30.692915] Authentication result for admin: SUCCESS
+[2026-09-11T11:59:30.705735] Login session started for admin
+[2026-09-11T12:20:33.931030] Login attempt: username=progress-user
+[2026-09-11T12:20:34.497841] Authentication result for progress-user: SUCCESS
+[2026-09-11T12:20:34.504952] Login session started for progress-user
+[2026-09-11T12:20:35.514091] Login attempt: username=progress-user
+[2026-09-11T12:20:35.987344] Authentication result for progress-user: SUCCESS
+[2026-09-11T12:20:35.993799] Login session started for progress-user

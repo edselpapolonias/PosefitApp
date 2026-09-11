@@ -108,9 +108,9 @@ export default function ExerciseSelectionPage() {
           {visibleExercises.map((exercise) => (
             <article className={`exercise-card exercise-card--${exercise.tone} exercise-card--${exercise.id}`} key={exercise.id}>
               <div className="exercise-card__photo">
-                <img className="exercise-card__photo-image" src={exercise.image} alt={`${exercise.name} exercise demonstration`} />
+                <img decoding="async" loading="lazy" className="exercise-card__photo-image" src={exercise.image} alt={`${exercise.name} exercise demonstration`} />
                 <span className="exercise-card__number" aria-hidden="true">{exercise.number}</span>
-                <img className="exercise-card__anatomy" src={exercise.anatomy} alt={`${exercise.name} primary muscle areas`} />
+                <img decoding="async" loading="lazy" className="exercise-card__anatomy" src={exercise.anatomy} alt={`${exercise.name} primary muscle areas`} />
               </div>
               <div className="exercise-card__content">
                 <h2>{exercise.name}</h2>

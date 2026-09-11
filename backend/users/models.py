@@ -1,6 +1,20 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
+class UserWorkoutPlan(models.Model):
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='workout_plans')
+    plan_id = models.CharField(max_length=60)
+    status = models.CharField(max_length=12, default='active')
+    activated_at = models.DateTimeField(auto_now_add=True)
+    start_date = models.DateField()
+    completed_workout_ids = models.JSONField(default=list, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user'], condition=models.Q(status='active'), name='one_active_plan_per_user')]
+
 class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

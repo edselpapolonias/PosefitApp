@@ -36,7 +36,7 @@ test.each([
   const trigger = screen.getByRole('button', { name: 'Watch Demonstration' });
   trigger.focus();
   fireEvent.click(trigger);
-  expect(screen.getByRole('dialog', { name: `How to Perform: ${name}` })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'EXERCISE DEMONSTRATION' })).toBeInTheDocument();
   const video = screen.getByLabelText(`${name} demonstration video`);
   expect(video).toHaveAttribute('src', `/videos/how-to-perform/${filename}`);
   expect(video.muted).toBe(true);
@@ -62,7 +62,7 @@ test('backdrop and Escape close; content clicks do not; original scroll style is
   render(<SquatPage />);
   const open = () => fireEvent.click(screen.getByRole('button', { name: 'Watch Demonstration' }));
   open();
-  fireEvent.click(screen.getByRole('heading', { name: 'How to Perform: Squat' }));
+  fireEvent.click(screen.getByRole('heading', { name: 'EXERCISE DEMONSTRATION' }));
   expect(screen.getByRole('dialog')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('dialog'));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

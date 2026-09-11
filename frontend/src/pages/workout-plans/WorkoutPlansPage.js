@@ -45,7 +45,7 @@ function ExerciseList({ exercises }) {
     <div className="plan-exercises">
       {exercises.map((exercise) => (
         <div className="plan-exercise" key={exercise.id}>
-          <img className={exercise.id === 'leg-raise' ? 'leg-raise-icon' : ''} src={exercise.icon} alt="" aria-hidden="true" />
+          <img decoding="async" className={exercise.id === 'leg-raise' ? 'leg-raise-icon' : ''} src={exercise.icon} alt="" aria-hidden="true" />
           <span>{exercise.name}</span>
         </div>
       ))}
@@ -58,7 +58,7 @@ function PlanCard({ plan }) {
   return (
     <article className={`workout-plan-card workout-plan-card--${plan.slug}`}>
       <div className="workout-plan-card__image">
-        <img src={plan.image} alt={plan.imageAlt} />
+        <img decoding="async" loading="lazy" src={plan.image} alt={plan.imageAlt} />
         <span className={`workout-plan-card__level workout-plan-card__level--${plan.level.toLowerCase()}`}>{plan.level}</span>
         {plan.popular && <span className="workout-plan-card__popular"><i className="fa-solid fa-star" aria-hidden="true" />Recommended</span>}
       </div>
@@ -118,7 +118,7 @@ export default function WorkoutPlansPage() {
           <div className="workout-plans-hero__visual" aria-hidden="true">
             <span className="workout-plans-hero__ray workout-plans-hero__ray--one" />
             <span className="workout-plans-hero__ray workout-plans-hero__ray--two" />
-            <img src={workoutHero} alt="" />
+            <img decoding="async" src={workoutHero} alt="" />
             <p className="workout-plans-hero__motto">Consistency<br />Builds<br />Progress</p>
             <small>Same<br /><strong>Stronger<br />You</strong></small>
           </div>

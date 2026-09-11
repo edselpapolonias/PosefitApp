@@ -59,6 +59,11 @@ export function finalizeLungeCycle(state) {
     type: 'incorrect',
     minimumAngle: state.minimumAngle,
     workingLeg: state.workingLeg,
-    reasons: ['Lunge was not completed by returning to the start position'],
+    reasons: [
+      'Lunge was not completed by returning to the start position',
+      ...(state.excessiveDepthDetected ? ['Lunge depth was excessive'] : []),
+      ...(!state.validBottomConfirmed && !state.excessiveDepthDetected
+        && state.minimumAngle <= LUNGE_DEPTH.incompleteAttemptMax ? ['Lunge depth was too shallow or unstable'] : []),
+    ],
   };
 }

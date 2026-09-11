@@ -1,3 +1,4 @@
+import { normalizeFormIssues } from './formIssues';
 import { calculateAccuracy } from '../utils/statistics';
 
 export const LATEST_SESSION_RESULT_KEY = 'posefitLatestSessionResult';
@@ -15,7 +16,7 @@ export const SUMMARY_REASON_ICONS = {
 export function buildReasonCounts(badReps = []) {
     const reasonCounts = {};
     badReps.forEach((rep) => {
-        (rep.reasons || []).forEach((reason) => {
+        [...new Set(rep.reasons || [])].forEach((reason) => {
             reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
         });
     });
@@ -86,23 +87,6 @@ function toNonNegativeNumber(value, fallback = 0) {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-function normalizeFormIssues(formIssues = []) {
-    if (Array.isArray(formIssues)) {
-        return formIssues
-            .map((issue) => ({
-                type: String(issue?.type || '').trim(),
-                count: toNonNegativeNumber(issue?.count),
-            }))
-            .filter((issue) => issue.type && issue.count > 0)
-            .sort((a, b) => b.count - a.count);
-    }
-
-    return Object.entries(formIssues || {})
-        .map(([type, count]) => ({ type, count: toNonNegativeNumber(count) }))
-        .filter((issue) => issue.type && issue.count > 0)
-        .sort((a, b) => b.count - a.count);
-}
-
 function feedbackText(value) {
     if (Array.isArray(value)) {
         return value.map((item) => String(item).trim()).filter(Boolean).join(' ');
@@ -119,7 +103,7 @@ function normalizeSessionFeedback(feedback) {
         feedbackText(feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations),
     ].filter(Boolean).join(' ');
 
-    return feedbackParagraph ? { feedbackParagraph } : null;
+    return feedbackParagraph ? { feedbackParagraph, issueFeedback: Array.isArray(feedback.issueFeedback) ? feedback.issueFeedback : [] } : null;
 }
 
 export function createSessionResult(data = {}) {
@@ -149,7 +133,7 @@ export function createSessionResult(data = {}) {
         totalReps: metricType === 'reps' ? Math.round(toNonNegativeNumber(data.totalReps, correctReps)) : null,
         totalHoldTime: metricType === 'time' ? Math.round(toNonNegativeNumber(data.totalHoldTime)) : null,
         accuracy,
-        formIssues: normalizeFormIssues(data.formIssues),
+        formIssues: normalizeFormIssues(data.formIssues, String(exercise.id || '').trim().toLowerCase()),
         setResults: Array.isArray(data.setResults) ? data.setResults : [],
         config: data.config && typeof data.config === 'object' ? data.config : {},
         analysis: data.analysis && typeof data.analysis === 'object' ? data.analysis : {},

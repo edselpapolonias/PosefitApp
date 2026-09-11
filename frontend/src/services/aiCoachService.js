@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { normalizeFormIssues } from './formIssues';
 import { apiUrl } from './apiConfig';
 
 const AI_FEEDBACK_URL = apiUrl('/api/users/exercise-coach-feedback/');
@@ -21,7 +22,7 @@ function normalizeFeedback(feedback) {
         normalizeText(feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations),
     ].filter(Boolean).join(' ');
 
-    return feedbackParagraph ? { feedbackParagraph } : null;
+    return feedbackParagraph ? { feedbackParagraph, issueFeedback: Array.isArray(feedback.issueFeedback) ? feedback.issueFeedback : [] } : null;
 }
 
 function buildAngleStats(repAngles = []) {
@@ -92,7 +93,7 @@ export async function fetchSquatCoachFeedback(stats) {
 export async function fetchSessionCoachFeedback(sessionResult) {
     if (sessionResult?.feedback) return sessionResult.feedback;
 
-    const formIssues = sessionResult.formIssues || [];
+    const formIssues = normalizeFormIssues(sessionResult.formIssues, sessionResult.exercise?.id);
     const mistakes = Object.fromEntries(
         formIssues
             .filter((issue) => issue?.type && Number(issue.count) > 0)
@@ -113,6 +114,7 @@ export async function fetchSessionCoachFeedback(sessionResult) {
         duration: sessionResult.duration,
         setResults: sessionResult.setResults || [],
         mistakes,
+        formIssues,
         angleStats: buildAngleStats(sessionResult.analysis?.repAngles || []),
         totalSets: sessionResult.config?.totalSets || 0,
         totalRepsPerSet: sessionResult.config?.repsPerSet || 0,

@@ -15,6 +15,29 @@ from .models import CustomUser, WorkoutSession
 
 
 class CoachFeedbackServiceTests(SimpleTestCase):
+    def test_all_structured_issues_reach_gemini_and_unknown_response_ids_are_removed(self):
+        issues = [
+            {'issueId': 'squat:insufficient-depth', 'label': 'Incomplete Squat Depth', 'count': 6},
+            {'issueId': 'squat:uneven-legs', 'label': 'Uneven Leg Movement', 'count': 3},
+            {'issueId': 'squat:short-hold', 'label': 'Bottom Hold Too Short', 'count': 2},
+        ]
+        payload = normalize_exercise_request({'exercise': 'squat', 'summary': {'formIssues': issues}})
+        self.assertEqual(payload['summary']['formIssues'], issues)
+        self.assertEqual(len(payload['summary']['mistakes']), 3)
+        body = _build_request_body(payload)
+        self.assertIn('squat:short-hold', body['contents'][0]['parts'][0]['text'])
+        feedback = _normalize_feedback({
+            'feedbackParagraph': 'Session recorded.',
+            'issueFeedback': [
+                {'issueId': 'invented', 'advice': 'Invented problem.'},
+                {'issueId': 'squat:short-hold', 'advice': 'Hold for one second.'},
+                {'issueId': 'squat:short-hold', 'advice': 'Duplicate.'},
+            ],
+        }, payload)
+        self.assertEqual(feedback['issueFeedback'], [
+            {'issueId': 'squat:short-hold', 'advice': 'Hold for one second.'},
+        ])
+
     def test_normalizes_only_recorded_session_measurements(self):
         payload = normalize_exercise_request({
             'exercise': 'squat',
@@ -41,7 +64,7 @@ class CoachFeedbackServiceTests(SimpleTestCase):
         body = _build_request_body(normalize_exercise_request({'exercise': 'squat'}))
         properties = body['generationConfig']['responseSchema']['properties']
 
-        self.assertEqual(set(properties), {'feedbackParagraph'})
+        self.assertEqual(set(properties), {'feedbackParagraph', 'issueFeedback'})
         self.assertEqual(body['generationConfig']['thinkingConfig']['thinkingBudget'], 0)
         self.assertEqual(body['generationConfig']['maxOutputTokens'], 2048)
 
@@ -269,6 +292,10 @@ class WorkoutSessionApiTests(TestCase):
 
         payload = {
             'id': 'current-squat',
+            'formIssues': [
+                {'issueId': 'squat:insufficient-depth', 'label': 'Incomplete Squat Depth', 'type': 'Incomplete Squat Depth', 'count': 3, 'exercise': 'squat'},
+                {'issueId': 'squat:short-hold', 'label': 'Bottom Hold Too Short', 'type': 'Bottom Hold Too Short', 'count': 1, 'exercise': 'squat'},
+            ],
             'exercise': {'id': 'squat', 'name': 'Squat'},
             'metricType': 'reps',
             'status': 'completed',
@@ -292,6 +319,10 @@ class WorkoutSessionApiTests(TestCase):
 
         second_response = self.client.post('/api/users/sessions/complete/', payload, format='json')
         self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(
+            WorkoutSession.objects.get(user=self.user, session_id='current-squat').form_issues,
+            payload['formIssues'],
+        )
         self.assertEqual(
             WorkoutSession.objects.filter(user=self.user, session_id='current-squat').count(),
             1,

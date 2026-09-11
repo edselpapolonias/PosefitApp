@@ -16,6 +16,7 @@ import {
 import { createSessionResult, saveLatestSessionResult } from '../../../services/summaryService';
 import { formatTime } from '../../../utils/formatters';
 import { speak } from '../../../utils/speechFeedback';
+import { holdFeedback, HOLD_FAILURE_REASON } from '../../../exercises/repHold';
 import './SquatCameraPage.css';
 import './LegRaiseCameraPage.css';
 
@@ -112,6 +113,12 @@ export default function LegRaiseCameraPage() {
     cycleRef.current = createLegRaiseCycleState();
     setPhase('waiting');
   }, []);
+
+  useEffect(() => {
+    const resetHiddenHold = () => { if (document.hidden) resetCycle(); };
+    document.addEventListener('visibilitychange', resetHiddenHold);
+    return () => document.removeEventListener('visibilitychange', resetHiddenHold);
+  }, [resetCycle]);
 
   useEffect(() => {
     if (!started) return undefined;
@@ -235,6 +242,10 @@ export default function LegRaiseCameraPage() {
     const result = advanceLegRaiseCycle(cycleRef.current, analysis);
     cycleRef.current = result.state;
     setPhase(lowering && analysis.position !== 'lowered' ? 'lowering' : result.state.phase);
+    if (result.state.attemptStarted && analysis.position === 'valid_raised' && analysis.legExtended) {
+      setFeedback(result.state.hold.qualified ? 'Good! Complete the rep.' : 'Hold the position for 1 second.');
+      setFeedbackDetail(holdFeedback(result.state.hold));
+    }
     if (!result.event) return;
     if (result.event.type === 'correct') {
       correctRef.current += 1;
@@ -250,6 +261,10 @@ export default function LegRaiseCameraPage() {
       incorrectRef.current.push({ angle: Math.round(result.event.maximumHipFlexion), reasons: result.event.reasons, classification: 'bad', set: setRef.current, side: result.event.activeSide });
       setIncorrectRef.current += 1;
       setIncorrectCount(incorrectRef.current.length);
+      if (result.event.reasons[0] === HOLD_FAILURE_REASON) {
+        setFeedback(HOLD_FAILURE_REASON);
+        setFeedbackDetail('Maintain the raised position continuously before lowering.');
+      }
       if (!mutedRef.current) speak(result.event.reasons[0], true);
     }
   }, [completeSet, targetReps]);
@@ -267,7 +282,7 @@ export default function LegRaiseCameraPage() {
     const reason = readinessStatus === 'turn_sideways'
       ? 'Camera orientation became unsuitable during the Leg Raise'
       : 'Required landmarks were lost during the Leg Raise';
-    incorrectRef.current.push({ angle: Math.round(interrupted.maximumHipFlexion), reasons: [reason], classification: 'bad', set: setRef.current, side: interrupted.activeSide });
+    incorrectRef.current.push({ angle: Math.round(interrupted.maximumHipFlexion), reasons: [...new Set([...interrupted.reasons, reason])], classification: 'bad', set: setRef.current, side: interrupted.activeSide });
     setIncorrectRef.current += 1;
     setIncorrectCount(incorrectRef.current.length);
   }, []);
@@ -296,7 +311,7 @@ export default function LegRaiseCameraPage() {
       return;
     }
     const analysis = analyzeLegRaise(results.poseLandmarks, cycleRef.current.activeSide);
-    if (!analysis) return;
+    if (!analysis) { resetCycle(); return; }
     const lowering = cycleRef.current.validRaisedConfirmed && analysis.hipFlexion < cycleRef.current.maximumHipFlexion;
     const live = lowering
       ? analysis.position === 'lowered'
@@ -314,7 +329,9 @@ export default function LegRaiseCameraPage() {
       setActiveSide(analysis.activeSide); setHipFlexion(Math.round(analysis.hipFlexion)); setKneeAngle(Math.round(analysis.kneeAngle));
     }
     processRep(analysis);
-    if (!mutedRef.current) speak(live.feedback);
+    if (!mutedRef.current) speak(analysis.position === 'valid_raised' && analysis.legExtended
+      ? cycleRef.current.hold.qualified ? 'Good! Complete the rep.' : 'Keep holding.'
+      : live.feedback);
   }, [clearCanvas, drawAngle, processRep, recordInterruptedAttempt, resetCycle]);
 
   const startCamera = useCallback(async () => {

@@ -272,7 +272,7 @@ export default function LungeCameraPage() {
           : 'Required landmarks were lost during the Lunge';
         incorrectRef.current.push({
           angle: Math.round(interruptedAttempt.minimumAngle),
-          reasons: [reason],
+          reasons: [...new Set([...interruptedAttempt.reasons, reason])],
           classification: 'bad',
           set: setRef.current,
           leg: interruptedAttempt.workingLeg,
