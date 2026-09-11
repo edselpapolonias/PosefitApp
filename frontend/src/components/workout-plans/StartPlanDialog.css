@@ -3,7 +3,7 @@
 .start-plan-dialog::backdrop { background: #10182d99; }
 .start-plan-dialog__content { position: relative; padding: 38px 32px 30px; text-align: center; }
 .start-plan-dialog button { font: inherit; cursor: pointer; }
-.start-plan-dialog button:disabled { cursor: wait; opacity: .65; }
+.start-plan-dialog button:disabled { cursor: not-allowed; opacity: .65; }
 .start-plan-dialog button:focus-visible { outline: 3px solid #ff9c68; outline-offset: 3px; }
 .start-plan-dialog__close { position: absolute; top: 13px; right: 13px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #fff2e9; color: #ff5a0a; }
 .start-plan-dialog__icon { display: grid; place-items: center; width: 66px; height: 66px; margin: 0 auto 20px; border-radius: 20px; color: #ff5a0a; background: #fff0e5; font-size: 30px; }

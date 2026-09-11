@@ -23,6 +23,7 @@ export async function startWorkoutPlan(planId, startDate) {
 
 export const startBeginnerPlan = (startDate) => startWorkoutPlan('beginner-full-body', startDate);
 export const startLowerBodyPlan = (startDate) => startWorkoutPlan('lower-body-focus', startDate);
+export const startCoreUpperPlan = (startDate) => startWorkoutPlan('core-upper-body', startDate);
 
 export async function endWorkoutPlan(plan) {
   await post('/api/users/workout-plans/end/', { instanceId: plan.instanceId });

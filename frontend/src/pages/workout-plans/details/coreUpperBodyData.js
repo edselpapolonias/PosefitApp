@@ -4,6 +4,11 @@ import legRaiseIcon from '../../../images/icon-leg-raise.png';
 
 export const CORE_UPPER_PLAN_ID = 'core-upper-body';
 export const CORE_UPPER_PLAN_REST_SECONDS = 60;
+export const coreUpperWorkoutDays = [
+  { label: 'MON', name: 'Monday', offset: 0 },
+  { label: 'WED', name: 'Wednesday', offset: 2 },
+  { label: 'FRI', name: 'Friday', offset: 4 },
+];
 
 const exerciseLibrary = {
   'push-up': { id: 'push-up', name: 'Push-up', focus: 'Chest, Arms', icon: pushUpIcon },
@@ -153,5 +158,6 @@ export const coreUpperBodyPlan = {
   level: 'Intermediate',
   durationWeeks: 4,
   restTime: CORE_UPPER_PLAN_REST_SECONDS,
+  scheduleDays: coreUpperWorkoutDays,
   weeks: Object.values(coreUpperScheduleByWeek),
 };

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../../components/Navbar';
 import pushUpPhoto from '../../../images/exercise-card-push-up.png';
@@ -7,8 +7,12 @@ import {
   coreUpperExercises,
   coreUpperProgression,
   coreUpperScheduleByWeek,
+  coreUpperWorkoutDays,
 } from './coreUpperBodyData';
 import { PlanFact, WorkoutDayCard } from '../../../components/workout-plans/PlanDetailsShared';
+import StartPlanDialog from '../../../components/workout-plans/StartPlanDialog';
+import { ActiveWorkoutPlan } from './BeginnerFullBodyActive';
+import { endWorkoutPlan, fetchActiveWorkoutPlan, startCoreUpperPlan } from '../../../services/workoutPlanService';
 import './BeginnerFullBodyDetails.css';
 import './CoreUpperBodyDetails.css';
 
@@ -28,28 +32,100 @@ const expectations = [
 
 export default function CoreUpperBodyDetails() {
   const navigate = useNavigate();
+  const [activePlan, setActivePlan] = useState(null);
   const scheduleRef = useRef(null);
   const [activeWeek, setActiveWeek] = useState(1);
   const activeSchedule = coreUpperScheduleByWeek[activeWeek];
   const activeProgression = coreUpperProgression[activeWeek - 1];
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [ending, setEnding] = useState(false);
+  const submittingRef = useRef(false);
+  const loadVersionRef = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const version = loadVersionRef.current;
+    fetchActiveWorkoutPlan(controller.signal).then((plan) => {
+      if (active && version === loadVersionRef.current && plan?.id === coreUpperBodyPlan.id) setActivePlan(plan);
+    }).catch(() => { /* Activation reports API failures in its dialog. */ });
+    return () => { active = false; controller.abort(); };
+  }, []);
 
   const selectWeek = (week) => {
     if (coreUpperScheduleByWeek[week]) setActiveWeek(week);
   };
 
   const preparePlan = () => {
-    sessionStorage.setItem('posefitActiveWorkoutPlan', JSON.stringify({
-      ...coreUpperBodyPlan,
-      activeWeek,
-      activeDay: activeSchedule[0].day,
-      activeWorkout: activeSchedule[0],
-    }));
-    scheduleRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    loadVersionRef.current += 1;
+    setError('');
+    setConfirming(true);
   };
+
+  const confirmPlan = async (startDate) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const plan = await startCoreUpperPlan(startDate);
+      if (!plan?.instanceId || plan.id !== coreUpperBodyPlan.id) throw new Error('Unable to start the plan. Please try again.');
+      setActivePlan(plan);
+      setConfirming(false);
+    } catch (failure) {
+      setError(failure.response?.data?.error || (failure.message?.startsWith('You already') ? failure.message : 'Unable to start the plan. Please try again.'));
+    } finally {
+      submittingRef.current = false;
+      setBusy(false);
+    }
+  };
+
+  const endPlan = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setEnding(true);
+    setError('');
+    try {
+      await endWorkoutPlan(activePlan);
+      setActivePlan(null);
+      setActiveWeek(1);
+    } catch {
+      setError('Unable to end the plan. Please try again.');
+    } finally {
+      submittingRef.current = false;
+      setEnding(false);
+    }
+  };
+
+  if (activePlan) return <ActiveWorkoutPlan
+    plan={activePlan}
+    onEndPlan={endPlan}
+    ending={ending}
+    error={error}
+    scheduleByWeek={coreUpperScheduleByWeek}
+    title="Core & Upper Body"
+    heroPhoto={pushUpPhoto}
+    heroAlt="Athlete demonstrating a push-up"
+    slogan={<>Build Strength<br />With Every Rep</>}
+    quote={<>&ldquo;A stronger core<br />supports every movement.&rdquo;</>}
+    description="Build upper-body strength, core strength, and stability through controlled Push-up, Plank, and Leg Raise training."
+    facts={['3 Days/Week', '25–40 min', '4 Weeks', coreUpperBodyPlan.level]}
+    motivation={<>&ldquo;Control every rep,<br />build lasting strength,<br />and keep progressing.&rdquo;</>}
+  />;
 
   return (
     <div className="beginner-detail-page beginner-full-body-detail-page core-upper-detail-page">
       <Navbar activeItem="Workout Plans" />
+      {confirming && <StartPlanDialog
+        busy={busy}
+        error={error}
+        onCancel={() => setConfirming(false)}
+        onConfirm={confirmPlan}
+        planName="Core & Upper Body"
+        workoutDays={coreUpperWorkoutDays}
+      />}
 
       <main className="beginner-detail-page__main">
         <button className="beginner-detail-page__back" type="button" onClick={() => navigate('/workout-plans')}>

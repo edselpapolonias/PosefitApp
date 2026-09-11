@@ -19,6 +19,11 @@ PLAN_DEFINITIONS = {
         'workout_id_prefix': 'lower-body-week-',
         'workout_days': (('Tuesday', 1), ('Thursday', 3), ('Saturday', 5)),
     },
+    'core-upper-body': {
+        'name': 'Core & Upper Body',
+        'workout_id_prefix': 'core-upper-week-',
+        'workout_days': (('Monday', 0), ('Wednesday', 2), ('Friday', 4)),
+    },
 }
 
 

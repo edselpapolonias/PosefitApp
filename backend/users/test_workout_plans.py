@@ -88,6 +88,90 @@ class WorkoutPlanTests(TestCase):
         self.assertEqual(plan['schedule'][0]['date'], '2026-09-22')
         self.assertEqual(plan['schedule'][-1]['date'], '2026-10-17')
 
+    @patch('users.workout_plan_views.timezone.localdate', return_value=date(2026, 9, 11))
+    def test_core_upper_uses_monday_wednesday_friday_and_its_own_ids(self, _today):
+        response = self.client.post('/api/users/workout-plans/active/', {
+            'planId': 'core-upper-body',
+            'startDate': '2026-09-14',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        plan = response.data['plan']
+        self.assertEqual(plan['name'], 'Core & Upper Body')
+        self.assertEqual(plan['startDate'], '2026-09-14')
+        self.assertEqual(plan['completedWorkouts'], 0)
+        self.assertEqual(plan['remainingWorkouts'], 12)
+        self.assertEqual([item['day'] for item in plan['schedule']], ['Monday', 'Wednesday', 'Friday'] * 4)
+        self.assertEqual(
+            [date.fromisoformat(item['date']).weekday() for item in plan['schedule']],
+            [0, 2, 4] * 4,
+        )
+        self.assertEqual(plan['schedule'][0]['id'], 'core-upper-week-1-monday')
+        self.assertEqual(plan['schedule'][-1]['id'], 'core-upper-week-4-friday')
+        self.assertEqual(plan['schedule'][0]['date'], '2026-09-14')
+        self.assertEqual(plan['schedule'][-1]['date'], '2026-10-09')
+
+    def test_core_upper_day_session_persists_circuit_sets_and_completes_one_workout(self):
+        plan = UserWorkoutPlan.objects.create(
+            user=self.user,
+            plan_id='core-upper-body',
+            start_date=date(2026, 9, 14),
+        )
+        session_id = f'plan-{plan.pk}-core-upper-week-1-monday'
+        started = self.client.post('/api/users/workout-plans/day-sessions/start/', {
+            'id': session_id,
+            'planInstanceId': plan.pk,
+            'workoutId': 'core-upper-week-1-monday',
+            'week': 1,
+            'workoutDay': 'Monday',
+            'scheduledDate': '2026-09-14',
+            'exercises': [
+                {'exerciseId': 'push-up', 'name': 'Push-up', 'metricType': 'reps', 'setsRequired': 2, 'repsPerSet': 8},
+                {'exerciseId': 'plank', 'name': 'Plank', 'metricType': 'time', 'setsRequired': 2, 'durationPerSet': 20},
+                {'exerciseId': 'leg-raise', 'name': 'Leg Raise', 'metricType': 'reps', 'setsRequired': 1, 'repsPerSet': 10},
+            ],
+        }, format='json')
+        self.assertEqual(started.status_code, 200)
+        self.assertEqual(started.data['session']['currentExerciseIndex'], 0)
+
+        early_finish = self.client.post('/api/users/workout-plans/day-sessions/finish/', {'sessionId': session_id}, format='json')
+        self.assertEqual(early_finish.status_code, 409)
+
+        steps = [
+            ('push-up', {'correctReps': 8}, 1),
+            ('plank', {'totalHoldTime': 20}, 2),
+            ('leg-raise', {'correctReps': 10}, 0),
+            ('push-up', {'correctReps': 8}, 1),
+            ('plank', {'totalHoldTime': 20}, -1),
+        ]
+        last_session = None
+        for index, (exercise_id, result_values, next_index) in enumerate(steps):
+            completed = self.client.post('/api/users/workout-plans/day-sessions/set-complete/', {
+                'sessionId': session_id,
+                'exerciseId': exercise_id,
+                'sessionResult': {
+                    'id': f'core-set-{index + 1}',
+                    'status': 'completed',
+                    'accuracy': 90,
+                    'duration': 20,
+                    'formIssues': [],
+                    **result_values,
+                },
+            }, format='json')
+            self.assertEqual(completed.status_code, 200)
+            last_session = completed.data['session']
+            self.assertEqual(last_session['currentExerciseIndex'], next_index)
+
+        self.assertEqual([item['completedSets'] for item in last_session['exercises']], [2, 2, 1])
+        self.assertEqual([len(item['results']) for item in last_session['exercises']], [2, 2, 1])
+
+        finished = self.client.post('/api/users/workout-plans/day-sessions/finish/', {'sessionId': session_id}, format='json')
+        self.assertEqual(finished.status_code, 200)
+        self.assertEqual(finished.data['plan']['completedWorkoutIds'], ['core-upper-week-1-monday'])
+        self.assertEqual(finished.data['plan']['completedWorkouts'], 1)
+        self.assertEqual(finished.data['plan']['remainingWorkouts'], 11)
+        self.assertEqual(finished.data['plan']['percentage'], 8)
+
     def test_lower_body_day_session_requires_each_leg_target(self):
         plan = UserWorkoutPlan.objects.create(
             user=self.user,

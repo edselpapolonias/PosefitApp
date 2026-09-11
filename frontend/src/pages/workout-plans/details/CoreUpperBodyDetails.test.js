@@ -1,10 +1,27 @@
 import React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CoreUpperBodyDetails from './CoreUpperBodyDetails';
 import { coreUpperScheduleByWeek } from './coreUpperBodyData';
 
 const mockNavigate = jest.fn();
+let mockPersisted = null;
+let mockStartDate = null;
+
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: { csrf_token: 'test' } })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+}));
+
+jest.mock('../../../services/workoutPlanService', () => ({
+  fetchActiveWorkoutPlan: () => Promise.resolve(mockPersisted),
+  startCoreUpperPlan: (startDate) => {
+    mockStartDate = startDate;
+    mockPersisted = { id: 'core-upper-body', name: 'Core & Upper Body', instanceId: 3, startDate, activeWeek: 1, completedWorkoutIds: [] };
+    return Promise.resolve(mockPersisted);
+  },
+  endWorkoutPlan: () => { mockPersisted = null; return Promise.resolve(); },
+}));
 
 jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
@@ -14,11 +31,18 @@ jest.mock('../../../components/Navbar', () => function MockNavbar({ activeItem }
   return <div data-testid="navbar">{activeItem}</div>;
 });
 
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+});
+
 describe('Core & Upper Body plan details', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     localStorage.clear();
     sessionStorage.clear();
+    mockPersisted = null;
+    mockStartDate = null;
   });
 
   test('numbers workout days continuously across weeks', () => {
@@ -120,19 +144,39 @@ describe('Core & Upper Body plan details', () => {
     ]);
   });
 
-  test('prepares Core & Upper data and omits the Save Plan action', () => {
+  test('confirms, persists, and opens the reusable Core & Upper Body active plan', async () => {
     render(<CoreUpperBodyDetails />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Week 4' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start This Plan' }));
+    expect(screen.getByRole('heading', { name: 'Start Core & Upper Body?' })).toBeInTheDocument();
+    expect(screen.getByText(/Workouts are scheduled every Monday, Wednesday, and Friday/)).toBeInTheDocument();
+    expect(mockPersisted).toBeNull();
+    expect([...document.querySelectorAll('.start-plan-dialog__preview strong')].map((item) => item.textContent)).toEqual(['MON', 'WED', 'FRI']);
+    expect([...document.querySelectorAll('.start-plan-dialog__preview time')].map((item) => new Date(`${item.dateTime}T12:00:00`).getDay())).toEqual([1, 3, 5]);
 
-    const activePlan = JSON.parse(sessionStorage.getItem('posefitActiveWorkoutPlan'));
-    expect(activePlan.id).toBe('core-upper-body');
-    expect(activePlan.activeWeek).toBe(4);
-    expect(activePlan.activeWorkout.exercises[0]).toEqual(expect.objectContaining({
-      exerciseId: 'push-up', sets: 4, reps: 12, restTime: 60,
-    }));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('heading', { name: 'Start Core & Upper Body?' })).not.toBeInTheDocument();
+    expect(mockPersisted).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start This Plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Plan' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'End Plan' })).toBeInTheDocument());
+
+    expect(new Date(`${mockStartDate}T12:00:00`).getDay()).toBe(1);
+    expect(screen.getByRole('heading', { name: 'Core & Upper Body' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Plan details')).toHaveTextContent('3 Days/Week25–40 min4 WeeksIntermediate');
+    expect(screen.getByText('0 of 12 workouts completed')).toBeInTheDocument();
+
+    const calendar = screen.getByRole('heading', { name: 'Weekly Calendar' }).closest('section');
+    expect([...calendar.querySelectorAll('.is-workout time')].map((item) => new Date(`${item.dateTime}T12:00:00`).getDay())).toEqual([1, 3, 5]);
+    const dayOne = screen.getByRole('article', { name: 'DAY 1, Monday' });
+    expect(dayOne.querySelectorAll('.beginner-active__exercises img')).toHaveLength(3);
+    expect(within(dayOne).getByText('3 sets × 20 sec')).toBeInTheDocument();
+    fireEvent.click(within(dayOne).getByRole('button', { name: 'Start Workout' }));
+    expect(mockNavigate).toHaveBeenCalledWith(
+      { pathname: '/exercises/push-up/start', search: expect.stringContaining('workoutSession=') },
+      { state: expect.objectContaining({ workoutConfig: expect.objectContaining({ sets: 1, reps: 8 }) }) },
+    );
     expect(screen.queryByRole('button', { name: /Save Plan|Plan Saved/ })).not.toBeInTheDocument();
   });
 });
