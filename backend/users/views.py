@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from .models import CustomUser, WorkoutSession
 from .dashboard_service import build_dashboard, record_login_day
+from .history_service import build_history, history_session_data, recent_session_data
 from .workout_plan_views import active_plans_data
 from .session_progress_service import (
     build_progress_comparison,
@@ -108,7 +109,31 @@ def logout_view(request):
 def dashboard(request):
     data = build_dashboard(request.user)
     data['activePlans'] = active_plans_data(request.user)
+    data['recentWorkouts'] = recent_session_data(request.user)
     return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history(request):
+    try:
+        page = max(1, int(request.query_params.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    search = str(request.query_params.get('search') or '').strip()[:80]
+    return Response(build_history(request.user, search=search, page=page))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_session(request, session_id):
+    session = history_session_data(request.user, session_id)
+    if session is None:
+        return Response(
+            {'error': 'The completed workout session was not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    return Response({'session': session})
 
 
 @api_view(['GET'])

@@ -73,6 +73,38 @@ class DashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['firstName'], 'Alex')
         self.assertEqual(response.data['activePlans'], [])
+        self.assertEqual(response.data['recentWorkouts'], [])
+
+    def test_endpoint_returns_only_three_latest_supported_completed_sessions(self):
+        for index, exercise in enumerate(['squat', 'push-up', 'plank', 'lunge']):
+            session = self.session(
+                f'session-{index}', self.now + timedelta(minutes=index),
+                seconds=70 + index, accuracy=80 + index, exercise=exercise,
+            )
+            session.sets_completed = index + 1
+            session.metric_type = WorkoutSession.METRIC_TIME if exercise == 'plank' else WorkoutSession.METRIC_REPS
+            session.total_reps = None if exercise == 'plank' else 10 + index
+            session.total_hold_time = 60 if exercise == 'plank' else None
+            session.configuration = {'totalSets': index + 1, 'holdSecondsPerSet': 60} if exercise == 'plank' else {
+                'totalSets': index + 1, 'repsPerSet': 10,
+            }
+            session.save()
+        self.session('sit-up', self.now + timedelta(hours=1), exercise='sit-up')
+        self.session('ended-recent', self.now + timedelta(hours=2), status='ended')
+        other = CustomUser.objects.create_user(username='recent-other')
+        self.session('other-recent', self.now + timedelta(hours=3), user=other)
+
+        client = APIClient()
+        client.force_authenticate(self.user)
+        response = client.get('/api/users/dashboard/')
+
+        self.assertEqual(response.status_code, 200)
+        recent = response.data['recentWorkouts']
+        self.assertEqual([item['id'] for item in recent], ['session-3', 'session-2', 'session-1'])
+        self.assertEqual(len(recent), 3)
+        self.assertEqual(recent[1]['metricType'], 'time')
+        self.assertEqual(recent[1]['totalHoldTime'], 60)
+        self.assertNotIn('sit-up', [item['exercise'] for item in recent])
 
     def test_endpoint_returns_ordered_active_plans_with_day_session_status(self):
         beginner = UserWorkoutPlan.objects.create(

@@ -18,6 +18,8 @@ import WorkoutPlansPage from './pages/workout-plans/WorkoutPlansPage';
 import BeginnerFullBodyDetails from './pages/workout-plans/details/BeginnerFullBodyDetails';
 import LowerBodyFocusDetails from './pages/workout-plans/details/LowerBodyFocusDetails';
 import CoreUpperBodyDetails from './pages/workout-plans/details/CoreUpperBodyDetails';
+import HistoryPage from './pages/history/HistoryPage';
+import HistorySessionSummaryPage from './pages/history/HistorySessionSummaryPage';
 
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
@@ -48,6 +50,8 @@ function App() {
         <Route path="/workout-plans/beginner-full-body" element={<PrivateRoute><BeginnerFullBodyDetails /></PrivateRoute>} />
         <Route path="/workout-plans/lower-body-focus" element={<PrivateRoute><LowerBodyFocusDetails /></PrivateRoute>} />
         <Route path="/workout-plans/core-upper-body" element={<PrivateRoute><CoreUpperBodyDetails /></PrivateRoute>} />
+        <Route path="/history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
+        <Route path="/history/session/:sessionId" element={<PrivateRoute><HistorySessionSummaryPage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );

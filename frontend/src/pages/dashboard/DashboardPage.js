@@ -7,6 +7,12 @@ import { beginnerScheduleByWeek } from '../workout-plans/details/beginnerFullBod
 import { lowerBodyScheduleByWeek } from '../workout-plans/details/lowerBodyFocusData';
 import { coreUpperScheduleByWeek } from '../workout-plans/details/coreUpperBodyData';
 import { readWorkoutDaySession, workoutDaySessionId } from '../../services/workoutDaySessionService';
+import { formatTime } from '../../utils/formatters';
+import squatIcon from '../../images/icon-squat.png';
+import pushUpIcon from '../../images/icon-push-up.png';
+import plankIcon from '../../images/icon-plank.png';
+import lungeIcon from '../../images/icon-lunge.png';
+import legRaiseIcon from '../../images/icon-leg-raise.png';
 import './DashboardPage.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -16,6 +22,13 @@ const planSchedules = {
   'core-upper-body': coreUpperScheduleByWeek,
 };
 const planRoutes = Object.fromEntries(workoutPlans.map((plan) => [plan.slug, plan.detailsRoute]));
+const recentWorkoutIcons = {
+  squat: squatIcon,
+  'push-up': pushUpIcon,
+  plank: plankIcon,
+  lunge: lungeIcon,
+  'leg-raise': legRaiseIcon,
+};
 const formatNumber = (value) => new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
 const dateLabel = (date) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
 
@@ -96,6 +109,93 @@ function LoginStreak({ data, error }) {
     </div>)}</div>
     <p className="dashboard-streak__hint">Every day you show up counts.</p>
     <div className="dashboard-streak__result"><i className="fa-regular fa-circle-check" aria-hidden="true" /><div><strong>{data ? `${data.currentStreak} ${data.currentStreak === 1 ? 'day' : 'days'} in a row!` : error ? 'Streak unavailable' : 'Loading streak…'}</strong><p>{data ? `Best recorded streak: ${data.bestStreak} ${data.bestStreak === 1 ? 'day' : 'days'}` : 'Your login history will appear here.'}</p></div></div>
+  </section>;
+}
+
+function savedNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function completedAtLabel(value) {
+  const completedAt = new Date(value);
+  if (Number.isNaN(completedAt.getTime())) return { date: 'Date unavailable', time: '' };
+  return {
+    date: new Intl.DateTimeFormat('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    }).format(completedAt),
+    time: new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric', minute: '2-digit',
+    }).format(completedAt),
+  };
+}
+
+function formResult(value) {
+  const accuracy = savedNumber(value);
+  if (accuracy === null) return null;
+  if (accuracy >= 80) return { accuracy, label: 'Good', tone: 'good' };
+  if (accuracy >= 60) return { accuracy, label: 'Fair', tone: 'fair' };
+  return { accuracy, label: 'Needs Work', tone: 'needs-work' };
+}
+
+function workoutResult(session) {
+  const configuration = session.configuration || {};
+  const perLeg = Boolean(configuration.perLeg);
+  if (session.metricType === 'time') {
+    const totalHoldTime = savedNumber(session.totalHoldTime);
+    if (totalHoldTime !== null) return `${formatTime(Math.max(0, Math.round(totalHoldTime)))} hold`;
+    const holdPerSet = savedNumber(configuration.holdSecondsPerSet ?? configuration.holdTime ?? configuration.targetHoldTime);
+    return holdPerSet === null ? 'No hold data' : `${formatTime(Math.max(0, Math.round(holdPerSet)))} per set`;
+  }
+
+  if (perLeg) {
+    const left = savedNumber(session.analysis?.perLegCounts?.left);
+    const right = savedNumber(session.analysis?.perLegCounts?.right);
+    if (left !== null && right !== null && left === right) return `${left} reps each leg`;
+    if (left !== null || right !== null) return `${left ?? '—'} left · ${right ?? '—'} right`;
+    const repsPerSet = savedNumber(configuration.repsPerSet ?? configuration.targetReps ?? configuration.reps);
+    if (repsPerSet !== null) return `${repsPerSet} reps each leg`;
+  }
+
+  const totalReps = savedNumber(session.totalReps);
+  if (totalReps !== null) return `${totalReps} reps`;
+  const repsPerSet = savedNumber(configuration.repsPerSet ?? configuration.targetReps ?? configuration.reps);
+  return repsPerSet === null ? 'No rep data' : `${repsPerSet} reps per set`;
+}
+
+function RecentWorkoutRow({ session }) {
+  const completedAt = completedAtLabel(session.completedAt);
+  const result = formResult(session.accuracy);
+  const sets = savedNumber(session.setsCompleted);
+  const duration = savedNumber(session.duration);
+  const summaryLabel = `View ${session.exerciseName} session summary from ${completedAt.date}${completedAt.time ? ` at ${completedAt.time}` : ''}`;
+  return <article className="dashboard-recent__row">
+    <div className="dashboard-recent__exercise">
+      <span><img src={recentWorkoutIcons[session.exercise]} alt="" /></span>
+      <div><strong>{session.exerciseName}</strong><p>{completedAt.date}{completedAt.time && <> <b aria-hidden="true">·</b> {completedAt.time}</>}</p></div>
+    </div>
+    <div className="dashboard-recent__details">
+      <div><strong>{sets === null ? '—' : `${sets} ${sets === 1 ? 'set' : 'sets'}`}</strong><span>{workoutResult(session)}</span></div>
+      <div className="dashboard-recent__duration"><strong>{duration === null ? '—' : formatTime(Math.max(0, Math.round(duration)))}</strong><span><i className="fa-regular fa-clock" aria-hidden="true" />Duration</span></div>
+      <div className={`dashboard-recent__score${result ? ` dashboard-recent__score--${result.tone}` : ''}`}><strong>{result ? `${result.accuracy}%` : '—'}</strong><span>{result ? result.label : 'No data'}</span></div>
+    </div>
+    <Link className="dashboard-recent__arrow" to={`/history/session/${encodeURIComponent(session.id)}`} aria-label={summaryLabel}>
+      <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+    </Link>
+  </article>;
+}
+
+function RecentWorkouts({ sessions, loading, error }) {
+  const recent = (Array.isArray(sessions) ? sessions : [])
+    .filter((session) => recentWorkoutIcons[session.exercise])
+    .slice(0, 3);
+  return <section className="dashboard-panel dashboard-recent" aria-labelledby="recent-workouts-title" aria-busy={loading}>
+    <header><h2 id="recent-workouts-title">Recent Workouts</h2><Link to="/history">View All</Link></header>
+    {loading ? <div className="dashboard-recent__skeleton" aria-label="Loading recent workouts">{[0, 1, 2].map((row) => <span key={row} />)}</div>
+      : error ? <div className="dashboard-recent__empty dashboard-recent__empty--error"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" /><strong>Recent workouts unavailable</strong><p>Please try again when your connection is available.</p></div>
+        : recent.length ? <div className="dashboard-recent__list">{recent.map((session) => <RecentWorkoutRow session={session} key={session.id} />)}</div>
+          : <div className="dashboard-recent__empty"><i className="fa-solid fa-dumbbell" aria-hidden="true" /><strong>No recent workouts yet</strong><p>Complete your first workout and it will appear here.</p></div>}
   </section>;
 }
 
@@ -197,7 +297,7 @@ export default function DashboardPage() {
           <SummaryCard title="Average Accuracy" icon="fa-bullseye" tone="purple" value={data?.averageAccuracy != null ? formatNumber(data.averageAccuracy) : '—'} unit={data?.averageAccuracy != null ? '%' : ''} note={data ? (data.averageAccuracy == null ? 'No accuracy data this week' : 'This week · Excludes plank') : pending} />
         </div>
         <div className="dashboard-analytics"><WorkoutTime data={data} /><LoginStreak data={data} error={error} /></div>
-        <section className="dashboard-panel dashboard-recent"><header><h2>Recent Workouts</h2></header><div className="dashboard-recent__empty"><i className="fa-solid fa-dumbbell" aria-hidden="true" /><p>No recent workouts to display yet.</p></div></section>
+        <RecentWorkouts sessions={data?.recentWorkouts} loading={!data && !error} error={error} />
       </div>
       <PlanPreview data={data} error={error} />
     </main>

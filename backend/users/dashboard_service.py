@@ -18,6 +18,17 @@ def record_login_day(user):
     )
 
 
+def best_login_streak(login_days):
+    """Return the longest run of unique consecutive calendar days."""
+    best = run = 0
+    previous = None
+    for day in login_days:
+        run = run + 1 if previous and day == previous + timedelta(days=1) else 1
+        best = max(best, run)
+        previous = day
+    return best
+
+
 def build_dashboard(user, now=None):
     zone = dashboard_timezone()
     now = now or timezone.now()
@@ -46,12 +57,7 @@ def build_dashboard(user, now=None):
     while cursor in login_set:
         current += 1
         cursor -= timedelta(days=1)
-    best = run = 0
-    previous = None
-    for day in login_days:
-        run = run + 1 if previous and day == previous + timedelta(days=1) else 1
-        best = max(best, run)
-        previous = day
+    best = best_login_streak(login_days)
     return {
         'firstName': user.first_name or user.username,
         'timezone': str(zone), 'today': today.isoformat(),

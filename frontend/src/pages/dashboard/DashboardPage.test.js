@@ -44,12 +44,54 @@ test('renders real statistics and a workout-plan empty state without fake exerci
   expect(within(screen.getByRole('region', { name: 'Total Workout Time' })).getByText('30')).toBeInTheDocument();
   expect(within(screen.getByRole('region', { name: 'Average Accuracy' })).getByText('91')).toBeInTheDocument();
   expect(screen.getByRole('img', { name: /Workout minutes this week: Mon 30, Tue 0/ })).toBeInTheDocument();
-  expect(screen.getByText('No recent workouts to display yet.')).toBeInTheDocument();
+  expect(screen.getByText('No recent workouts yet')).toBeInTheDocument();
+  expect(screen.getByText('Complete your first workout and it will appear here.')).toBeInTheDocument();
   const planCard = screen.getByRole('complementary', { name: 'Workout plan' });
   expect(within(planCard).getByRole('heading', { name: 'No Active Plan' })).toBeInTheDocument();
   expect(within(planCard).getByRole('link', { name: /Browse Workout Plans/ })).toHaveAttribute('href', '/workout-plans');
   expect(within(planCard).queryByText(/Squat|Push-up|Plank|Lunge|Leg Raise/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Calories Burned|kcal/)).not.toBeInTheDocument();
+});
+
+test('shows at most three real recent sessions with exact summary links and no calories', async () => {
+  getDashboard.mockResolvedValue({
+    ...data,
+    recentWorkouts: [
+      {
+        id: 'newest-squat', exercise: 'squat', exerciseName: 'Squat', metricType: 'reps',
+        completedAt: '2026-09-12T10:32:00Z', duration: 681, setsCompleted: 3,
+        accuracy: 94, totalReps: 30, totalHoldTime: null, configuration: { totalSets: 3, repsPerSet: 10 }, analysis: {},
+      },
+      {
+        id: 'timed-plank', exercise: 'plank', exerciseName: 'Plank', metricType: 'time',
+        completedAt: '2026-09-11T09:00:00Z', duration: 70, setsCompleted: 3,
+        accuracy: null, totalReps: null, totalHoldTime: 60, configuration: { totalSets: 3, holdSecondsPerSet: 20 }, analysis: {},
+      },
+      {
+        id: 'per-leg-lunge', exercise: 'lunge', exerciseName: 'Lunge', metricType: 'reps',
+        completedAt: '2026-09-10T09:00:00Z', duration: 95, setsCompleted: 1,
+        accuracy: 0, totalReps: 16, totalHoldTime: null, configuration: { totalSets: 1, repsPerSet: 8, perLeg: true }, analysis: { perLegCounts: { left: 8, right: 8 } },
+      },
+      {
+        id: 'fourth-leg-raise', exercise: 'leg-raise', exerciseName: 'Leg Raise', metricType: 'reps',
+        completedAt: '2026-09-09T09:00:00Z', duration: 90, setsCompleted: 1,
+        accuracy: 90, totalReps: 10, configuration: {}, analysis: {},
+      },
+    ],
+  });
+  render(<DashboardPage />);
+
+  expect(await screen.findByText('Squat')).toBeInTheDocument();
+  expect(screen.getByText('30 reps')).toBeInTheDocument();
+  expect(screen.getByText('11:21')).toBeInTheDocument();
+  expect(screen.getByText('01:00 hold')).toBeInTheDocument();
+  expect(screen.getByText('8 reps each leg')).toBeInTheDocument();
+  expect(screen.getByText('No data')).toBeInTheDocument();
+  expect(screen.getByText('0%')).toBeInTheDocument();
+  expect(screen.queryByText('Leg Raise')).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /View Squat session summary/ })).toHaveAttribute('href', '/history/session/newest-squat');
+  expect(screen.getByRole('link', { name: 'View All' })).toHaveAttribute('href', '/history');
+  expect(screen.queryByText(/kcal|calories/i)).not.toBeInTheDocument();
 });
 
 test('shows every exercise from the plan definition for the workout scheduled on the actual date', async () => {
