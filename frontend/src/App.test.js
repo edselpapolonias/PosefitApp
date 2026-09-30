@@ -36,6 +36,7 @@ jest.mock('./pages/workout-plans/details/BeginnerFullBodyDetails', () => () => n
 jest.mock('./pages/workout-plans/details/LowerBodyFocusDetails', () => () => null);
 jest.mock('./pages/workout-plans/details/CoreUpperBodyDetails', () => () => null);
 jest.mock('./pages/history/HistoryPage', () => () => null);
+jest.mock('./pages/history/PlanHistoryPage', () => () => null);
 jest.mock('./pages/history/HistorySessionSummaryPage', () => () => null);
 
 test('keeps every PoseFit route registered after reorganizing pages', () => {
@@ -64,6 +65,7 @@ test('keeps every PoseFit route registered after reorganizing pages', () => {
     '/workout-plans/lower-body-focus',
     '/workout-plans/core-upper-body',
     '/history',
+    '/history/plan/:planInstanceId',
     '/history/session/:sessionId',
   ]);
 });

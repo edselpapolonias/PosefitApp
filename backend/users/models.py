@@ -84,6 +84,13 @@ class WorkoutSession(models.Model):
         on_delete=models.CASCADE,
         related_name='workout_sessions',
     )
+    workout_plan_day_session = models.ForeignKey(
+        WorkoutPlanDaySession,
+        on_delete=models.SET_NULL,
+        related_name='workout_sessions',
+        null=True,
+        blank=True,
+    )
     session_id = models.CharField(max_length=120)
     exercise = models.CharField(max_length=50)
     exercise_name = models.CharField(max_length=80)

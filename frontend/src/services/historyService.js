@@ -17,3 +17,11 @@ export async function getHistorySession(sessionId, signal) {
   );
   return response.data?.session || null;
 }
+
+export async function getPlanHistory(instanceId, signal) {
+  const response = await axios.get(
+    apiUrl(`/api/users/history/plans/${encodeURIComponent(instanceId)}/`),
+    { withCredentials: true, signal },
+  );
+  return response.data?.plan || null;
+}

@@ -81,7 +81,8 @@ export function ActiveWorkoutPlan({
             {selected.workouts.map((workout) => {
               const completed = progress.completedIds.has(workout.id);
               const ready = workout.id === progress.nextId;
-              const inProgress = readWorkoutDaySession(workoutDaySessionId(plan, workout))?.status === 'active';
+              const inProgress = readWorkoutDaySession(workoutDaySessionId(plan, workout))?.status === 'active'
+                || plan.daySessions?.some((session) => session.workoutId === workout.id && session.status === 'active');
               return <article className={`beginner-active__workout${ready ? ' is-ready' : ''}`} key={workout.id} aria-label={`${workout.label}, ${workout.day}`}>
                 <div className="beginner-active__day"><span>{workout.label.replace('DAY', 'Day')}</span><h3>{workout.day}</h3><time dateTime={localDateKey(workout.date)}>{fullDate(workout.date)}</time></div>
                 <div className="beginner-active__exercises">{workout.exercises.map((exercise) => <div key={exercise.exerciseId}><img src={exercise.icon} alt="" /><strong>{exercise.name}</strong><span>{exercise.prescription}</span></div>)}</div>

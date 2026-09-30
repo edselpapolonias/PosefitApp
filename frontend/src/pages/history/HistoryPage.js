@@ -172,12 +172,72 @@ function TopExercises({ exercises = [] }) {
   );
 }
 
+function formatPlanDate(value) {
+  if (!value) return 'Date unavailable';
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T12:00:00`) : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  }).format(date);
+}
+
+function PlanHistoryCard({ plan }) {
+  const completed = plan.status === 'completed';
+  const ended = plan.status === 'ended';
+  const status = completed ? 'COMPLETED' : ended ? 'ENDED' : 'IN PROGRESS';
+  return (
+    <article className="history-plan-card">
+      <header>
+        <div><span>Workout Plan</span><h2>{plan.name}</h2></div>
+        <strong className={`history-plan-status history-plan-status--${plan.status}`}>{status}</strong>
+      </header>
+      <div className="history-plan-card__progress-copy">
+        <span>{completed ? `${plan.durationWeeks} Weeks` : `Week ${plan.activeWeek} of ${plan.durationWeeks}`}</span>
+        <strong>{plan.completedWorkouts} / {plan.totalWorkouts} Workouts Completed</strong>
+      </div>
+      <div className="history-plan-card__progress">
+        <span><i style={{ width: `${plan.percentage}%` }} /></span><strong>{plan.percentage}%</strong>
+      </div>
+      <dl>
+        <div><dt>Started</dt><dd>{formatPlanDate(plan.startDate)}</dd></div>
+        {completed && <div><dt>Completed</dt><dd>{formatPlanDate(plan.completedAt)}</dd></div>}
+        {!completed && plan.lastActivityAt && <div><dt>Last activity</dt><dd>{formatPlanDate(plan.lastActivityAt)}</dd></div>}
+      </dl>
+      <Link
+        className="history-plan-card__button"
+        to={`/history/plan/${plan.instanceId}`}
+        state={{ history: { tab: 'plans' } }}
+      >
+        View History <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+      </Link>
+    </article>
+  );
+}
+
+function ByPlanHistory({ plans = [], loading }) {
+  return (
+    <section className="history-plan-list" aria-busy={loading}>
+      <header><div><h1>Workout Plan History</h1><p>Progress from plans you have started</p></div></header>
+      {loading ? <div className="history-loading"><span /><p>Loading workout plan historyâ€¦</p></div> : plans.length ? (
+        <div className="history-plan-grid">{plans.map((plan) => <PlanHistoryCard key={plan.instanceId} plan={plan} />)}</div>
+      ) : (
+        <div className="history-empty">
+          <span><i className="fa-solid fa-calendar-check" /></span>
+          <h2>No Workout Plan history yet</h2>
+          <p>Your Workout Plan activity will appear here after you begin your first scheduled workout.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function HistoryPage() {
   const location = useLocation();
   const restoredHistory = location.state?.history;
   const [data, setData] = useState(null);
   const [search, setSearch] = useState(() => typeof restoredHistory?.search === 'string' ? restoredHistory.search : '');
   const [page, setPage] = useState(() => Math.max(1, Number(restoredHistory?.page) || 1));
+  const [activeTab, setActiveTab] = useState(() => restoredHistory?.tab === 'plans' ? 'plans' : 'all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -202,6 +262,7 @@ export default function HistoryPage() {
 
   const stats = data?.stats;
   const sessions = data?.sessions;
+  const planHistory = data?.planHistory || [];
   const statCards = useMemo(() => [
     { icon: 'fa-dumbbell', title: 'Total Workouts', value: stats ? stats.totalWorkouts : '—', label: 'Sessions' },
     { icon: 'fa-clock', title: 'Total Duration', value: stats ? formatTotalDuration(stats.totalDuration) : '—', label: 'Total Time' },
@@ -224,17 +285,17 @@ export default function HistoryPage() {
 
         <div className="history-toolbar">
           <div className="history-tabs" aria-label="History view">
-            <button className="is-active" type="button" aria-pressed="true">All Workouts</button>
-            <button type="button" disabled>By Plan</button>
+            <button className={activeTab === 'all' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'all'} onClick={() => setActiveTab('all')}>All Workouts</button>
+            <button className={activeTab === 'plans' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'plans'} onClick={() => setActiveTab('plans')}>By Plan</button>
             <button type="button" disabled>By Exercise</button>
           </div>
-          <div className="history-tools">
+          {activeTab === 'all' && <div className="history-tools">
             <label><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><span className="sr-only">Search workouts</span><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search workouts..." /></label>
             <button className="history-filter" type="button" disabled><i className="fa-solid fa-sliders" aria-hidden="true" />Filter</button>
-          </div>
+          </div>}
         </div>
 
-        <div className="history-content">
+        {activeTab === 'plans' ? <ByPlanHistory plans={planHistory} loading={loading} /> : <div className="history-content">
           <section className="history-table-card">
             <header><div><h1>All Workouts</h1><p>{sessions ? `${sessions.totalItems} completed ${sessions.totalItems === 1 ? 'session' : 'sessions'}` : 'Completed sessions'}</p></div></header>
             <div className="history-table-wrap">
@@ -242,7 +303,7 @@ export default function HistoryPage() {
                 <thead><tr><th>Date</th><th>Workout</th><th>Duration</th><th>Results</th><th>Action</th></tr></thead>
                 <tbody>
                   {sessions?.items.map((session) => (
-                    <WorkoutRow key={session.id} session={session} historyState={{ page, search }} />
+                    <WorkoutRow key={session.id} session={session} historyState={{ page, search, tab: 'all' }} />
                   ))}
                 </tbody>
               </table>
@@ -262,7 +323,7 @@ export default function HistoryPage() {
             <ActivityOverview days={data?.activityOverview} />
             <TopExercises exercises={data?.topExercises} />
           </aside>
-        </div>
+        </div>}
 
       </main>
     </div>

@@ -673,6 +673,185 @@
   font-size: 10px;
 }
 
+.history-plan-list {
+  min-height: 468px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e9e6e3;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(36, 24, 18, 0.035);
+}
+
+.history-plan-list > header {
+  margin-bottom: 20px;
+}
+
+.history-plan-list > header h1 {
+  margin: 0;
+  color: #161d2b;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.history-plan-list > header p {
+  margin: 5px 0 0;
+  color: #8b92a0;
+  font-size: 11px;
+}
+
+.history-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.history-plan-card {
+  min-width: 0;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(145deg, #fff 65%, #fff8f3);
+  border: 1px solid #e9e4df;
+  border-radius: 15px;
+  box-shadow: 0 8px 22px rgba(52, 35, 24, 0.055);
+}
+
+.history-plan-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.history-plan-card > header span {
+  color: #f05a13;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.history-plan-card h2 {
+  margin: 4px 0 0;
+  color: #192131;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.history-plan-status {
+  padding: 6px 9px;
+  flex: 0 0 auto;
+  color: #b54a16;
+  background: #fff0e7;
+  border-radius: 7px;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.45px;
+}
+
+.history-plan-status--completed {
+  color: #087742;
+  background: #e9f9f0;
+}
+
+.history-plan-status--ended {
+  color: #697181;
+  background: #f0f1f3;
+}
+
+.history-plan-card__progress-copy {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #72798a;
+  font-size: 10px;
+}
+
+.history-plan-card__progress-copy strong {
+  color: #353d4d;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.history-plan-card__progress {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-plan-card__progress > span {
+  height: 8px;
+  flex: 1;
+  overflow: hidden;
+  background: #f1ece8;
+  border-radius: 99px;
+}
+
+.history-plan-card__progress i {
+  height: 100%;
+  display: block;
+  background: linear-gradient(90deg, #ff8a4f, #f0540b);
+  border-radius: inherit;
+}
+
+.history-plan-card__progress > strong {
+  min-width: 34px;
+  color: #e6500a;
+  font-size: 12px;
+  text-align: right;
+}
+
+.history-plan-card dl {
+  margin: 20px 0 0;
+  padding-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  border-top: 1px solid #f0ece9;
+}
+
+.history-plan-card dl div {
+  min-width: 120px;
+}
+
+.history-plan-card dt {
+  color: #969ca8;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.history-plan-card dd {
+  margin: 3px 0 0;
+  color: #444c5b;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.history-plan-card__button {
+  min-height: 39px;
+  margin-top: 20px;
+  padding: 9px 14px;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #fff;
+  background: #f45b12;
+  border-radius: 9px;
+  box-shadow: 0 5px 12px rgba(244, 91, 18, 0.2);
+  font-size: 10px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.history-plan-card__button:hover {
+  background: #da4b08;
+}
+
 @media (max-width: 1240px) {
   .history-main { padding-inline: 24px; }
   .history-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -698,6 +877,7 @@
   .history-tools label { flex: 1; }
   .history-tools input { width: 100%; }
   .history-sidebar { grid-template-columns: 1fr; }
+  .history-plan-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 450px) {
@@ -708,4 +888,9 @@
   .history-stat-card strong { font-size: 24px; }
   .history-tools { align-items: stretch; }
   .history-filter { padding-inline: 12px; }
+  .history-plan-list { padding: 18px 14px; }
+  .history-plan-card { padding: 18px 15px; }
+  .history-plan-card > header,
+  .history-plan-card__progress-copy { align-items: flex-start; flex-direction: column; }
+  .history-plan-card__button { width: 100%; align-self: stretch; }
 }

@@ -16,6 +16,7 @@ urlpatterns = [
     path('workout-plans/day-sessions/finish/', finish_workout_day_session),
     path('dashboard/', views.dashboard),
     path('history/', views.history),
+    path('history/plans/<int:instance_id>/', views.history_plan),
     path('history/sessions/<str:session_id>/', views.history_session),
     path('register/', views.register),
     path('login/', views.login_view),

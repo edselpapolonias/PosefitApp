@@ -34,6 +34,34 @@ function writeSession(session) {
   return session;
 }
 
+function completedSetCount(session) {
+  return (session?.exercises || []).reduce(
+    (total, exercise) => total + (Number(exercise.completedSets) || 0),
+    0,
+  );
+}
+
+export function hydrateWorkoutDaySession(plan, workout, persistedSession, detailsRoute) {
+  if (!persistedSession?.id || !Array.isArray(persistedSession.exercises)) return null;
+  return writeSession({
+    version: 1,
+    ...persistedSession,
+    planId: plan.id,
+    planInstanceId: plan.instanceId,
+    planName: plan.name || 'Workout Plan',
+    detailsRoute: detailsRoute || planRoutes[plan.id] || '/workout-plans',
+    workoutId: persistedSession.workoutId || workout.id,
+    week: persistedSession.week || workout.week,
+    workoutDay: persistedSession.workoutDay || workout.day,
+    workoutLabel: workout.label || persistedSession.workoutLabel,
+    scheduledDate: persistedSession.scheduledDate || workout.scheduledDate || workout.date,
+    exercises: persistedSession.exercises.map((exercise) => ({
+      ...exercise,
+      results: Array.isArray(exercise.results) ? [...exercise.results] : [],
+    })),
+  });
+}
+
 function positiveInteger(value, fallback = null) {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -96,9 +124,19 @@ export function workoutDaySessionId(plan, workout) {
   return `plan-${plan.instanceId || plan.id}-${workout.id}`;
 }
 
-export function startOrResumeWorkoutDay(plan, workout) {
+export function startOrResumeWorkoutDay(plan, workout, detailsRoute) {
   const id = workoutDaySessionId(plan, workout);
-  const stored = readWorkoutDaySession(id);
+  let stored = readWorkoutDaySession(id);
+  const persisted = (plan.daySessions || []).find((session) => session.workoutId === workout.id);
+  if (persisted) {
+    const persistedSets = completedSetCount(persisted);
+    const storedSets = completedSetCount(stored);
+    const persistedIsNewer = !stored?.updatedAt
+      || (persisted.updatedAt && new Date(persisted.updatedAt) >= new Date(stored.updatedAt));
+    if (!stored || persistedSets > storedSets || (persistedSets === storedSets && persistedIsNewer)) {
+      stored = hydrateWorkoutDaySession(plan, workout, persisted, detailsRoute);
+    }
+  }
   if (stored?.status === 'active' && stored.exercises?.length) return stored;
 
   const session = {
@@ -107,7 +145,7 @@ export function startOrResumeWorkoutDay(plan, workout) {
     planId: plan.id,
     planInstanceId: plan.instanceId || null,
     planName: plan.name || 'Workout Plan',
-    detailsRoute: planRoutes[plan.id] || '/workout-plans',
+    detailsRoute: detailsRoute || planRoutes[plan.id] || '/workout-plans',
     workoutId: workout.id,
     week: workout.week,
     workoutDay: workout.day,
@@ -221,11 +259,12 @@ export function recordWorkoutSetResult(sessionResult) {
   session.currentExerciseIndex = nextIndex;
   session.updatedAt = new Date().toISOString();
   writeSession(session);
-  const syncPromise = syncDaySession('/api/users/workout-plans/day-sessions/set-complete/', {
-    sessionId: session.id,
-    exerciseId: exercise.exerciseId,
-    sessionResult,
-  });
+  const syncPromise = syncDaySession('/api/users/workout-plans/day-sessions/start/', session)
+    .then(() => syncDaySession('/api/users/workout-plans/day-sessions/set-complete/', {
+      sessionId: session.id,
+      exerciseId: exercise.exerciseId,
+      sessionResult,
+    }));
   syncPromise.catch(() => {});
   return { session, next: workoutStepNavigation(session), complete: nextIndex < 0, syncPromise };
 }

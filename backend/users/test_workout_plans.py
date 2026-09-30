@@ -2,8 +2,8 @@ from datetime import date
 from unittest.mock import patch
 from django.test import TestCase
 from rest_framework.test import APIClient
-from .models import CustomUser, UserWorkoutPlan
-from .workout_plan_views import first_monday
+from .models import CustomUser, UserWorkoutPlan, WorkoutPlanDaySession
+from .workout_plan_views import first_monday, plan_schedule
 
 
 class WorkoutPlanTests(TestCase):
@@ -241,3 +241,42 @@ class WorkoutPlanTests(TestCase):
         self.assertEqual(finished.data['plan']['completedWorkouts'], 1)
         self.assertEqual(finished.data['plan']['remainingWorkouts'], 11)
         self.assertEqual(finished.data['plan']['percentage'], 8)
+
+    def test_twelfth_completed_day_marks_the_plan_completed_once(self):
+        plan = UserWorkoutPlan.objects.create(
+            user=self.user,
+            plan_id='beginner-full-body',
+            start_date=date(2026, 9, 14),
+        )
+        schedule = plan_schedule(plan)
+        plan.completed_workout_ids = [item['id'] for item in schedule[:-1]]
+        plan.save(update_fields=['completed_workout_ids'])
+        last = schedule[-1]
+        day = WorkoutPlanDaySession.objects.create(
+            user=self.user,
+            plan=plan,
+            session_id=f'plan-{plan.pk}-{last["id"]}',
+            workout_id=last['id'],
+            week=last['week'],
+            workout_day=last['day'],
+            scheduled_date=date.fromisoformat(last['date']),
+            exercises=[{
+                'exerciseId': 'squat', 'name': 'Squat', 'metricType': 'reps',
+                'setsRequired': 1, 'repsPerSet': 10, 'completedSets': 1,
+                'results': [{'sessionResultId': 'final-plan-set'}],
+            }],
+        )
+
+        response = self.client.post(
+            '/api/users/workout-plans/day-sessions/finish/',
+            {'sessionId': day.session_id},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['plan']['status'], 'completed')
+        self.assertEqual(response.data['plan']['completedWorkouts'], 12)
+        self.assertEqual(response.data['plan']['percentage'], 100)
+        plan.refresh_from_db()
+        self.assertEqual(plan.status, 'completed')
+        self.assertIsNotNone(plan.completed_at)

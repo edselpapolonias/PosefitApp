@@ -38,6 +38,20 @@ const historyData = {
   },
   activityOverview: [{ date: '2026-09-10', count: 1 }],
   topExercises: [{ exercise: 'squat', name: 'Squat', sessions: 8 }],
+  planHistory: [{
+    id: 'beginner-full-body',
+    instanceId: 41,
+    name: 'Beginner Full Body',
+    status: 'active',
+    activeWeek: 2,
+    durationWeeks: 4,
+    completedWorkouts: 5,
+    totalWorkouts: 12,
+    percentage: 42,
+    startDate: '2026-09-07',
+    completedAt: null,
+    lastActivityAt: '2026-09-14T09:00:00Z',
+  }],
 };
 
 beforeEach(() => {
@@ -52,7 +66,7 @@ function renderHistory() {
   return render(<HistoryPage />);
 }
 
-test('renders real all-time metrics, the workout table, and static future controls', async () => {
+test('renders real all-time metrics, the workout table, and the available history controls', async () => {
   renderHistory();
 
   expect(await screen.findByText('8', { selector: '.history-stat-card strong' })).toBeInTheDocument();
@@ -66,11 +80,25 @@ test('renders real all-time metrics, the workout table, and static future contro
   expect(within(table).getAllByRole('columnheader').map((heading) => heading.textContent)).toEqual([
     'Date', 'Workout', 'Duration', 'Results', 'Action',
   ]);
-  expect(screen.getByRole('button', { name: 'By Plan' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'By Plan' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'By Exercise' })).toBeDisabled();
   expect(screen.getByRole('link', { name: 'View Summary' })).toHaveAttribute('href', '/history/session/squat-1');
   expect(screen.queryByText('Recent Achievements')).not.toBeInTheDocument();
   expect(screen.queryByText('Consistency is progress!')).not.toBeInTheDocument();
+});
+
+test('shows real plan instances without turning By Plan into the workouts table', async () => {
+  renderHistory();
+  await screen.findByText('8', { selector: '.history-stat-card strong' });
+
+  fireEvent.click(screen.getByRole('button', { name: 'By Plan' }));
+
+  expect(screen.getByRole('heading', { name: 'Workout Plan History' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Beginner Full Body' })).toBeInTheDocument();
+  expect(screen.getByText('5 / 12 Workouts Completed')).toBeInTheDocument();
+  expect(screen.getByText('42%')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /View History/ })).toHaveAttribute('href', '/history/plan/41');
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 
 test('searches by exercise name and uses the actual page count', async () => {

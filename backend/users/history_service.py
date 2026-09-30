@@ -3,11 +3,11 @@ from collections import Counter
 from datetime import datetime, time, timedelta
 
 from django.core.paginator import Paginator
-from django.db.models import Avg, Sum
+from django.db.models import Avg, Max, Q, Sum
 
 from .dashboard_service import best_login_streak, dashboard_timezone
 from .models import UserWorkoutPlan, WorkoutSession
-from .workout_plan_views import PLAN_DEFINITIONS, plan_schedule
+from .workout_plan_views import PLAN_DEFINITIONS, plan_data, plan_schedule
 
 
 SUPPORTED_EXERCISES = {
@@ -24,7 +24,54 @@ def _completed_sessions(user):
         user=user,
         status=WorkoutSession.STATUS_COMPLETED,
         exercise__in=SUPPORTED_EXERCISES,
+    ).filter(
+        Q(workout_plan_day_session__isnull=True)
+        | Q(workout_plan_day_session__status='completed')
     )
+
+
+def _plan_history_item(plan):
+    data = plan_data(plan)
+    last_activity = getattr(plan, 'last_activity_at', None)
+    if last_activity is None:
+        last_activity = max(
+            (session.updated_at for session in plan.day_sessions.all()),
+            default=None,
+        )
+    data['lastActivityAt'] = last_activity.isoformat() if last_activity else None
+    return data
+
+
+def plan_history_data(user):
+    """Return plan instances with persisted workout-day activity, newest first."""
+    plans = (
+        UserWorkoutPlan.objects.filter(
+            user=user,
+            plan_id__in=PLAN_DEFINITIONS,
+            day_sessions__isnull=False,
+        )
+        .annotate(last_activity_at=Max('day_sessions__updated_at'))
+        .prefetch_related('day_sessions')
+        .distinct()
+        .order_by('-last_activity_at', '-pk')
+    )
+    return [_plan_history_item(plan) for plan in plans]
+
+
+def plan_history_detail_data(user, instance_id):
+    plan = (
+        UserWorkoutPlan.objects.filter(
+            user=user,
+            pk=instance_id,
+            plan_id__in=PLAN_DEFINITIONS,
+            day_sessions__isnull=False,
+        )
+        .annotate(last_activity_at=Max('day_sessions__updated_at'))
+        .prefetch_related('day_sessions')
+        .distinct()
+        .first()
+    )
+    return _plan_history_item(plan) if plan else None
 
 
 def _completed_plan_count(user):
@@ -162,4 +209,5 @@ def build_history(user, search='', page=1, page_size=6, today=None):
         },
         'activityOverview': _activity_overview(sessions, today),
         'topExercises': _top_exercises(sessions),
+        'planHistory': plan_history_data(user),
     }

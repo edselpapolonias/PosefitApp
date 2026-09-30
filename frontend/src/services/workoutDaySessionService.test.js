@@ -74,3 +74,32 @@ test('requires the prescribed Lunge repetitions on both legs', () => {
   }).session;
   expect(getWorkoutStep(session)).toBeNull();
 });
+
+test('rehydrates persisted progress and resumes the next circuit set after local storage is cleared', () => {
+  const persistedPlan = {
+    ...plan,
+    daySessions: [{
+      id: 'plan-7-week-1-monday',
+      planInstanceId: 7,
+      workoutId: 'week-1-monday',
+      week: 1,
+      workoutDay: 'Monday',
+      scheduledDate: '2026-09-14',
+      status: 'active',
+      currentExerciseIndex: 1,
+      updatedAt: '2026-09-14T10:00:00Z',
+      exercises: [
+        { exerciseId: 'squat', name: 'Squat', metricType: 'reps', setsRequired: 3, repsPerSet: 10, completedSets: 2, results: [{ setNumber: 1 }, { setNumber: 2 }] },
+        { exerciseId: 'push-up', name: 'Push-up', metricType: 'reps', setsRequired: 3, repsPerSet: 8, completedSets: 1, results: [{ setNumber: 1 }] },
+        { exerciseId: 'plank', name: 'Plank', metricType: 'time', setsRequired: 2, durationPerSet: 20, completedSets: 1, results: [{ setNumber: 1 }] },
+      ],
+    }],
+  };
+
+  const resumed = startOrResumeWorkoutDay(persistedPlan, workout);
+  const step = getWorkoutStep(resumed);
+
+  expect(step.exercise.exerciseId).toBe('push-up');
+  expect(step.currentSet).toBe(2);
+  expect(step.round).toBe(2);
+});

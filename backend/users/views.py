@@ -8,9 +8,14 @@ from django.db import transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from .models import CustomUser, WorkoutSession
+from .models import CustomUser, WorkoutPlanDaySession, WorkoutSession
 from .dashboard_service import build_dashboard, record_login_day
-from .history_service import build_history, history_session_data, recent_session_data
+from .history_service import (
+    build_history,
+    history_session_data,
+    plan_history_detail_data,
+    recent_session_data,
+)
 from .workout_plan_views import active_plans_data
 from .session_progress_service import (
     build_progress_comparison,
@@ -137,6 +142,18 @@ def history_session(request, session_id):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_plan(request, instance_id):
+    plan = plan_history_detail_data(request.user, instance_id)
+    if plan is None:
+        return Response(
+            {'error': 'The workout plan history was not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    return Response({'plan': plan})
+
+
+@api_view(['GET'])
 def csrf_token(request):
     return Response({'csrf_token': get_token(request)})
 
@@ -191,8 +208,18 @@ def complete_workout_session(request):
     )
     accuracy = min(100, _non_negative_integer(data.get('accuracy')))
     feedback = data.get('feedback')
+    workout_context = data.get('workoutContext') if isinstance(data.get('workoutContext'), dict) else {}
+    plan_day_session = None
+    if workout_context.get('source') == 'workout-plan':
+        plan_day_session = WorkoutPlanDaySession.objects.filter(
+            user=request.user,
+            session_id=workout_context.get('workoutSessionId'),
+            plan_id=workout_context.get('planInstanceId'),
+            workout_id=workout_context.get('workoutId'),
+        ).first()
 
     values = {
+        'workout_plan_day_session': plan_day_session,
         'exercise': exercise[:50],
         'exercise_name': exercise_name or 'Exercise',
         'metric_type': metric_type,
@@ -217,7 +244,7 @@ def complete_workout_session(request):
             session_id=session_id[:120],
             defaults=values,
         )
-        if not created:
+        if not created and workout_session.workout_plan_day_session_id is None:
             for field, value in values.items():
                 setattr(workout_session, field, value)
         if isinstance(feedback, dict) and feedback:

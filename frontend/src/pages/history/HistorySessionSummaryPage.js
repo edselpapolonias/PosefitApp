@@ -232,6 +232,8 @@ export default function HistorySessionSummaryPage() {
   }, [sessionId]);
 
   const backState = location.state?.history ? { history: location.state.history } : undefined;
+  const backTo = location.state?.backTo || '/history';
+  const backLabel = location.state?.backLabel || 'Back to History';
   const presentation = useMemo(() => session ? sessionPresentation(session) : null, [session]);
 
   if (loading || error || !session) {
@@ -239,7 +241,7 @@ export default function HistorySessionSummaryPage() {
       <div className="history-session-page">
         <Navbar activeItem="History" />
         <main className="history-session-state">
-          {loading ? <><span className="history-session-spinner" /><h1>Loading session summary…</h1><p>Retrieving the saved workout result.</p></> : <><span className="history-session-state__icon"><i className="fa-solid fa-file-circle-xmark" /></span><h1>Session summary unavailable</h1><p>{error}</p><Link to="/history" state={backState}>Back to History</Link></>}
+          {loading ? <><span className="history-session-spinner" /><h1>Loading session summary…</h1><p>Retrieving the saved workout result.</p></> : <><span className="history-session-state__icon"><i className="fa-solid fa-file-circle-xmark" /></span><h1>Session summary unavailable</h1><p>{error}</p><Link to={backTo} state={backState}>{backLabel}</Link></>}
         </main>
       </div>
     );
@@ -261,7 +263,7 @@ export default function HistorySessionSummaryPage() {
     <div className="history-session-page">
       <Navbar activeItem="History" />
       <main className="history-session-main">
-        <Link className="history-session-back" to="/history" state={backState}><i className="fa-solid fa-arrow-left" aria-hidden="true" />Back to History</Link>
+        <Link className="history-session-back" to={backTo} state={backState}><i className="fa-solid fa-arrow-left" aria-hidden="true" />{backLabel}</Link>
 
         <header className="history-session-header">
           <div><h1>Session Summary</h1><p>Here’s a summary of your completed workout session.</p></div>
@@ -284,7 +286,7 @@ export default function HistorySessionSummaryPage() {
           <SetBreakdown session={session} presentation={presentation} />
         </div>
 
-        <div className="history-session-actions"><Link to="/history" state={backState}>Back to History</Link></div>
+        <div className="history-session-actions"><Link to={backTo} state={backState}>{backLabel}</Link></div>
       </main>
     </div>
   );

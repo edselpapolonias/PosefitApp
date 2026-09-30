@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import CustomUser, UserWorkoutPlan, WorkoutPlanDaySession
+from .models import CustomUser, UserWorkoutPlan, WorkoutPlanDaySession, WorkoutSession
 from .dashboard_service import dashboard_timezone
 
 
@@ -51,12 +51,14 @@ def plan_data(plan):
     schedule = plan_schedule(plan)
     valid_ids = {workout['id'] for workout in schedule}
     completed = list(dict.fromkeys(item for item in plan.completed_workout_ids if item in valid_ids))
+    is_completed = len(completed) == len(schedule)
     current = next((item for item in schedule if item['id'] not in completed), None)
     return {
         'id': plan.plan_id, 'instanceId': plan.pk, 'userId': plan.user_id,
-        'name': definition['name'], 'status': 'completed' if plan.completed_at else plan.status,
+        'name': definition['name'],
+        'status': 'completed' if is_completed else ('ended' if plan.status == 'ended' else 'active'),
         'activatedAt': plan.activated_at.isoformat(), 'startDate': plan.start_date.isoformat(),
-        'completedAt': plan.completed_at.isoformat() if plan.completed_at else None,
+        'completedAt': plan.completed_at.isoformat() if is_completed and plan.completed_at else None,
         'durationWeeks': 4, 'totalWorkouts': len(schedule), 'schedule': schedule,
         'completedWorkoutIds': completed, 'completedWorkouts': len(completed),
         'remainingWorkouts': len(schedule) - len(completed), 'percentage': round(len(completed) / len(schedule) * 100),
@@ -123,6 +125,7 @@ def _day_session_data(day_session):
         'currentExerciseIndex': day_session.current_exercise_index,
         'status': day_session.status,
         'startedAt': day_session.started_at.isoformat(),
+        'updatedAt': day_session.updated_at.isoformat(),
         'completedAt': day_session.completed_at.isoformat() if day_session.completed_at else None,
     }
 
@@ -222,6 +225,11 @@ def complete_workout_day_set(request):
         day_session.current_exercise_index = _next_exercise_index(exercises, index)
         day_session.exercises = exercises
         day_session.save(update_fields=['exercises', 'current_exercise_index', 'updated_at'])
+        WorkoutSession.objects.filter(
+            user=request.user,
+            session_id=result_id[:120],
+            workout_plan_day_session__isnull=True,
+        ).update(workout_plan_day_session=day_session)
     return Response({'session': _day_session_data(day_session)})
 
 
@@ -242,11 +250,28 @@ def finish_workout_day_session(request):
             day_session.current_exercise_index = -1
             day_session.save(update_fields=['status', 'completed_at', 'current_exercise_index', 'updated_at'])
         plan = day_session.plan
-        completed = list(dict.fromkeys([*plan.completed_workout_ids, day_session.workout_id]))
+        valid_ids = {item['id'] for item in plan_schedule(plan)}
+        completed = list(dict.fromkeys(
+            item for item in [*plan.completed_workout_ids, day_session.workout_id]
+            if item in valid_ids
+        ))
         plan.completed_workout_ids = completed
-        if len(completed) >= 12 and not plan.completed_at:
-            plan.completed_at = timezone.now()
-        plan.save(update_fields=['completed_workout_ids', 'completed_at'])
+        if set(completed) == valid_ids:
+            if not plan.completed_at:
+                plan.completed_at = timezone.now()
+            plan.status = 'completed'
+        result_ids = [
+            result.get('sessionResultId')
+            for exercise in day_session.exercises
+            for result in exercise.get('results', [])
+            if result.get('sessionResultId')
+        ]
+        WorkoutSession.objects.filter(
+            user=request.user,
+            session_id__in=result_ids,
+            workout_plan_day_session__isnull=True,
+        ).update(workout_plan_day_session=day_session)
+        plan.save(update_fields=['completed_workout_ids', 'completed_at', 'status'])
     return Response({'session': _day_session_data(day_session), 'plan': plan_data(plan)})
 
 
