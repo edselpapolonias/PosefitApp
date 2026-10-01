@@ -74,14 +74,6 @@ export default function ExerciseSelectionPage() {
             <h1 id="exercise-page-title">Choose Your Exercise</h1>
             <p className="exercise-hero__intro">Start your training, improve your form, and reach your fitness goals.</p>
           </div>
-          <div className="exercise-hero__motivation" aria-hidden="true">
-            <p className="exercise-hero__script">Better Form<br />A Stronger You</p>
-            <span className="exercise-hero__stroke" />
-          </div>
-          <div className="exercise-hero__consistency" aria-hidden="true">
-            <p>CONSISTENCY<br />CREATES<br />PROGRESS</p>
-            <span className="exercise-hero__bars"><i /><i /><i /></span>
-          </div>
         </section>
 
         <section className="exercise-toolbar" aria-label="Exercise filters and search">

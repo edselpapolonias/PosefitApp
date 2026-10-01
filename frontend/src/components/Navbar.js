@@ -9,7 +9,7 @@ const navigationItems = [
   { label: 'Exercises', path: '/exercises' },
   { label: 'Workout Plans', path: '/workout-plans' },
   { label: 'History', path: '/history' },
-  { label: 'Progress' },
+  { label: 'Progress', path: '/progress' },
 ];
 
 function getStoredUser() {

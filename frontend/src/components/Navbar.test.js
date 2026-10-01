@@ -24,7 +24,7 @@ test('repeated current-page clicks do not navigate and close the account menu', 
   expect(mockNavigation).toHaveBeenCalledWith('/exercises');
 });
 
-test('renders working destinations and keeps Progress as a placeholder', () => {
+test('renders working destinations including Progress', () => {
   render(<Navbar activeItem="Dashboard" />);
 
   const primaryNavigation = screen.getByRole('navigation', { name: 'Primary navigation' });
@@ -35,11 +35,11 @@ test('renders working destinations and keeps Progress as a placeholder', () => {
     'Exercises',
     'Workout Plans',
     'History',
+    'Progress',
   ]);
   links.forEach((link) => {
     expect(link).not.toHaveAttribute('aria-disabled', 'true');
   });
-  expect(within(primaryNavigation).getByText('Progress')).toHaveAttribute('aria-disabled', 'true');
 });
 
 test('parent navigation and modified clicks still work', () => {

@@ -852,6 +852,313 @@
   background: #da4b08;
 }
 
+.history-exercise-list,
+.history-exercise-detail {
+  min-height: 468px;
+}
+
+.history-exercise-list {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e9e6e3;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(36, 24, 18, 0.035);
+}
+
+.history-exercise-list > header {
+  margin-bottom: 20px;
+}
+
+.history-exercise-list > header h1,
+.history-exercise-detail__header h1 {
+  margin: 0;
+  color: #161d2b;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+.history-exercise-list > header p,
+.history-exercise-detail__header p {
+  margin: 5px 0 0;
+  color: #8b92a0;
+  font-size: 11px;
+}
+
+.history-exercise-grid,
+.history-exercise-skeleton {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.history-exercise-card {
+  min-width: 0;
+  min-height: 310px;
+  padding: 21px;
+  display: flex;
+  flex-direction: column;
+  color: #202838;
+  background: linear-gradient(145deg, #fff 68%, #fff8f3);
+  border: 1px solid #e9e4df;
+  border-radius: 15px;
+  box-shadow: 0 8px 22px rgba(52, 35, 24, 0.05);
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.history-exercise-card:hover {
+  border-color: #f5b391;
+  box-shadow: 0 11px 26px rgba(86, 45, 22, 0.09);
+  transform: translateY(-2px);
+}
+
+.history-exercise-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.history-exercise-card > header > span,
+.history-exercise-detail__header > span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff1e8;
+  border: 1px solid #ffddc8;
+  border-radius: 14px;
+}
+
+.history-exercise-card > header img,
+.history-exercise-detail__header img {
+  width: 49px;
+  height: 49px;
+  object-fit: contain;
+}
+
+.history-exercise-card > header > i {
+  margin: 7px 4px 0 0;
+  color: #f45b12;
+  font-size: 12px;
+}
+
+.history-exercise-card h2 {
+  margin: 15px 0 13px;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.history-exercise-card dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.history-exercise-card dl div {
+  min-width: 0;
+  padding: 10px 8px;
+  background: #fffaf7;
+  border: 1px solid #f1ebe7;
+  border-radius: 9px;
+}
+
+.history-exercise-card dt {
+  min-height: 25px;
+  color: #9298a4;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.history-exercise-card dd {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: #252d3d;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-exercise-card__last {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #9298a4;
+  font-size: 8px;
+}
+
+.history-exercise-card__last strong {
+  color: #4d5565;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.history-exercise-card footer {
+  margin-top: auto;
+  padding-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #e6500a;
+  border-top: 1px solid #f0ece9;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.history-exercise-card footer i {
+  font-size: 8px;
+}
+
+.history-exercise-skeleton span {
+  min-height: 310px;
+  background: linear-gradient(100deg, #f5f1ee 15%, #fff 35%, #f5f1ee 55%);
+  background-size: 250% 100%;
+  border: 1px solid #eee9e5;
+  border-radius: 15px;
+  animation: history-exercise-shimmer 1.4s linear infinite;
+}
+
+@keyframes history-exercise-shimmer {
+  to { background-position-x: -150%; }
+}
+
+.history-exercise-error {
+  min-height: 330px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #7d8493;
+  text-align: center;
+}
+
+.history-exercise-error > i {
+  color: #e6500a;
+  font-size: 28px;
+}
+
+.history-exercise-error p {
+  margin: 12px 0;
+  font-size: 11px;
+}
+
+.history-exercise-error button {
+  padding: 8px 15px;
+  color: #fff;
+  background: #f45b12;
+  border: 0;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.history-exercise-back {
+  margin-bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6a7282;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.history-exercise-back:hover {
+  color: #e6500a;
+}
+
+.history-exercise-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.history-exercise-stats {
+  margin: 20px 0 18px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.history-exercise-stat {
+  min-width: 0;
+  min-height: 108px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e9e6e3;
+  border-radius: 13px;
+  box-shadow: 0 4px 16px rgba(36, 24, 18, 0.035);
+}
+
+.history-exercise-stat > span {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #f45b12;
+  background: #fff0e7;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.history-exercise-stat div {
+  min-width: 0;
+}
+
+.history-exercise-stat strong {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(17px, 1.5vw, 23px);
+  letter-spacing: -0.45px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-exercise-stat p {
+  margin: 4px 0 0;
+  color: #8b92a0;
+  font-size: 8px;
+}
+
+.history-exercise-sessions table {
+  min-width: 760px;
+}
+
+.history-exercise-sessions th:nth-child(1) { width: 21%; }
+.history-exercise-sessions th:nth-child(2) { width: 12%; }
+.history-exercise-sessions th:nth-child(3) { width: 16%; }
+.history-exercise-sessions th:nth-child(4) { width: 16%; }
+.history-exercise-sessions th:nth-child(5) { width: 17%; }
+.history-exercise-sessions th:nth-child(6) { width: 18%; }
+
+.history-exercise-session-value,
+.history-exercise-session-label {
+  display: block;
+}
+
+.history-exercise-session-value {
+  color: #303849;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.history-exercise-session-label {
+  margin-top: 3px;
+  color: #9298a5;
+  font-size: 8px;
+}
+
 @media (max-width: 1240px) {
   .history-main { padding-inline: 24px; }
   .history-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -859,12 +1166,16 @@
   .history-content { grid-template-columns: minmax(0, 1fr) 290px; }
   .history-table-card td,
   .history-table-card th { padding-inline: 13px; }
+  .history-exercise-grid,
+  .history-exercise-skeleton { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-exercise-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 980px) {
   .history-content { grid-template-columns: 1fr; }
   .history-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .history-table-wrap { min-height: 390px; }
+  .history-exercise-stat { min-height: 98px; }
 }
 
 @media (max-width: 720px) {
@@ -878,6 +1189,10 @@
   .history-tools input { width: 100%; }
   .history-sidebar { grid-template-columns: 1fr; }
   .history-plan-grid { grid-template-columns: 1fr; }
+  .history-exercise-list { padding: 20px 16px; }
+  .history-exercise-grid,
+  .history-exercise-skeleton { gap: 13px; }
+  .history-exercise-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 450px) {
@@ -893,4 +1208,18 @@
   .history-plan-card > header,
   .history-plan-card__progress-copy { align-items: flex-start; flex-direction: column; }
   .history-plan-card__button { width: 100%; align-self: stretch; }
+  .history-exercise-grid,
+  .history-exercise-skeleton,
+  .history-exercise-stats { grid-template-columns: 1fr; }
+  .history-exercise-card { min-height: 285px; }
+  .history-exercise-skeleton span { min-height: 285px; }
+  .history-exercise-detail__header { align-items: flex-start; }
+  .history-exercise-detail__header > span { width: 52px; height: 52px; flex: 0 0 auto; }
+  .history-exercise-detail__header img { width: 44px; height: 44px; }
+  .history-exercise-stat { min-height: 82px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-exercise-card { transition: none; }
+  .history-exercise-skeleton span { animation: none; }
 }

@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import { getHistory } from '../../services/historyService';
+import {
+  getExerciseHistory,
+  getExerciseHistoryOverview,
+  getHistory,
+} from '../../services/historyService';
 import squatIcon from '../../images/icon-squat.png';
 import pushUpIcon from '../../images/icon-push-up.png';
 import plankIcon from '../../images/icon-plank.png';
@@ -34,6 +38,16 @@ function formatSessionDuration(seconds) {
   const remainingSeconds = totalSeconds % 60;
   const clock = `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   return hours ? `${hours}:${clock}` : `${clock} min`;
+}
+
+function formatExerciseMeasure(seconds) {
+  const totalSeconds = Math.max(0, Math.round(Number(seconds) || 0));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+  if (hours) return `${hours}h${minutes ? ` ${minutes}m` : ''}`;
+  if (minutes) return `${minutes}m${remainingSeconds ? ` ${remainingSeconds}s` : ''}`;
+  return `${remainingSeconds} sec`;
 }
 
 function formatCompletedAt(value) {
@@ -231,16 +245,115 @@ function ByPlanHistory({ plans = [], loading }) {
   );
 }
 
+function ExerciseOverviewCard({ exercise }) {
+  const isPlank = exercise.exercise === 'plank';
+  const lastPerformed = exercise.lastPerformed ? formatCompletedAt(exercise.lastPerformed).date : 'Not performed yet';
+  return (
+    <Link
+      className="history-exercise-card"
+      to={`/history/exercise/${exercise.exercise}`}
+      state={{ history: { tab: 'exercise', exercisePage: 1 } }}
+      aria-label={`View ${exercise.name} history`}
+    >
+      <header>
+        <span><img src={exerciseIcons[exercise.exercise]} alt="" /></span>
+        <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+      </header>
+      <h2>{exercise.name}</h2>
+      <dl>
+        <div><dt>Completed Sessions</dt><dd>{exercise.sessions}</dd></div>
+        <div><dt>Avg. Form Accuracy</dt><dd>{exercise.averageAccuracy == null ? '—' : `${exercise.averageAccuracy}%`}</dd></div>
+        <div><dt>{isPlank ? 'Total Hold Time' : 'Total Reps'}</dt><dd>{isPlank ? formatExerciseMeasure(exercise.totalHoldTime) : `${exercise.totalReps} reps`}</dd></div>
+      </dl>
+      <div className="history-exercise-card__last"><span>Last Performed</span><strong>{lastPerformed}</strong></div>
+      <footer>View History <i className="fa-solid fa-chevron-right" aria-hidden="true" /></footer>
+    </Link>
+  );
+}
+
+function ExerciseHistoryOverview({ exercises, loading, error, onRetry }) {
+  return (
+    <section className="history-exercise-list" aria-busy={loading}>
+      <header><h1>History by Exercise</h1><p>Review your workout history and performance for each exercise.</p></header>
+      {error ? <div className="history-exercise-error" role="alert"><i className="fa-solid fa-triangle-exclamation" /><p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div>
+        : loading ? <div className="history-exercise-skeleton" aria-label="Loading exercise history">{[0, 1, 2, 3, 4].map((item) => <span key={item} />)}</div>
+          : <div className="history-exercise-grid">{exercises.map((exercise) => <ExerciseOverviewCard key={exercise.exercise} exercise={exercise} />)}</div>}
+    </section>
+  );
+}
+
+function ExerciseDetailStat({ icon, value, label }) {
+  return <article className="history-exercise-stat"><span><i className={`fa-solid ${icon}`} /></span><div><strong>{value}</strong><p>{label}</p></div></article>;
+}
+
+function ExerciseSessionRow({ session, exercise, page }) {
+  const completedAt = formatCompletedAt(session.completedAt);
+  const result = accuracyResult(session.accuracy);
+  const isPlank = exercise.exercise === 'plank';
+  return (
+    <tr>
+      <td className="history-date-cell"><strong>{completedAt.date}</strong><span>{completedAt.time}</span></td>
+      <td><strong className="history-exercise-session-value">{session.setsCompleted}</strong><span className="history-exercise-session-label">{session.setsCompleted === 1 ? 'Set' : 'Sets'}</span></td>
+      <td><strong className="history-exercise-session-value">{isPlank ? formatExerciseMeasure(session.totalHoldTime) : session.totalReps == null ? '—' : session.totalReps}</strong><span className="history-exercise-session-label">{isPlank ? 'Hold Time' : session.totalReps == null ? 'No rep data' : 'Reps'}</span></td>
+      <td className="history-duration-cell">{formatSessionDuration(session.duration)}</td>
+      <td>{result ? <div className={`history-result history-result--${result.tone}`}><strong>{result.accuracy}%</strong><span>{result.label}</span></div> : <span className="history-no-result">—<small>No accuracy data</small></span>}</td>
+      <td><Link className="history-summary-button" to={`/history/session/${encodeURIComponent(session.id)}`} state={{ backTo: `/history/exercise/${exercise.exercise}`, backLabel: `Back to ${exercise.name} History`, history: { tab: 'exercise', exercisePage: page } }}>View Summary</Link></td>
+    </tr>
+  );
+}
+
+function ExerciseHistoryDetail({ data, page, onPageChange, loading, error, onRetry }) {
+  if (error) return <section className="history-exercise-detail"><div className="history-exercise-error" role="alert"><i className="fa-solid fa-triangle-exclamation" /><p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div></section>;
+  if (loading || !data) return <section className="history-exercise-detail"><div className="history-loading"><span /><p>Loading exercise history…</p></div></section>;
+  const isPlank = data.exercise === 'plank';
+  const stats = [
+    { icon: 'fa-circle-check', value: data.stats.totalSessions, label: 'Total Sessions' },
+    { icon: 'fa-bullseye', value: data.stats.averageAccuracy == null ? '—' : `${data.stats.averageAccuracy}%`, label: 'Avg. Form Accuracy' },
+    { icon: isPlank ? 'fa-stopwatch' : 'fa-rotate', value: isPlank ? formatExerciseMeasure(data.stats.totalHoldTime) : data.stats.totalReps, label: isPlank ? 'Total Hold Time' : 'Total Reps' },
+    { icon: 'fa-trophy', value: data.stats.bestAccuracy == null ? '—' : `${data.stats.bestAccuracy}%`, label: 'Best Form Accuracy' },
+    { icon: 'fa-clock', value: formatTotalDuration(data.stats.totalDuration), label: 'Total Workout Time' },
+  ];
+  return (
+    <section className="history-exercise-detail">
+      <Link className="history-exercise-back" to="/history" state={{ history: { tab: 'exercise' } }}><i className="fa-solid fa-arrow-left" />Back to By Exercise</Link>
+      <header className="history-exercise-detail__header">
+        <span><img src={exerciseIcons[data.exercise]} alt="" /></span>
+        <div><h1>{data.name} History</h1><p>Review your completed {data.name} sessions and performance over time.</p></div>
+      </header>
+      <div className="history-exercise-stats">{stats.map((stat) => <ExerciseDetailStat key={stat.label} {...stat} />)}</div>
+      <section className="history-table-card history-exercise-sessions">
+        <header><div><h1>Session History</h1><p>{data.sessions.totalItems} completed {data.sessions.totalItems === 1 ? 'session' : 'sessions'} · Newest first</p></div></header>
+        <div className="history-table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Sets</th><th>{isPlank ? 'Hold Time' : 'Reps'}</th><th>Duration</th><th>Form Accuracy</th><th>Action</th></tr></thead>
+            <tbody>{data.sessions.items.map((session) => <ExerciseSessionRow key={session.id} session={session} exercise={data} page={page} />)}</tbody>
+          </table>
+          {!data.sessions.items.length && <div className="history-empty"><span><i className="fa-solid fa-dumbbell" /></span><h2>No {data.name} history yet</h2><p>Complete a {data.name} workout and your sessions will appear here.</p></div>}
+        </div>
+        <Pagination current={data.sessions.page} total={data.sessions.totalPages} onChange={onPageChange} />
+      </section>
+    </section>
+  );
+}
+
 export default function HistoryPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { exerciseId } = useParams();
   const restoredHistory = location.state?.history;
   const [data, setData] = useState(null);
   const [search, setSearch] = useState(() => typeof restoredHistory?.search === 'string' ? restoredHistory.search : '');
   const [page, setPage] = useState(() => Math.max(1, Number(restoredHistory?.page) || 1));
-  const [activeTab, setActiveTab] = useState(() => restoredHistory?.tab === 'plans' ? 'plans' : 'all');
+  const [activeTab, setActiveTab] = useState(() => exerciseId || restoredHistory?.tab === 'exercise' ? 'exercise' : restoredHistory?.tab === 'plans' ? 'plans' : 'all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [exerciseOverview, setExerciseOverview] = useState([]);
+  const [exerciseDetail, setExerciseDetail] = useState(null);
+  const [exercisePage, setExercisePage] = useState(() => Math.max(1, Number(restoredHistory?.exercisePage) || 1));
+  const [exerciseLoading, setExerciseLoading] = useState(false);
+  const [exerciseError, setExerciseError] = useState('');
+  const [exerciseAttempt, setExerciseAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -259,6 +372,39 @@ export default function HistoryPage() {
       });
     return () => controller.abort();
   }, [page, search, attempt]);
+
+  useEffect(() => {
+    if (exerciseId) setActiveTab('exercise');
+  }, [exerciseId]);
+
+  useEffect(() => {
+    if (activeTab !== 'exercise') return undefined;
+    const controller = new AbortController();
+    setExerciseLoading(true);
+    setExerciseError('');
+    if (exerciseId) {
+      getExerciseHistory(exerciseId, { page: exercisePage, signal: controller.signal })
+        .then((result) => {
+          setExerciseDetail(result);
+          if (result.sessions.page !== exercisePage) setExercisePage(result.sessions.page);
+        })
+        .catch((failure) => {
+          if (failure.code !== 'ERR_CANCELED') setExerciseError(failure.response?.status === 404 ? 'This exercise history is not available.' : 'We couldn’t load this exercise history. Please try again.');
+        })
+        .finally(() => { if (!controller.signal.aborted) setExerciseLoading(false); });
+    } else {
+      getExerciseHistoryOverview(controller.signal)
+        .then(setExerciseOverview)
+        .catch((failure) => { if (failure.code !== 'ERR_CANCELED') setExerciseError('We couldn’t load your exercise history. Please try again.'); })
+        .finally(() => { if (!controller.signal.aborted) setExerciseLoading(false); });
+    }
+    return () => controller.abort();
+  }, [activeTab, exerciseId, exercisePage, exerciseAttempt]);
+
+  const selectTab = (tab) => {
+    setActiveTab(tab);
+    if (exerciseId) navigate('/history', { state: { history: { page, search, tab } } });
+  };
 
   const stats = data?.stats;
   const sessions = data?.sessions;
@@ -285,9 +431,9 @@ export default function HistoryPage() {
 
         <div className="history-toolbar">
           <div className="history-tabs" aria-label="History view">
-            <button className={activeTab === 'all' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'all'} onClick={() => setActiveTab('all')}>All Workouts</button>
-            <button className={activeTab === 'plans' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'plans'} onClick={() => setActiveTab('plans')}>By Plan</button>
-            <button type="button" disabled>By Exercise</button>
+            <button className={activeTab === 'all' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'all'} onClick={() => selectTab('all')}>All Workouts</button>
+            <button className={activeTab === 'plans' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'plans'} onClick={() => selectTab('plans')}>By Plan</button>
+            <button className={activeTab === 'exercise' ? 'is-active' : ''} type="button" aria-pressed={activeTab === 'exercise'} onClick={() => selectTab('exercise')}>By Exercise</button>
           </div>
           {activeTab === 'all' && <div className="history-tools">
             <label><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><span className="sr-only">Search workouts</span><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search workouts..." /></label>
@@ -295,7 +441,11 @@ export default function HistoryPage() {
           </div>}
         </div>
 
-        {activeTab === 'plans' ? <ByPlanHistory plans={planHistory} loading={loading} /> : <div className="history-content">
+        {activeTab === 'plans' ? <ByPlanHistory plans={planHistory} loading={loading} /> : activeTab === 'exercise' ? (
+          exerciseId
+            ? <ExerciseHistoryDetail data={exerciseDetail} page={exercisePage} onPageChange={setExercisePage} loading={exerciseLoading} error={exerciseError} onRetry={() => setExerciseAttempt((value) => value + 1)} />
+            : <ExerciseHistoryOverview exercises={exerciseOverview} loading={exerciseLoading} error={exerciseError} onRetry={() => setExerciseAttempt((value) => value + 1)} />
+        ) : <div className="history-content">
           <section className="history-table-card">
             <header><div><h1>All Workouts</h1><p>{sessions ? `${sessions.totalItems} completed ${sessions.totalItems === 1 ? 'session' : 'sessions'}` : 'Completed sessions'}</p></div></header>
             <div className="history-table-wrap">

@@ -29,7 +29,7 @@
   padding: 34px 46px 20px;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 1.6fr 0.75fr 0.45fr;
+  grid-template-columns: 1fr;
   align-items: center;
   background:
     radial-gradient(circle at 91% 22%, rgba(255, 188, 140, 0.28) 0 88px, transparent 89px),
@@ -60,9 +60,7 @@
   background: rgba(255, 192, 145, 0.18);
 }
 
-.exercise-hero__copy,
-.exercise-hero__motivation,
-.exercise-hero__consistency {
+.exercise-hero__copy {
   position: relative;
   z-index: 1;
 }
@@ -90,62 +88,6 @@
   font-size: 17px;
   line-height: 1.45;
 }
-
-.exercise-hero__motivation {
-  align-self: center;
-  justify-self: center;
-  color: #ff5200;
-  transform: rotate(-4deg);
-}
-
-.exercise-hero__script {
-  margin: 0;
-  font-family: 'Segoe Script', 'Brush Script MT', cursive;
-  font-size: clamp(24px, 2.3vw, 35px);
-  line-height: 1.14;
-}
-
-.exercise-hero__stroke {
-  width: 110px;
-  height: 18px;
-  margin: -2px auto 0;
-  display: block;
-  border-top: 3px solid currentColor;
-  border-radius: 50%;
-  transform: rotate(-8deg);
-}
-
-.exercise-hero__consistency {
-  justify-self: end;
-  min-width: 145px;
-  padding-right: 8px;
-  color: #96522e;
-  text-align: center;
-}
-
-.exercise-hero__consistency p {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-.exercise-hero__bars {
-  height: 40px;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 5px;
-}
-
-.exercise-hero__bars i {
-  width: 8px;
-  height: 14px;
-  border: 2px solid #ff5a0a;
-  border-radius: 2px 2px 0 0;
-}
-
-.exercise-hero__bars i:nth-child(2) { height: 24px; }
-.exercise-hero__bars i:nth-child(3) { height: 34px; }
 
 .exercise-toolbar {
   min-height: 82px;
@@ -551,8 +493,6 @@
 }
 
 @media (max-width: 980px) {
-  .exercise-hero { grid-template-columns: 1.4fr 0.8fr; }
-  .exercise-hero__consistency { display: none; }
   .exercise-toolbar { align-items: stretch; flex-direction: column; }
   .exercise-toolbar__filters { overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
   .exercise-toolbar__filters::-webkit-scrollbar { display: none; }
@@ -563,7 +503,6 @@
 
 @media (max-width: 760px) {
   .exercise-hero { min-height: 150px; padding: 28px 20px 18px; grid-template-columns: 1fr; }
-  .exercise-hero__motivation { display: none; }
   .exercise-hero h1 { font-size: 34px; }
   .exercise-hero__intro { max-width: 520px; font-size: 14px; }
   .exercise-toolbar { min-height: auto; padding: 0 20px 24px; }

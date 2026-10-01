@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import datetime, time, timedelta
 
 from django.core.paginator import Paginator
-from django.db.models import Avg, Max, Q, Sum
+from django.db.models import Avg, Count, Max, Q, Sum
 
 from .dashboard_service import best_login_streak, dashboard_timezone
 from .models import UserWorkoutPlan, WorkoutSession
@@ -169,6 +169,83 @@ def recent_session_data(user, limit=3):
         }
         for session in sessions
     ]
+
+
+def exercise_history_overview_data(user):
+    """Return fixed-order all-time summaries for every supported exercise."""
+    grouped = {
+        item['exercise']: item
+        for item in _completed_sessions(user).values('exercise').annotate(
+            session_count=Count('pk'),
+            average_accuracy=Avg('accuracy'),
+            total_reps=Sum('total_reps'),
+            total_hold_time=Sum('total_hold_time'),
+            last_performed=Max('completed_at'),
+        )
+    }
+    exercises = []
+    for exercise, name in SUPPORTED_EXERCISES.items():
+        values = grouped.get(exercise, {})
+        average_accuracy = values.get('average_accuracy')
+        last_performed = values.get('last_performed')
+        exercises.append({
+            'exercise': exercise,
+            'name': name,
+            'metricType': WorkoutSession.METRIC_TIME if exercise == 'plank' else WorkoutSession.METRIC_REPS,
+            'sessions': values.get('session_count', 0),
+            'averageAccuracy': round(average_accuracy, 1) if average_accuracy is not None else None,
+            'totalReps': None if exercise == 'plank' else values.get('total_reps') or 0,
+            'totalHoldTime': values.get('total_hold_time') or 0 if exercise == 'plank' else None,
+            'lastPerformed': last_performed.isoformat() if last_performed else None,
+        })
+    return exercises
+
+
+def exercise_history_data(user, exercise, page=1, page_size=6):
+    """Return one exercise's lifetime summary and newest-first completed sessions."""
+    if exercise not in SUPPORTED_EXERCISES:
+        return None
+    sessions = _completed_sessions(user).filter(exercise=exercise)
+    aggregates = sessions.aggregate(
+        total_sessions=Count('pk'),
+        average_accuracy=Avg('accuracy'),
+        best_accuracy=Max('accuracy'),
+        total_duration=Sum('duration'),
+        total_reps=Sum('total_reps'),
+        total_hold_time=Sum('total_hold_time'),
+    )
+    paginator = Paginator(sessions.order_by('-completed_at', '-pk'), page_size)
+    requested_page = max(1, page)
+    page_object = paginator.get_page(min(requested_page, paginator.num_pages or 1))
+    is_plank = exercise == 'plank'
+
+    return {
+        'exercise': exercise,
+        'name': SUPPORTED_EXERCISES[exercise],
+        'metricType': WorkoutSession.METRIC_TIME if is_plank else WorkoutSession.METRIC_REPS,
+        'stats': {
+            'totalSessions': aggregates['total_sessions'],
+            'averageAccuracy': round(aggregates['average_accuracy'], 1) if aggregates['average_accuracy'] is not None else None,
+            'bestAccuracy': aggregates['best_accuracy'],
+            'totalDuration': aggregates['total_duration'] or 0,
+            'totalReps': None if is_plank else aggregates['total_reps'] or 0,
+            'totalHoldTime': aggregates['total_hold_time'] or 0 if is_plank else None,
+        },
+        'sessions': {
+            'items': [
+                {
+                    **_session_data(session),
+                    'totalReps': session.total_reps,
+                    'totalHoldTime': session.total_hold_time,
+                }
+                for session in page_object.object_list
+            ],
+            'page': page_object.number,
+            'pageSize': page_size,
+            'totalItems': paginator.count,
+            'totalPages': paginator.num_pages,
+        },
+    }
 
 
 def build_history(user, search='', page=1, page_size=6, today=None):

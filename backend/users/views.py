@@ -12,10 +12,13 @@ from .models import CustomUser, WorkoutPlanDaySession, WorkoutSession
 from .dashboard_service import build_dashboard, record_login_day
 from .history_service import (
     build_history,
+    exercise_history_data,
+    exercise_history_overview_data,
     history_session_data,
     plan_history_detail_data,
     recent_session_data,
 )
+from .progress_service import build_progress
 from .workout_plan_views import active_plans_data
 from .session_progress_service import (
     build_progress_comparison,
@@ -120,6 +123,12 @@ def dashboard(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def progress(request):
+    return Response(build_progress(request.user, range_key=request.query_params.get('range', '30d')))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def history(request):
     try:
         page = max(1, int(request.query_params.get('page', 1)))
@@ -127,6 +136,28 @@ def history(request):
         page = 1
     search = str(request.query_params.get('search') or '').strip()[:80]
     return Response(build_history(request.user, search=search, page=page))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_exercises(request):
+    return Response({'exercises': exercise_history_overview_data(request.user)})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def history_exercise(request, exercise):
+    try:
+        page = max(1, int(request.query_params.get('page', 1)))
+    except (TypeError, ValueError):
+        page = 1
+    data = exercise_history_data(request.user, exercise, page=page)
+    if data is None:
+        return Response(
+            {'error': 'The requested exercise history is not supported.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    return Response(data)
 
 
 @api_view(['GET'])
@@ -206,7 +237,8 @@ def complete_workout_session(request):
         if data.get('status') == WorkoutSession.STATUS_COMPLETED
         else WorkoutSession.STATUS_ENDED
     )
-    accuracy = min(100, _non_negative_integer(data.get('accuracy')))
+    parsed_accuracy = _non_negative_integer(data.get('accuracy'), nullable=True)
+    accuracy = min(100, parsed_accuracy) if parsed_accuracy is not None else None
     feedback = data.get('feedback')
     workout_context = data.get('workoutContext') if isinstance(data.get('workoutContext'), dict) else {}
     plan_day_session = None

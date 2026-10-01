@@ -1,16 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import workoutHero from '../../images/workout-plans-hero.png';
 import { workoutPlans } from './workoutPlansData';
 import './WorkoutPlansPage.css';
-
-const heroFeatures = [
-  { icon: 'fa-dumbbell', title: 'Pre-made Plans', text: 'Ready to follow' },
-  { icon: 'fa-bullseye', title: 'For All Levels', text: 'Beginner to Advanced' },
-  { icon: 'fa-calendar-days', title: 'Structured Routines', text: 'Save time and stay on track' },
-  { icon: 'fa-chart-simple', title: 'Real Results', text: 'A healthier, stronger you' },
-];
 
 const bottomBenefits = [
   { icon: 'fa-bolt', title: 'Follow Proven Routines', text: 'Designed for real progress.' },
@@ -104,23 +96,6 @@ export default function WorkoutPlansPage() {
           <div className="workout-plans-hero__content">
             <h1 id="workout-plans-title">Workout Plans</h1>
             <p>Choose a plan, stay consistent, and reach your fitness goals<br className="workout-plans-hero__desktop-break" /> with structured routines designed for you.</p>
-            <div className="workout-plans-hero__features">
-              {heroFeatures.map((feature) => (
-                <div className="workout-plans-hero__feature" key={feature.title}>
-                  <span><i className={`fa-solid ${feature.icon}`} aria-hidden="true" /></span>
-                  <strong>{feature.title}</strong>
-                  <small>{feature.text}</small>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="workout-plans-hero__visual" aria-hidden="true">
-            <span className="workout-plans-hero__ray workout-plans-hero__ray--one" />
-            <span className="workout-plans-hero__ray workout-plans-hero__ray--two" />
-            <img decoding="async" src={workoutHero} alt="" />
-            <p className="workout-plans-hero__motto">Consistency<br />Builds<br />Progress</p>
-            <small>Same<br /><strong>Stronger<br />You</strong></small>
           </div>
         </section>
 

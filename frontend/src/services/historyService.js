@@ -25,3 +25,19 @@ export async function getPlanHistory(instanceId, signal) {
   );
   return response.data?.plan || null;
 }
+
+export async function getExerciseHistoryOverview(signal) {
+  const response = await axios.get(apiUrl('/api/users/history/exercises/'), {
+    withCredentials: true,
+    signal,
+  });
+  return Array.isArray(response.data?.exercises) ? response.data.exercises : [];
+}
+
+export async function getExerciseHistory(exerciseId, { page = 1, signal } = {}) {
+  const response = await axios.get(
+    apiUrl(`/api/users/history/exercises/${encodeURIComponent(exerciseId)}/`),
+    { withCredentials: true, params: { page }, signal },
+  );
+  return response.data;
+}

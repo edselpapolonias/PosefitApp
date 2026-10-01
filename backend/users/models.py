@@ -99,7 +99,7 @@ class WorkoutSession(models.Model):
     completed_at = models.DateTimeField()
     duration = models.PositiveIntegerField(default=0)
     sets_completed = models.PositiveIntegerField(default=0)
-    accuracy = models.PositiveSmallIntegerField(default=0)
+    accuracy = models.PositiveSmallIntegerField(null=True, blank=True)
     correct_reps = models.PositiveIntegerField(null=True, blank=True)
     incorrect_reps = models.PositiveIntegerField(null=True, blank=True)
     total_reps = models.PositiveIntegerField(null=True, blank=True)

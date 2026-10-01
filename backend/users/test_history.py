@@ -3,7 +3,13 @@ from datetime import date, datetime, timedelta, timezone
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from .history_service import build_history, history_session_data, plan_history_detail_data
+from .history_service import (
+    build_history,
+    exercise_history_data,
+    exercise_history_overview_data,
+    history_session_data,
+    plan_history_detail_data,
+)
 from .models import CustomUser, LoginDay, UserWorkoutPlan, WorkoutPlanDaySession, WorkoutSession
 from .workout_plan_views import plan_schedule
 
@@ -272,3 +278,98 @@ class HistoryTests(TestCase):
         self.assertEqual(saved.accuracy, 93)
         self.assertEqual(saved.correct_reps, 10)
         self.assertEqual(saved.feedback, {'feedbackParagraph': 'Saved later.'})
+
+    def test_by_exercise_overview_keeps_five_fixed_cards_and_real_totals(self):
+        older = self.session('squat-older', 'squat', self.now - timedelta(days=2), 120, 80)
+        older.total_reps = 20
+        older.save(update_fields=['total_reps'])
+        newer = self.session('squat-newer', 'squat', self.now, 180, None)
+        newer.total_reps = 30
+        newer.save(update_fields=['total_reps'])
+        plank = self.session('plank-history', 'plank', self.now - timedelta(days=1), 90, 95)
+        plank.total_hold_time = 60
+        plank.save(update_fields=['total_hold_time'])
+        self.session('other-squat', 'squat', self.now, user=self.other_user)
+
+        exercises = exercise_history_overview_data(self.user)
+
+        self.assertEqual([item['exercise'] for item in exercises], [
+            'squat', 'push-up', 'plank', 'lunge', 'leg-raise',
+        ])
+        squat = exercises[0]
+        self.assertEqual(squat['sessions'], 2)
+        self.assertEqual(squat['averageAccuracy'], 80)
+        self.assertEqual(squat['totalReps'], 50)
+        self.assertEqual(squat['lastPerformed'], newer.completed_at.isoformat())
+        self.assertEqual(exercises[1]['sessions'], 0)
+        self.assertIsNone(exercises[1]['averageAccuracy'])
+        self.assertEqual(exercises[1]['totalReps'], 0)
+        self.assertEqual(exercises[2]['totalHoldTime'], 60)
+        self.assertIsNone(exercises[2]['totalReps'])
+
+    def test_by_exercise_detail_is_all_time_newest_first_and_paginated(self):
+        older = self.session('detail-older', 'lunge', self.now - timedelta(days=3), 100, 84)
+        older.total_reps = 16
+        older.save(update_fields=['total_reps'])
+        newer = self.session('detail-newer', 'lunge', self.now, 200, 96)
+        newer.total_reps = 20
+        newer.save(update_fields=['total_reps'])
+        self.session('not-lunge', 'squat', self.now + timedelta(minutes=1), 999, 100)
+
+        first_page = exercise_history_data(self.user, 'lunge', page=1, page_size=1)
+
+        self.assertEqual(first_page['stats'], {
+            'totalSessions': 2,
+            'averageAccuracy': 90.0,
+            'bestAccuracy': 96,
+            'totalDuration': 300,
+            'totalReps': 36,
+            'totalHoldTime': None,
+        })
+        self.assertEqual(first_page['sessions']['items'][0]['id'], 'detail-newer')
+        self.assertEqual(first_page['sessions']['totalPages'], 2)
+        second_page = exercise_history_data(self.user, 'lunge', page=2, page_size=1)
+        self.assertEqual(second_page['sessions']['items'][0]['id'], 'detail-older')
+        self.assertIsNone(exercise_history_data(self.user, 'sit-up'))
+
+    def test_by_exercise_endpoints_are_owned_and_withhold_partial_plan_results(self):
+        plan = UserWorkoutPlan.objects.create(
+            user=self.user,
+            plan_id='beginner-full-body',
+            start_date=date(2026, 9, 14),
+        )
+        day = WorkoutPlanDaySession.objects.create(
+            user=self.user,
+            plan=plan,
+            session_id='exercise-partial-day',
+            workout_id='week-1-monday',
+            week=1,
+            workout_day='Monday',
+            scheduled_date=date(2026, 9, 14),
+            exercises=[],
+        )
+        partial = self.session('partial-squat-result', 'squat', self.now)
+        partial.workout_plan_day_session = day
+        partial.total_reps = 10
+        partial.save(update_fields=['workout_plan_day_session', 'total_reps'])
+
+        client = APIClient()
+        client.force_authenticate(self.user)
+        overview = client.get('/api/users/history/exercises/')
+        detail = client.get('/api/users/history/exercises/squat/')
+        self.assertEqual(overview.status_code, 200)
+        self.assertEqual(overview.data['exercises'][0]['sessions'], 0)
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data['sessions']['totalItems'], 0)
+        self.assertEqual(client.get('/api/users/history/exercises/sit-up/').status_code, 404)
+        self.assertIn(APIClient().get('/api/users/history/exercises/').status_code, [401, 403])
+
+        day.status = WorkoutPlanDaySession.STATUS_COMPLETED
+        day.completed_at = self.now
+        day.save(update_fields=['status', 'completed_at'])
+        published = client.get('/api/users/history/exercises/squat/')
+        self.assertEqual(published.data['sessions']['items'][0]['id'], 'partial-squat-result')
+
+        other_client = APIClient()
+        other_client.force_authenticate(self.other_user)
+        self.assertEqual(other_client.get('/api/users/history/exercises/squat/').data['sessions']['totalItems'], 0)

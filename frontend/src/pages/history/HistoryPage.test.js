@@ -2,14 +2,22 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import HistoryPage from './HistoryPage';
-import { getHistory } from '../../services/historyService';
+import { getExerciseHistory, getExerciseHistoryOverview, getHistory } from '../../services/historyService';
 
+let mockExerciseId;
+const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   useLocation: () => ({ state: null }),
-  Link: ({ to, state, children, ...props }) => <a href={to} {...props}>{children}</a>,
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ exerciseId: mockExerciseId }),
+  Link: ({ to, state, children, ...props }) => <a href={to} data-back-to={state?.backTo} {...props}>{children}</a>,
 }), { virtual: true });
 jest.mock('../../components/Navbar', () => ({ activeItem }) => <div data-testid="navbar">{activeItem}</div>);
-jest.mock('../../services/historyService', () => ({ getHistory: jest.fn() }));
+jest.mock('../../services/historyService', () => ({
+  getHistory: jest.fn(),
+  getExerciseHistoryOverview: jest.fn(),
+  getExerciseHistory: jest.fn(),
+}));
 
 const historyData = {
   stats: {
@@ -54,12 +62,40 @@ const historyData = {
   }],
 };
 
+const exerciseOverview = [
+  { exercise: 'squat', name: 'Squat', metricType: 'reps', sessions: 2, averageAccuracy: 92, totalReps: 60, totalHoldTime: null, lastPerformed: '2026-09-28T10:00:00Z' },
+  { exercise: 'push-up', name: 'Push-up', metricType: 'reps', sessions: 1, averageAccuracy: 90, totalReps: 24, totalHoldTime: null, lastPerformed: '2026-09-27T10:00:00Z' },
+  { exercise: 'plank', name: 'Plank', metricType: 'time', sessions: 1, averageAccuracy: 95, totalReps: null, totalHoldTime: 80, lastPerformed: '2026-09-26T10:00:00Z' },
+  { exercise: 'lunge', name: 'Lunge', metricType: 'reps', sessions: 0, averageAccuracy: null, totalReps: 0, totalHoldTime: null, lastPerformed: null },
+  { exercise: 'leg-raise', name: 'Leg Raise', metricType: 'reps', sessions: 0, averageAccuracy: null, totalReps: 0, totalHoldTime: null, lastPerformed: null },
+];
+
+const squatDetail = {
+  exercise: 'squat',
+  name: 'Squat',
+  metricType: 'reps',
+  stats: { totalSessions: 2, averageAccuracy: 92, bestAccuracy: 94, totalDuration: 800, totalReps: 60, totalHoldTime: null },
+  sessions: {
+    items: [{ id: 'squat-detail-1', exercise: 'squat', exerciseName: 'Squat', metricType: 'reps', completedAt: '2026-09-28T10:32:00Z', duration: 680, setsCompleted: 3, accuracy: 94, totalReps: 30, totalHoldTime: null }],
+    page: 1,
+    pageSize: 6,
+    totalItems: 2,
+    totalPages: 1,
+  },
+};
+
 beforeEach(() => {
+  mockExerciseId = undefined;
+  mockNavigate.mockReset();
   getHistory.mockReset();
+  getExerciseHistoryOverview.mockReset();
+  getExerciseHistory.mockReset();
   getHistory.mockImplementation(({ page = 1 }) => Promise.resolve({
     ...historyData,
     sessions: { ...historyData.sessions, page },
   }));
+  getExerciseHistoryOverview.mockResolvedValue(exerciseOverview);
+  getExerciseHistory.mockResolvedValue(squatDetail);
 });
 
 function renderHistory() {
@@ -81,7 +117,7 @@ test('renders real all-time metrics, the workout table, and the available histor
     'Date', 'Workout', 'Duration', 'Results', 'Action',
   ]);
   expect(screen.getByRole('button', { name: 'By Plan' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'By Exercise' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'By Exercise' })).toBeEnabled();
   expect(screen.getByRole('link', { name: 'View Summary' })).toHaveAttribute('href', '/history/session/squat-1');
   expect(screen.queryByText('Recent Achievements')).not.toBeInTheDocument();
   expect(screen.queryByText('Consistency is progress!')).not.toBeInTheDocument();
@@ -110,4 +146,36 @@ test('searches by exercise name and uses the actual page count', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: '2' }));
   await waitFor(() => expect(getHistory).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, search: 'PLANK' })));
+});
+
+test('opens By Exercise and renders all five fixed exercise cards with real data', async () => {
+  renderHistory();
+  await screen.findByText('8', { selector: '.history-stat-card strong' });
+
+  fireEvent.click(screen.getByRole('button', { name: 'By Exercise' }));
+
+  expect(await screen.findByRole('heading', { name: 'History by Exercise' })).toBeInTheDocument();
+  expect(getExerciseHistoryOverview).toHaveBeenCalledWith(expect.any(AbortSignal));
+  expect(screen.getByRole('link', { name: 'View Squat history' })).toHaveAttribute('href', '/history/exercise/squat');
+  expect(screen.getByRole('link', { name: 'View Push-up history' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'View Plank history' })).toHaveTextContent('1m 20s');
+  expect(screen.getByRole('link', { name: 'View Lunge history' })).toHaveTextContent('Not performed yet');
+  expect(screen.getByRole('link', { name: 'View Leg Raise history' })).toBeInTheDocument();
+  expect(screen.queryByText('Sit-up')).not.toBeInTheDocument();
+});
+
+test('renders one exercise lifetime summary and links exact sessions to the existing summary', async () => {
+  mockExerciseId = 'squat';
+  renderHistory();
+
+  expect(await screen.findByRole('heading', { name: 'Squat History' })).toBeInTheDocument();
+  expect(getExerciseHistory).toHaveBeenCalledWith('squat', { page: 1, signal: expect.any(AbortSignal) });
+  expect(screen.getByText('60')).toBeInTheDocument();
+  expect(screen.getByText('94%', { selector: '.history-exercise-stat strong' })).toBeInTheDocument();
+  const table = screen.getByRole('table');
+  expect(within(table).getAllByRole('columnheader').map((heading) => heading.textContent)).toEqual([
+    'Date', 'Sets', 'Reps', 'Duration', 'Form Accuracy', 'Action',
+  ]);
+  expect(screen.getByRole('link', { name: 'View Summary' })).toHaveAttribute('href', '/history/session/squat-detail-1');
+  expect(screen.getByRole('link', { name: 'Back to By Exercise' })).toHaveAttribute('href', '/history');
 });

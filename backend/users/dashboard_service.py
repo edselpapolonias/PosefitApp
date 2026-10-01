@@ -47,7 +47,7 @@ def build_dashboard(user, now=None):
     for session in sessions:
         count += 1
         seconds_by_day[session['completed_at'].astimezone(zone).date()] += session['duration']
-        if session['exercise'] in {'squat', 'push-up', 'lunge', 'leg-raise'}:
+        if session['exercise'] in {'squat', 'push-up', 'lunge', 'leg-raise'} and session['accuracy'] is not None:
             accuracies.append(session['accuracy'])
 
     login_days = list(user.login_days.filter(date__lte=today).values_list('date', flat=True))

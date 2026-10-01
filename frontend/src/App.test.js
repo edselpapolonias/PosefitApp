@@ -65,7 +65,9 @@ test('keeps every PoseFit route registered after reorganizing pages', () => {
     '/workout-plans/lower-body-focus',
     '/workout-plans/core-upper-body',
     '/history',
+    '/history/exercise/:exerciseId',
     '/history/plan/:planInstanceId',
     '/history/session/:sessionId',
+    '/progress',
   ]);
 });
