@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { apiUrl } from '../services/apiConfig';
+import poseFitLogo from '../images/PoseFit Logo.png';
 import './Navbar.css';
 
 const navigationItems = [
@@ -101,9 +102,7 @@ export default function Navbar({ activeItem }) {
     <header className="top-navbar">
       <div className="top-navbar__inner">
         <NavLink className="top-navbar__brand" to="/dashboard" onClick={(event) => handleNavigation(event, '/dashboard')} aria-label="PoseFit dashboard">
-          <span className="top-navbar__brand-icon" aria-hidden="true">
-            <i className="fa-solid fa-person-running" />
-          </span>
+          <img className="top-navbar__brand-logo" src={poseFitLogo} alt="" aria-hidden="true" />
           <span className="top-navbar__brand-copy">
             <span className="top-navbar__brand-name">
               POSE<span>FIT</span>

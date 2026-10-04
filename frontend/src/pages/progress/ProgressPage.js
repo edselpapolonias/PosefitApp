@@ -93,11 +93,21 @@ function StatCard({ icon, title, value, unit, comparison, comparisonType, period
   return (
     <article className="progress-stat">
       <span className="progress-stat__icon" aria-hidden="true"><i className={`fa-solid ${icon}`} /></span>
-      <div>
+      <div className="progress-stat__copy">
         <h2>{title}</h2>
         <strong>{value}<b>{unit}</b></strong>
         {support || <Comparison item={comparison} type={comparisonType} periodDays={periodDays} />}
       </div>
+      <svg className="progress-stat__spark" viewBox="0 0 68 34" aria-hidden="true">
+        <defs>
+          <linearGradient id={`progress-spark-${icon}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ff5a0a" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#ff5a0a" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="M1 31 C8 30 10 21 18 22 C26 23 27 13 36 14 C45 16 48 7 57 10 C62 11 65 6 67 4 L67 34 L1 34 Z" fill={`url(#progress-spark-${icon})`} stroke="none" />
+        <path d="M1 31 C8 30 10 21 18 22 C26 23 27 13 36 14 C45 16 48 7 57 10 C62 11 65 6 67 4" />
+      </svg>
     </article>
   );
 }
@@ -342,8 +352,8 @@ export default function ProgressPage() {
     <div className="progress-page">
       <Navbar activeItem="Progress" />
       <main className="progress-main">
-        <header className="progress-header">
-          <div><h1>Progress</h1><p>Track your improvement and stay motivated on your fitness journey.</p></div>
+        <header className="progress-hero">
+          <div className="progress-hero__content"><span className="progress-hero__eyebrow">PROGRESS</span><h1>Progress</h1><p>Track your improvement and stay motivated on your fitness journey.</p></div>
           <div className="progress-range" role="group" aria-label="Progress time range">{RANGE_OPTIONS.map((option) => <button key={option.key} type="button" className={range === option.key ? 'is-active' : ''} aria-pressed={range === option.key} onClick={() => setRange(option.key)}>{option.label}</button>)}</div>
         </header>
 

@@ -1,6 +1,6 @@
 """Read-only all-time workout history aggregates."""
 from collections import Counter
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Max, Q, Sum
@@ -20,7 +20,9 @@ SUPPORTED_EXERCISES = {
 
 
 def _completed_sessions(user):
-    return WorkoutSession.objects.filter(
+    return WorkoutSession.objects.select_related(
+        'workout_plan_day_session__plan',
+    ).filter(
         user=user,
         status=WorkoutSession.STATUS_COMPLETED,
         exercise__in=SUPPORTED_EXERCISES,
@@ -125,6 +127,8 @@ def _top_exercises(sessions):
 
 
 def _session_data(session):
+    plan_day = session.workout_plan_day_session
+    plan_definition = PLAN_DEFINITIONS.get(plan_day.plan.plan_id) if plan_day else None
     return {
         'id': session.session_id,
         'exercise': session.exercise,
@@ -134,7 +138,27 @@ def _session_data(session):
         'duration': session.duration,
         'setsCompleted': session.sets_completed,
         'accuracy': session.accuracy,
+        'planName': plan_definition['name'] if plan_definition else None,
         'configuration': session.configuration if isinstance(session.configuration, dict) else {},
+    }
+
+
+def _achievement_data(sessions, best_streak):
+    """Return genuine all-time milestones used by the History summary cards."""
+    longest = sessions.order_by('-duration', '-completed_at', '-pk').first()
+    most_accurate = sessions.filter(accuracy__isnull=False).order_by(
+        '-accuracy', '-completed_at', '-pk',
+    ).first()
+    return {
+        'longestWorkout': {
+            'duration': longest.duration,
+            'completedAt': longest.completed_at.isoformat(),
+        } if longest else None,
+        'bestAccuracy': {
+            'accuracy': most_accurate.accuracy,
+            'completedAt': most_accurate.completed_at.isoformat(),
+        } if most_accurate else None,
+        'bestStreak': {'days': best_streak},
     }
 
 
@@ -201,7 +225,77 @@ def exercise_history_overview_data(user):
     return exercises
 
 
-def exercise_history_data(user, exercise, page=1, page_size=6):
+def _shift_month(month, offset):
+    month_index = (month.year * 12 + month.month - 1) + offset
+    return date(month_index // 12, month_index % 12 + 1, 1)
+
+
+def _exercise_analytics(sessions, is_plank, today=None):
+    """Build the chart, frequency, personal-best, and improvement datasets."""
+    zone = dashboard_timezone()
+    scored = sessions.filter(accuracy__isnull=False)
+    trend_sessions = list(scored.order_by('-completed_at', '-pk')[:8])
+    trend = [
+        {
+            'completedAt': session.completed_at.isoformat(),
+            'accuracy': session.accuracy,
+        }
+        for session in reversed(trend_sessions)
+    ]
+
+    current_month = (today or datetime.now(zone).date()).replace(day=1)
+    months = [_shift_month(current_month, offset) for offset in range(-3, 1)]
+    frequency_rows = {
+        month.strftime('%Y-%m'): {
+            'key': month.strftime('%Y-%m'),
+            'label': month.strftime('%b'),
+            'days': [0] * 7,
+        }
+        for month in months
+    }
+    frequency_start = datetime.combine(months[0], time.min, tzinfo=zone)
+    for completed_at in sessions.filter(completed_at__gte=frequency_start).values_list('completed_at', flat=True):
+        local_date = completed_at.astimezone(zone).date()
+        row = frequency_rows.get(local_date.strftime('%Y-%m'))
+        if row:
+            row['days'][local_date.weekday()] += 1
+
+    best_accuracy = scored.order_by('-accuracy', '-completed_at', '-pk').first()
+    volume_field = 'total_hold_time' if is_plank else 'total_reps'
+    best_volume = sessions.filter(**{f'{volume_field}__isnull': False}).order_by(
+        f'-{volume_field}', '-completed_at', '-pk',
+    ).first()
+    longest = sessions.order_by('-duration', '-completed_at', '-pk').first()
+    first_scored = scored.order_by('completed_at', 'pk').first()
+    latest_scored = scored.order_by('-completed_at', '-pk').first()
+    accuracy_change = (
+        latest_scored.accuracy - first_scored.accuracy
+        if first_scored and latest_scored and first_scored.pk != latest_scored.pk
+        else None
+    )
+
+    return {
+        'accuracyTrend': trend,
+        'workoutFrequency': list(frequency_rows.values()),
+        'personalBests': {
+            'accuracy': {
+                'value': best_accuracy.accuracy,
+                'completedAt': best_accuracy.completed_at.isoformat(),
+            } if best_accuracy else None,
+            'volume': {
+                'value': getattr(best_volume, volume_field),
+                'completedAt': best_volume.completed_at.isoformat(),
+            } if best_volume else None,
+            'duration': {
+                'value': longest.duration,
+                'completedAt': longest.completed_at.isoformat(),
+            } if longest else None,
+        },
+        'accuracyChange': accuracy_change,
+    }
+
+
+def exercise_history_data(user, exercise, page=1, page_size=6, today=None):
     """Return one exercise's lifetime summary and newest-first completed sessions."""
     if exercise not in SUPPORTED_EXERCISES:
         return None
@@ -231,6 +325,7 @@ def exercise_history_data(user, exercise, page=1, page_size=6):
             'totalReps': None if is_plank else aggregates['total_reps'] or 0,
             'totalHoldTime': aggregates['total_hold_time'] or 0 if is_plank else None,
         },
+        'analytics': _exercise_analytics(sessions, is_plank, today=today),
         'sessions': {
             'items': [
                 {
@@ -248,8 +343,8 @@ def exercise_history_data(user, exercise, page=1, page_size=6):
     }
 
 
-def build_history(user, search='', page=1, page_size=6, today=None):
-    """Return all-time metrics plus a searched, newest-first session page."""
+def build_history(user, search='', page=1, page_size=8, today=None, sort='newest'):
+    """Return all-time metrics plus a searched and ordered session page."""
     zone = dashboard_timezone()
     today = today or datetime.now(zone).date()
     sessions = _completed_sessions(user)
@@ -262,12 +357,14 @@ def build_history(user, search='', page=1, page_size=6, today=None):
         ]
         filtered = filtered.filter(exercise__in=matching_ids)
 
-    paginator = Paginator(filtered.order_by('-completed_at', '-pk'), page_size)
+    ordering = ('completed_at', 'pk') if sort == 'oldest' else ('-completed_at', '-pk')
+    paginator = Paginator(filtered.order_by(*ordering), page_size)
     requested_page = max(1, page)
     page_object = paginator.get_page(min(requested_page, paginator.num_pages or 1))
     accuracies = sessions.filter(accuracy__isnull=False)
     average_accuracy = accuracies.aggregate(value=Avg('accuracy'))['value']
-    login_days = user.login_days.order_by('date').values_list('date', flat=True)
+    login_days = list(user.login_days.order_by('date').values_list('date', flat=True))
+    streak = best_login_streak(login_days)
 
     return {
         'stats': {
@@ -275,7 +372,7 @@ def build_history(user, search='', page=1, page_size=6, today=None):
             'totalDuration': aggregates['total_duration'] or 0,
             'workoutPlansCompleted': _completed_plan_count(user),
             'averageAccuracy': round(average_accuracy, 1) if average_accuracy is not None else None,
-            'bestStreak': best_login_streak(login_days),
+            'bestStreak': streak,
         },
         'sessions': {
             'items': [_session_data(session) for session in page_object.object_list],
@@ -286,5 +383,6 @@ def build_history(user, search='', page=1, page_size=6, today=None):
         },
         'activityOverview': _activity_overview(sessions, today),
         'topExercises': _top_exercises(sessions),
+        'achievements': _achievement_data(sessions, streak),
         'planHistory': plan_history_data(user),
     }

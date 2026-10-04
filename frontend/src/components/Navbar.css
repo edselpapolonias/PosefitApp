@@ -35,12 +35,12 @@
   text-decoration: none;
 }
 
-.top-navbar__brand-icon {
-  width: 28px;
-  color: #ff5a0a;
-  font-size: 34px;
-  line-height: 1;
-  transform: translateY(-1px);
+.top-navbar__brand-logo {
+  width: 36px;
+  height: 36px;
+  display: block;
+  flex: 0 0 36px;
+  object-fit: contain;
 }
 
 .top-navbar__brand-copy {
@@ -303,9 +303,10 @@ a.top-navbar__link {
 }
 
 @media (max-width: 460px) {
-  .top-navbar__brand-icon {
-    width: 23px;
-    font-size: 29px;
+  .top-navbar__brand-logo {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
   }
 
   .top-navbar__brand-name {

@@ -37,6 +37,7 @@ const historyData = {
       duration: 680,
       setsCompleted: 3,
       accuracy: 94,
+      planName: 'Beginner Full Body',
       configuration: { totalSets: 3, repsPerSet: 10 },
     }],
     page: 1,
@@ -46,6 +47,11 @@ const historyData = {
   },
   activityOverview: [{ date: '2026-09-10', count: 1 }],
   topExercises: [{ exercise: 'squat', name: 'Squat', sessions: 8 }],
+  achievements: {
+    longestWorkout: { duration: 680, completedAt: '2026-09-10T10:32:00Z' },
+    bestAccuracy: { accuracy: 94, completedAt: '2026-09-10T10:32:00Z' },
+    bestStreak: { days: 7 },
+  },
   planHistory: [{
     id: 'beginner-full-body',
     instanceId: 41,
@@ -75,6 +81,24 @@ const squatDetail = {
   name: 'Squat',
   metricType: 'reps',
   stats: { totalSessions: 2, averageAccuracy: 92, bestAccuracy: 94, totalDuration: 800, totalReps: 60, totalHoldTime: null },
+  analytics: {
+    accuracyTrend: [
+      { completedAt: '2026-09-20T10:00:00Z', accuracy: 90 },
+      { completedAt: '2026-09-28T10:32:00Z', accuracy: 94 },
+    ],
+    workoutFrequency: [
+      { key: '2026-06', label: 'Jun', days: [0, 0, 0, 0, 0, 0, 0] },
+      { key: '2026-07', label: 'Jul', days: [0, 1, 0, 0, 0, 0, 0] },
+      { key: '2026-08', label: 'Aug', days: [0, 0, 1, 0, 0, 0, 0] },
+      { key: '2026-09', label: 'Sep', days: [1, 0, 0, 0, 0, 0, 0] },
+    ],
+    personalBests: {
+      accuracy: { value: 94, completedAt: '2026-09-28T10:32:00Z' },
+      volume: { value: 30, completedAt: '2026-09-28T10:32:00Z' },
+      duration: { value: 680, completedAt: '2026-09-28T10:32:00Z' },
+    },
+    accuracyChange: 4,
+  },
   sessions: {
     items: [{ id: 'squat-detail-1', exercise: 'squat', exerciseName: 'Squat', metricType: 'reps', completedAt: '2026-09-28T10:32:00Z', duration: 680, setsCompleted: 3, accuracy: 94, totalReps: 30, totalHoldTime: null }],
     page: 1,
@@ -110,16 +134,17 @@ test('renders real all-time metrics, the workout table, and the available histor
   expect(screen.getByText('1h 23m')).toBeInTheDocument();
   expect(screen.getByText('91.5%')).toBeInTheDocument();
   expect(screen.getByText('3 sets × 10 reps')).toBeInTheDocument();
-  expect(screen.getByText('11:20 min')).toBeInTheDocument();
+  expect(screen.getAllByText('11:20 min')).toHaveLength(2);
 
   const table = screen.getByRole('table');
   expect(within(table).getAllByRole('columnheader').map((heading) => heading.textContent)).toEqual([
-    'Date', 'Workout', 'Duration', 'Results', 'Action',
+    'Date & Time', 'Exercise', 'Plan', 'Duration', 'Accuracy', 'Result', 'Action',
   ]);
   expect(screen.getByRole('button', { name: 'By Plan' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'By Exercise' })).toBeEnabled();
   expect(screen.getByRole('link', { name: 'View Summary' })).toHaveAttribute('href', '/history/session/squat-1');
-  expect(screen.queryByText('Recent Achievements')).not.toBeInTheDocument();
+  expect(screen.getByText('Recent Achievements')).toBeInTheDocument();
+  expect(screen.getByText('Longest Workout')).toBeInTheDocument();
   expect(screen.queryByText('Consistency is progress!')).not.toBeInTheDocument();
 });
 
@@ -141,26 +166,29 @@ test('searches by exercise name and uses the actual page count', async () => {
   renderHistory();
   expect((await screen.findAllByText('Squat')).length).toBeGreaterThan(0);
 
-  fireEvent.change(screen.getByPlaceholderText('Search workouts...'), { target: { value: 'PLANK' } });
+  fireEvent.change(screen.getByPlaceholderText('Search workouts or exercises...'), { target: { value: 'PLANK' } });
   await waitFor(() => expect(getHistory).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, search: 'PLANK' })));
 
   fireEvent.click(screen.getByRole('button', { name: '2' }));
   await waitFor(() => expect(getHistory).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, search: 'PLANK' })));
 });
 
-test('opens By Exercise and renders all five fixed exercise cards with real data', async () => {
+test('opens By Exercise and renders the prototype master-detail exercise dashboard', async () => {
   renderHistory();
   await screen.findByText('8', { selector: '.history-stat-card strong' });
 
   fireEvent.click(screen.getByRole('button', { name: 'By Exercise' }));
 
-  expect(await screen.findByRole('heading', { name: 'History by Exercise' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Exercises' })).toBeInTheDocument();
   expect(getExerciseHistoryOverview).toHaveBeenCalledWith(expect.any(AbortSignal));
-  expect(screen.getByRole('link', { name: 'View Squat history' })).toHaveAttribute('href', '/history/exercise/squat');
-  expect(screen.getByRole('link', { name: 'View Push-up history' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'View Plank history' })).toHaveTextContent('1m 20s');
-  expect(screen.getByRole('link', { name: 'View Lunge history' })).toHaveTextContent('Not performed yet');
-  expect(screen.getByRole('link', { name: 'View Leg Raise history' })).toBeInTheDocument();
+  expect(getExerciseHistory).toHaveBeenCalledWith('squat', { page: 1, signal: expect.any(AbortSignal) });
+  expect(screen.getByRole('button', { name: /Squat.*2 sessions/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: /Push-up.*1 session/ })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Form Accuracy Trend' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Workout Frequency' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Personal Bests' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /View Form Guide/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Start Squat/i })).not.toBeInTheDocument();
   expect(screen.queryByText('Sit-up')).not.toBeInTheDocument();
 });
 
@@ -168,14 +196,14 @@ test('renders one exercise lifetime summary and links exact sessions to the exis
   mockExerciseId = 'squat';
   renderHistory();
 
-  expect(await screen.findByRole('heading', { name: 'Squat History' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Squat' })).toBeInTheDocument();
   expect(getExerciseHistory).toHaveBeenCalledWith('squat', { page: 1, signal: expect.any(AbortSignal) });
-  expect(screen.getByText('60')).toBeInTheDocument();
-  expect(screen.getByText('94%', { selector: '.history-exercise-stat strong' })).toBeInTheDocument();
+  expect(screen.getByText('60 reps')).toBeInTheDocument();
+  expect(screen.getByText('94%', { selector: '.history-personal-bests strong' })).toBeInTheDocument();
   const table = screen.getByRole('table');
   expect(within(table).getAllByRole('columnheader').map((heading) => heading.textContent)).toEqual([
-    'Date', 'Sets', 'Reps', 'Duration', 'Form Accuracy', 'Action',
+    'Date & Time', 'Sets × Target', 'Duration', 'Form Accuracy', 'Result', 'Action',
   ]);
-  expect(screen.getByRole('link', { name: 'View Summary' })).toHaveAttribute('href', '/history/session/squat-detail-1');
-  expect(screen.getByRole('link', { name: 'Back to By Exercise' })).toHaveAttribute('href', '/history');
+  expect(screen.getByRole('link', { name: 'View' })).toHaveAttribute('href', '/history/session/squat-detail-1');
+  expect(screen.queryByRole('link', { name: 'Back to By Exercise' })).not.toBeInTheDocument();
 });

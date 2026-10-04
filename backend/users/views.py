@@ -135,7 +135,8 @@ def history(request):
     except (TypeError, ValueError):
         page = 1
     search = str(request.query_params.get('search') or '').strip()[:80]
-    return Response(build_history(request.user, search=search, page=page))
+    sort = 'oldest' if request.query_params.get('sort') == 'oldest' else 'newest'
+    return Response(build_history(request.user, search=search, page=page, sort=sort))
 
 
 @api_view(['GET'])

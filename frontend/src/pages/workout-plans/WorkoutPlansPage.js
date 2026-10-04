@@ -94,8 +94,9 @@ export default function WorkoutPlansPage() {
       <main className="workout-plans-page__main">
         <section className="workout-plans-hero" aria-labelledby="workout-plans-title">
           <div className="workout-plans-hero__content">
-            <h1 id="workout-plans-title">Workout Plans</h1>
-            <p>Choose a plan, stay consistent, and reach your fitness goals<br className="workout-plans-hero__desktop-break" /> with structured routines designed for you.</p>
+            <p className="workout-plans-hero__eyebrow">WORKOUT PLANS</p>
+            <h1 id="workout-plans-title">Choose Your Workout Plan</h1>
+            <p className="workout-plans-hero__intro">Choose a plan, stay consistent, and reach your fitness goals<br className="workout-plans-hero__desktop-break" /> with structured routines designed for you.</p>
           </div>
         </section>
 

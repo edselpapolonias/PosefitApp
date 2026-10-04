@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { apiUrl } from './apiConfig';
 
-export async function getHistory({ page = 1, search = '', signal } = {}) {
+export async function getHistory({ page = 1, search = '', sort = 'newest', signal } = {}) {
   const response = await axios.get(apiUrl('/api/users/history/'), {
     withCredentials: true,
-    params: { page, ...(search ? { search } : {}) },
+    params: { page, sort, ...(search ? { search } : {}) },
     signal,
   });
   return response.data;

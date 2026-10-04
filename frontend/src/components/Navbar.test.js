@@ -25,8 +25,9 @@ test('repeated current-page clicks do not navigate and close the account menu', 
 });
 
 test('renders working destinations including Progress', () => {
-  render(<Navbar activeItem="Dashboard" />);
+  const { container } = render(<Navbar activeItem="Dashboard" />);
 
+  expect(container.querySelector('.top-navbar__brand-logo')).toHaveAttribute('src', expect.stringContaining('PoseFit Logo.png'));
   const primaryNavigation = screen.getByRole('navigation', { name: 'Primary navigation' });
   const links = within(primaryNavigation).getAllByRole('link');
 

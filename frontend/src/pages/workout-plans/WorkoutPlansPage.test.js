@@ -20,6 +20,8 @@ describe('Workout Plans page', () => {
     render(<WorkoutPlansPage />);
 
     expect(screen.getByTestId('navbar')).toHaveTextContent('Workout Plans');
+    expect(screen.getByText('WORKOUT PLANS')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Choose Your Workout Plan' })).toBeInTheDocument();
     const plans = screen.getByRole('region', { name: 'Workout plans' });
     expect(within(plans).getAllByRole('article')).toHaveLength(3);
     expect(within(plans).getByRole('heading', { name: 'Beginner Full Body' })).toBeInTheDocument();

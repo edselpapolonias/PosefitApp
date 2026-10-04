@@ -73,9 +73,13 @@ class HistoryTests(TestCase):
         self.assertEqual([item['exercise'] for item in result['sessions']['items']], ['plank', 'squat'])
         self.assertEqual(result['topExercises'][0]['sessions'], 1)
         self.assertEqual(sum(day['count'] for day in result['activityOverview']), 1)
+        self.assertEqual(result['sessions']['items'][0]['planName'], None)
+        self.assertEqual(result['achievements']['longestWorkout']['duration'], 150)
+        self.assertEqual(result['achievements']['bestAccuracy']['accuracy'], 100)
+        self.assertEqual(result['achievements']['bestStreak']['days'], 4)
 
     def test_search_pagination_and_endpoint_authentication(self):
-        for index in range(8):
+        for index in range(9):
             self.session(
                 f'squat-{index}',
                 'squat',
@@ -89,6 +93,8 @@ class HistoryTests(TestCase):
         search_result = build_history(self.user, search='PLANK', page=4, today=date(2026, 9, 12))
         self.assertEqual(search_result['sessions']['page'], 1)
         self.assertEqual(search_result['sessions']['totalItems'], 1)
+        oldest_first = build_history(self.user, sort='oldest', today=date(2026, 9, 12))
+        self.assertEqual(oldest_first['sessions']['items'][0]['id'], 'squat-8')
 
         anonymous = APIClient().get('/api/users/history/')
         self.assertIn(anonymous.status_code, [401, 403])
@@ -316,7 +322,7 @@ class HistoryTests(TestCase):
         newer.save(update_fields=['total_reps'])
         self.session('not-lunge', 'squat', self.now + timedelta(minutes=1), 999, 100)
 
-        first_page = exercise_history_data(self.user, 'lunge', page=1, page_size=1)
+        first_page = exercise_history_data(self.user, 'lunge', page=1, page_size=1, today=date(2026, 9, 12))
 
         self.assertEqual(first_page['stats'], {
             'totalSessions': 2,
@@ -328,6 +334,12 @@ class HistoryTests(TestCase):
         })
         self.assertEqual(first_page['sessions']['items'][0]['id'], 'detail-newer')
         self.assertEqual(first_page['sessions']['totalPages'], 2)
+        self.assertEqual([point['accuracy'] for point in first_page['analytics']['accuracyTrend']], [84, 96])
+        self.assertEqual(first_page['analytics']['accuracyChange'], 12)
+        self.assertEqual(first_page['analytics']['personalBests']['accuracy']['value'], 96)
+        self.assertEqual(first_page['analytics']['personalBests']['volume']['value'], 20)
+        self.assertEqual(first_page['analytics']['personalBests']['duration']['value'], 200)
+        self.assertEqual(sum(sum(row['days']) for row in first_page['analytics']['workoutFrequency']), 2)
         second_page = exercise_history_data(self.user, 'lunge', page=2, page_size=1)
         self.assertEqual(second_page['sessions']['items'][0]['id'], 'detail-older')
         self.assertIsNone(exercise_history_data(self.user, 'sit-up'))

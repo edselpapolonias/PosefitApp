@@ -65,6 +65,14 @@
   z-index: 1;
 }
 
+.workout-plans-hero__eyebrow {
+  margin: 0 0 4px;
+  color: #ff5200;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+}
+
 .workout-plans-hero__content h1 {
   margin: 0;
   color: #0b1a31;
@@ -74,7 +82,7 @@
   letter-spacing: -1.4px;
 }
 
-.workout-plans-hero__content > p {
+.workout-plans-hero__intro {
   margin: 6px 0 0;
   color: #34445d;
   font-size: 17px;
@@ -555,7 +563,7 @@
   }
 
   .workout-plans-hero__content h1 { font-size: 34px; }
-  .workout-plans-hero__content > p { max-width: 520px; font-size: 14px; }
+  .workout-plans-hero__intro { max-width: 520px; font-size: 14px; }
 
   .workout-plan-controls {
     min-height: auto;
@@ -585,6 +593,10 @@
 }
 
 @media (max-width: 560px) {
+  .workout-plans-hero__eyebrow {
+    font-size: 15px;
+  }
+
   .workout-plans-hero__content h1 {
     font-size: 30px;
     letter-spacing: -1px;
