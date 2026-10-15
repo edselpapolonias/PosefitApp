@@ -284,22 +284,27 @@ export default function DashboardPage() {
   return <div className="dashboard-page">
     <Navbar activeItem="Dashboard" />
     <main className="dashboard-main">
-      <div className="dashboard-primary">
-        <section className="dashboard-welcome">
-          <div><h1>Welcome back{data?.firstName ? `, ${data.firstName}` : ''}! <span role="img" aria-label="waving hand">👋</span></h1><p>Keep going! Consistency today leads to results tomorrow.</p></div>
-          <p className="dashboard-welcome__motto" aria-hidden="true">Better Form.<br />A Stronger You.</p>
-        </section>
-        {error && <div className="dashboard-error" role="alert">{error}<button onClick={() => setAttempt((value) => value + 1)}>Retry</button></div>}
-        <div className="dashboard-stats" aria-busy={!data && !error}>
-          <SummaryCard title="Total Workout Time" icon="fa-clock" tone="orange" value={data ? formatNumber(data.totalSeconds / 60) : '—'} unit={data ? 'min' : ''} note={data ? 'This week · Mon–Sun' : pending} />
-          <SummaryCard title="Workouts Completed" icon="fa-circle-check" tone="green" value={data ? data.workoutsCompleted : '—'} unit={data ? 'sessions' : ''} note={data ? 'Completed this week' : pending} />
-          <SummaryCard title="Current Streak" icon="fa-calendar-days" tone="blue" value={data ? data.currentStreak : '—'} unit={data ? 'days' : ''} note={data ? 'Consecutive login days' : pending} />
-          <SummaryCard title="Average Accuracy" icon="fa-bullseye" tone="purple" value={data?.averageAccuracy != null ? formatNumber(data.averageAccuracy) : '—'} unit={data?.averageAccuracy != null ? '%' : ''} note={data ? (data.averageAccuracy == null ? 'No accuracy data this week' : 'This week · Excludes plank') : pending} />
+      <section className="dashboard-welcome" aria-labelledby="dashboard-page-title">
+        <div className="dashboard-welcome__content">
+          <p className="dashboard-welcome__eyebrow">DASHBOARD</p>
+          <h1 id="dashboard-page-title">Welcome back{data?.firstName ? `, ${data.firstName}` : ''}</h1>
+          <p className="dashboard-welcome__intro">Here’s a clear look at your week and what’s next.</p>
         </div>
-        <div className="dashboard-analytics"><WorkoutTime data={data} /><LoginStreak data={data} error={error} /></div>
-        <RecentWorkouts sessions={data?.recentWorkouts} loading={!data && !error} error={error} />
+      </section>
+      <div className="dashboard-layout">
+        <div className="dashboard-primary">
+          {error && <div className="dashboard-error" role="alert">{error}<button onClick={() => setAttempt((value) => value + 1)}>Retry</button></div>}
+          <div className="dashboard-stats" aria-busy={!data && !error}>
+            <SummaryCard title="Total Workout Time" icon="fa-clock" tone="orange" value={data ? formatNumber(data.totalSeconds / 60) : '—'} unit={data ? 'min' : ''} note={data ? 'This week · Mon–Sun' : pending} />
+            <SummaryCard title="Workouts Completed" icon="fa-circle-check" tone="green" value={data ? data.workoutsCompleted : '—'} unit={data ? 'sessions' : ''} note={data ? 'Completed this week' : pending} />
+            <SummaryCard title="Current Streak" icon="fa-calendar-days" tone="blue" value={data ? data.currentStreak : '—'} unit={data ? 'days' : ''} note={data ? 'Consecutive login days' : pending} />
+            <SummaryCard title="Average Accuracy" icon="fa-bullseye" tone="purple" value={data?.averageAccuracy != null ? formatNumber(data.averageAccuracy) : '—'} unit={data?.averageAccuracy != null ? '%' : ''} note={data ? (data.averageAccuracy == null ? 'No accuracy data this week' : 'This week · Excludes plank') : pending} />
+          </div>
+          <div className="dashboard-analytics"><WorkoutTime data={data} /><LoginStreak data={data} error={error} /></div>
+          <RecentWorkouts sessions={data?.recentWorkouts} loading={!data && !error} error={error} />
+        </div>
+        <PlanPreview data={data} error={error} />
       </div>
-      <PlanPreview data={data} error={error} />
     </main>
   </div>;
 }
