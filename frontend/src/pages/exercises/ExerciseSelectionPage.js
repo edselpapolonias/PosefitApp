@@ -41,7 +41,7 @@ const exercises = [
   },
 ];
 
-const filters = ['All Exercises (5)', 'Lower Body', 'Upper Body', 'Core', 'Full Body'];
+const filters = ['All Exercises (5)', 'Lower Body', 'Upper Body', 'Core'];
 
 const steps = [
   { icon: 'fa-bullseye', title: '1. Choose Exercise', text: 'Select an exercise from the list above.' },

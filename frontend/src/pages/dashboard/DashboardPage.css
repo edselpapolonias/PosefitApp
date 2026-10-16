@@ -112,6 +112,7 @@
   gap: 13px;
   background: #ffffff;
   border: 1px solid #e3e8ef;
+  border-left: 3px solid #f45b12;
   border-radius: 12px;
   box-shadow: 0 5px 16px rgba(27, 39, 56, 0.045);
 }
@@ -878,7 +879,6 @@
   color: #df4e08;
   background: #ffffff;
   border: 1px solid #e0e6ed;
-  border-left: 3px solid #f45b12;
   border-radius: 8px;
 }
 

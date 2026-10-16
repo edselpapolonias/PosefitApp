@@ -40,7 +40,7 @@ beforeEach(() => jest.clearAllMocks());
 test('renders real statistics and a workout-plan empty state without fake exercises', async () => {
   getDashboard.mockResolvedValue(data);
   render(<DashboardPage />);
-  expect(await screen.findByRole('heading', { name: /Welcome back, Alex/ })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /Welcome Back, Alex/ })).toBeInTheDocument();
   expect(within(screen.getByRole('region', { name: 'Total Workout Time' })).getByText('30')).toBeInTheDocument();
   expect(within(screen.getByRole('region', { name: 'Average Accuracy' })).getByText('91')).toBeInTheDocument();
   expect(screen.getByRole('img', { name: /Workout minutes this week: Mon 30, Tue 0/ })).toBeInTheDocument();
@@ -208,5 +208,5 @@ test('handles backend errors and retries without fabricated zero metrics', async
   expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t load');
   expect(screen.getAllByText('Unavailable')).toHaveLength(4);
   fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-  expect(await screen.findByRole('heading', { name: /Welcome back, Alex/ })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: /Welcome Back, Alex/ })).toBeInTheDocument();
 });

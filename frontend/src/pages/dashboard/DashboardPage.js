@@ -287,7 +287,7 @@ export default function DashboardPage() {
       <section className="dashboard-welcome" aria-labelledby="dashboard-page-title">
         <div className="dashboard-welcome__content">
           <p className="dashboard-welcome__eyebrow">DASHBOARD</p>
-          <h1 id="dashboard-page-title">Welcome back{data?.firstName ? `, ${data.firstName}` : ''}</h1>
+          <h1 id="dashboard-page-title">Welcome Back{data?.firstName ? `, ${data.firstName}` : ''}</h1>
           <p className="dashboard-welcome__intro">Here’s a clear look at your week and what’s next.</p>
         </div>
       </section>

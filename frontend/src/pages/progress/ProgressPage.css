@@ -179,6 +179,7 @@
   display: flex;
   align-items: flex-start;
   gap: 13px;
+  border-left: 3px solid #f45b12;
 }
 
 .progress-stat__icon {

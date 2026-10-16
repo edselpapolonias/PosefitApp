@@ -472,3 +472,18 @@
 [2026-10-15T22:39:14.606788] Login attempt: username=progress-user
 [2026-10-15T22:39:15.333980] Authentication result for progress-user: SUCCESS
 [2026-10-15T22:39:15.344048] Login session started for progress-user
+[2026-10-16T11:39:17.420564] Login attempt: username=admin
+[2026-10-16T11:39:19.256105] Authentication result for admin: SUCCESS
+[2026-10-16T11:39:19.478221] Login session started for admin
+[2026-10-16T11:58:37.630094] Login attempt: username=dashboard-user
+[2026-10-16T11:58:38.067885] Authentication result for dashboard-user: SUCCESS
+[2026-10-16T11:58:38.077327] Login session started for dashboard-user
+[2026-10-16T11:58:38.082089] Login attempt: username=dashboard-user
+[2026-10-16T11:58:38.520659] Authentication result for dashboard-user: SUCCESS
+[2026-10-16T11:58:38.523296] Login session started for dashboard-user
+[2026-10-16T11:58:56.067101] Login attempt: username=progress-user
+[2026-10-16T11:58:56.580104] Authentication result for progress-user: SUCCESS
+[2026-10-16T11:58:56.585256] Login session started for progress-user
+[2026-10-16T11:58:57.558090] Login attempt: username=progress-user
+[2026-10-16T11:58:58.032282] Authentication result for progress-user: SUCCESS
+[2026-10-16T11:58:58.038515] Login session started for progress-user
