@@ -28,6 +28,7 @@ test('renders working destinations including Progress', () => {
   const { container } = render(<Navbar activeItem="Dashboard" />);
 
   expect(container.querySelector('.top-navbar__brand-logo')).toHaveAttribute('src', expect.stringContaining('PoseFit Logo.png'));
+  expect(screen.queryByRole('button', { name: 'Notifications' })).not.toBeInTheDocument();
   const primaryNavigation = screen.getByRole('navigation', { name: 'Primary navigation' });
   const links = within(primaryNavigation).getAllByRole('link');
 

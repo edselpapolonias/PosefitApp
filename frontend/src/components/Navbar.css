@@ -123,25 +123,6 @@ a.top-navbar__link {
   position: relative;
 }
 
-.top-navbar__icon-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-  color: #181c26;
-  font-size: 17px;
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.top-navbar__icon-button:hover,
-.top-navbar__icon-button:focus-visible {
-  background: #f7f8fa;
-}
-
 .top-navbar__account {
   min-height: 42px;
   margin: -3px -6px;

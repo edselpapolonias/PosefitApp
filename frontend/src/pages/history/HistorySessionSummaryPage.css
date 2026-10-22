@@ -37,19 +37,36 @@
 
 .history-session-header {
   min-height: 92px;
-  margin: 8px 0 15px;
+  margin: 8px 0 18px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 28px;
+  background: #fffaf7;
+  border: 1px solid #f2e1d7;
+  border-radius: 11px;
 }
 
 .history-session-header h1 {
-  margin: 0 0 6px;
+  position: relative;
+  margin: 0 0 10px;
+  padding-left: 13px;
   font-size: clamp(27px, 2.3vw, 35px);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -1px;
+}
+
+.history-session-header h1::before {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 4px;
+  background: #f45b12;
+  border-radius: 3px;
+  content: '';
 }
 
 .history-session-header > div > p {
@@ -67,8 +84,9 @@
   gap: 8px;
   background: #fff;
   border: 1px solid #e2e6ed;
+  border-left: 3px solid #f45b12;
   border-radius: 10px;
-  box-shadow: 0 3px 12px rgba(31, 41, 55, 0.025);
+  box-shadow: 0 3px 12px rgba(31, 41, 55, 0.035);
 }
 
 .history-session-info > div {
@@ -117,8 +135,9 @@
   align-items: stretch;
   background: #fff;
   border: 1px solid #dfe4eb;
+  border-left: 4px solid #f45b12;
   border-radius: 11px;
-  box-shadow: 0 3px 14px rgba(31, 41, 55, 0.02);
+  box-shadow: 0 5px 16px rgba(27, 39, 56, 0.045);
 }
 
 .history-session-exercise {
@@ -187,10 +206,15 @@
 }
 
 .history-session-metric > span {
-  width: 34px;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
   color: #ff5413;
-  font-size: 27px;
+  background: #fff0e7;
+  border-radius: 9px;
+  font-size: 19px;
   text-align: center;
 }
 
@@ -258,7 +282,7 @@
   background: #fff;
   border: 1px solid #e1e5eb;
   border-radius: 11px;
-  box-shadow: 0 3px 14px rgba(31, 41, 55, 0.02);
+  box-shadow: 0 5px 16px rgba(27, 39, 56, 0.04);
 }
 
 .history-feedback-card {
@@ -412,9 +436,21 @@
 }
 
 .history-breakdown-card > header {
+  position: relative;
   min-height: 67px;
-  padding: 17px 19px 13px;
+  padding: 17px 19px 13px 27px;
   border-bottom: 1px solid #e8ebef;
+}
+
+.history-breakdown-card > header::before {
+  position: absolute;
+  top: 18px;
+  bottom: 17px;
+  left: 18px;
+  width: 3px;
+  background: #f45b12;
+  border-radius: 3px;
+  content: '';
 }
 
 .history-breakdown-scroll {
@@ -440,8 +476,8 @@
 
 .history-breakdown-card th {
   height: 42px;
-  color: #5b6578;
-  background: #fdfdfd;
+  color: #5d493f;
+  background: #fff7f2;
   font-weight: 600;
 }
 
@@ -457,6 +493,11 @@
 .history-breakdown-card td {
   color: #2e3749;
   font-weight: 500;
+}
+
+.history-breakdown-card td:first-child {
+  color: #e3530e;
+  font-weight: 700;
 }
 
 .history-breakdown-card td.is-good { color: #13903b; }
@@ -525,9 +566,9 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: linear-gradient(100deg, #ff651d, #f24d08);
+  background: #f45b12;
   border-radius: 8px;
-  box-shadow: 0 6px 14px rgba(241, 81, 13, 0.17);
+  box-shadow: 0 4px 10px rgba(241, 81, 13, 0.16);
   font-size: 10px;
   font-weight: 600;
   text-decoration: none;
@@ -593,7 +634,7 @@
   .history-session-exercise > span { width: 76px; }
   .history-session-exercise img { width: 72px; }
   .history-session-metric { padding-inline: 12px; gap: 8px; }
-  .history-session-metric > span { width: 27px; font-size: 22px; }
+  .history-session-metric > span { width: 34px; height: 34px; font-size: 17px; }
   .history-session-middle { grid-template-columns: minmax(0, 1.15fr) minmax(390px, 1fr); }
 }
 
@@ -609,7 +650,7 @@
 
 @media (max-width: 680px) {
   .history-session-main { padding: 21px 15px 32px; }
-  .history-session-header { align-items: stretch; flex-direction: column; gap: 17px; margin-top: 17px; }
+  .history-session-header { align-items: stretch; flex-direction: column; gap: 17px; margin-top: 17px; padding: 17px 15px; }
   .history-session-info { width: 100%; }
   .history-session-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .history-session-metric { min-height: 94px; }
@@ -623,9 +664,10 @@
   .history-session-exercise > span { width: 68px; height: 62px; }
   .history-session-exercise img { width: 66px; height: 58px; }
   .history-session-metric { padding: 12px 10px; align-items: flex-start; flex-direction: column; gap: 6px; }
-  .history-session-metric > span { width: auto; font-size: 19px; }
+  .history-session-metric > span { width: 32px; height: 32px; font-size: 16px; }
   .history-session-metric strong { font-size: 19px; }
   .history-feedback-card { padding: 16px 13px; }
-  .history-breakdown-card > header { padding-inline: 14px; }
+  .history-breakdown-card > header { padding: 17px 14px 13px 25px; }
+  .history-breakdown-card > header::before { left: 14px; }
   .history-session-actions a { width: 100%; }
 }

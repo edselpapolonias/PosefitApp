@@ -131,10 +131,6 @@ export default function Navbar({ activeItem }) {
         </nav>
 
         <div className="top-navbar__actions">
-          <button className="top-navbar__icon-button" type="button" aria-label="Notifications">
-            <i className="fa-regular fa-bell" aria-hidden="true" />
-          </button>
-
           <div className="top-navbar__account-menu" ref={accountMenuRef}>
             <button
               className="top-navbar__account"
