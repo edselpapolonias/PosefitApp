@@ -253,6 +253,7 @@ export default function PlankCameraPage() {
   } = useCameraInactivity({
     enabled: isStarted && !isResting && !workoutComplete,
     onTimeout: cancelForInactivity,
+    videoRef,
   });
 
   const completeCurrentSet = useCallback(() => {

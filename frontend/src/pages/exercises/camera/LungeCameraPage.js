@@ -156,6 +156,7 @@ export default function LungeCameraPage() {
   } = useCameraInactivity({
     enabled: started && !resting && !complete,
     onTimeout: cancelForInactivity,
+    videoRef,
   });
 
   const finish = useCallback((status = 'ended') => {

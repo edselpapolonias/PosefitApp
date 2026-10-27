@@ -10,6 +10,8 @@ import {
 } from './fitnessProfileOptions';
 import './FitnessProfileOnboarding.css';
 
+export const PROFILE_STATUS_RETRY_DELAYS = [500, 1000];
+
 function updateStoredUserAge(age) {
   try {
     const user = JSON.parse(localStorage.getItem('user')) || {};
@@ -206,25 +208,87 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
 
 export default function FitnessProfileOnboardingGate() {
   const location = useLocation();
-  const [profileData, setProfileData] = useState(null);
+  const [requestVersion, setRequestVersion] = useState(0);
+  const [gateState, setGateState] = useState({ status: 'idle', profileData: null, message: '' });
 
   useEffect(() => {
     let active = true;
-    setProfileData(null);
-    if (location.pathname !== '/dashboard' || !localStorage.getItem('user')) return () => { active = false; };
+    let retryTimer;
+    if (location.pathname !== '/dashboard' || !localStorage.getItem('user')) {
+      setGateState({ status: 'idle', profileData: null, message: '' });
+      return () => { active = false; };
+    }
 
-    getFitnessProfile()
-      .then((data) => {
-        if (active && data.shouldOnboard) setProfileData(data);
-      })
-      .catch(() => {
-        // A profile service interruption must not replace the dashboard with an error.
-      });
-    return () => { active = false; };
-  }, [location.pathname]);
+    setGateState({ status: 'loading', profileData: null, message: '' });
+    const loadProfileStatus = (attempt = 0) => {
+      getFitnessProfile()
+        .then((data) => {
+          if (!active) return;
+          setGateState({
+            status: data.shouldOnboard ? 'onboarding' : 'complete',
+            profileData: data,
+            message: '',
+          });
+        })
+        .catch((requestError) => {
+          if (!active) return;
+          if (attempt < PROFILE_STATUS_RETRY_DELAYS.length) {
+            retryTimer = window.setTimeout(
+              () => loadProfileStatus(attempt + 1),
+              PROFILE_STATUS_RETRY_DELAYS[attempt],
+            );
+            return;
+          }
+          setGateState({
+            status: 'error',
+            profileData: null,
+            message: fitnessProfileError(
+              requestError,
+              'PoseFit could not verify your fitness profile. Check your connection and try again.',
+            ),
+          });
+        });
+    };
+    loadProfileStatus();
 
-  if (!profileData) return null;
-  return <FitnessProfileOnboarding initialData={profileData} onComplete={() => setProfileData(null)} />;
+    return () => {
+      active = false;
+      window.clearTimeout(retryTimer);
+    };
+  }, [location.pathname, requestVersion]);
+
+  if (gateState.status === 'loading') {
+    return (
+      <div className="fitness-onboarding fitness-onboarding--status" role="status" aria-live="polite">
+        <section className="fitness-onboarding__status-modal">
+          <span className="fitness-onboarding__status-icon is-loading" aria-hidden="true"><i className="fa-solid fa-spinner" /></span>
+          <h2>Checking your fitness profile...</h2>
+          <p>Please wait while PoseFit prepares your dashboard.</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (gateState.status === 'error') {
+    return (
+      <div className="fitness-onboarding fitness-onboarding--status" role="alert" aria-live="assertive">
+        <section className="fitness-onboarding__status-modal">
+          <span className="fitness-onboarding__status-icon is-error" aria-hidden="true"><i className="fa-solid fa-circle-exclamation" /></span>
+          <h2>Unable to Verify Your Profile</h2>
+          <p>{gateState.message}</p>
+          <button type="button" onClick={() => setRequestVersion((version) => version + 1)}>Try Again</button>
+        </section>
+      </div>
+    );
+  }
+
+  if (gateState.status !== 'onboarding' || !gateState.profileData) return null;
+  return (
+    <FitnessProfileOnboarding
+      initialData={gateState.profileData}
+      onComplete={() => setGateState({ status: 'complete', profileData: null, message: '' })}
+    />
+  );
 }
 
 export { FitnessProfileOnboarding };

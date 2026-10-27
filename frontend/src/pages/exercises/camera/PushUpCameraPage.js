@@ -170,6 +170,7 @@ export default function PushUpCameraPage() {
   } = useCameraInactivity({
     enabled: isStarted && !isResting && !workoutComplete,
     onTimeout: cancelForInactivity,
+    videoRef,
   });
 
   const finishSession = useCallback((status = 'ended') => {

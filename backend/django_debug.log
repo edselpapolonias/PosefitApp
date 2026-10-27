@@ -587,3 +587,8 @@
 [2026-10-27T23:27:08.705358] Login attempt: username=progress-user
 [2026-10-27T23:27:09.394454] Authentication result for progress-user: SUCCESS
 [2026-10-27T23:27:09.402901] Login session started for progress-user
+[2026-10-27T23:41:46.927660] Register attempt: username=jb, first_name=John, last_name=Sajulga, age=22
+[2026-10-27T23:41:48.163810] Register success: Created user jb
+[2026-10-27T23:41:56.161304] Login attempt: username=jb
+[2026-10-27T23:41:57.168724] Authentication result for jb: SUCCESS
+[2026-10-27T23:41:57.279430] Login session started for jb

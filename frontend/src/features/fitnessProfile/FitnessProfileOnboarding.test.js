@@ -1,7 +1,10 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { FitnessProfileOnboarding } from './FitnessProfileOnboarding';
-import { saveFitnessProfile } from '../../services/fitnessProfileService';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import FitnessProfileOnboardingGate, {
+  FitnessProfileOnboarding,
+  PROFILE_STATUS_RETRY_DELAYS,
+} from './FitnessProfileOnboarding';
+import { getFitnessProfile, saveFitnessProfile } from '../../services/fitnessProfileService';
 
 jest.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/dashboard' }),
@@ -25,6 +28,8 @@ const initialData = {
 };
 
 beforeEach(() => {
+  localStorage.setItem('user', JSON.stringify({ username: 'new-user' }));
+  getFitnessProfile.mockReset();
   saveFitnessProfile.mockReset();
 });
 
@@ -74,4 +79,55 @@ test('shows the optional fifth step for Yes and allows the disclosure to be skip
     physicalLimitations: 'yes',
     affectedAreas: [],
   })));
+});
+
+test('retries temporary profile-status failures before showing onboarding', async () => {
+  jest.useFakeTimers();
+  getFitnessProfile
+    .mockRejectedValueOnce(new Error('temporary failure'))
+    .mockRejectedValueOnce(new Error('temporary failure'))
+    .mockResolvedValue(initialData);
+
+  render(<FitnessProfileOnboardingGate />);
+  expect(screen.getByText('Checking your fitness profile...')).toBeInTheDocument();
+
+  await act(async () => { await Promise.resolve(); });
+  await act(async () => {
+    jest.advanceTimersByTime(PROFILE_STATUS_RETRY_DELAYS[0]);
+    await Promise.resolve();
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(PROFILE_STATUS_RETRY_DELAYS[1]);
+    await Promise.resolve();
+  });
+
+  expect(getFitnessProfile).toHaveBeenCalledTimes(3);
+  expect(screen.getByRole('heading', { name: 'Tell Us Your Age' })).toBeInTheDocument();
+  jest.useRealTimers();
+});
+
+test('shows a retry action instead of silently bypassing onboarding', async () => {
+  jest.useFakeTimers();
+  getFitnessProfile.mockRejectedValue(new Error('service unavailable'));
+  render(<FitnessProfileOnboardingGate />);
+
+  await act(async () => { await Promise.resolve(); });
+  await act(async () => {
+    jest.advanceTimersByTime(PROFILE_STATUS_RETRY_DELAYS[0]);
+    await Promise.resolve();
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(PROFILE_STATUS_RETRY_DELAYS[1]);
+    await Promise.resolve();
+  });
+
+  expect(screen.getByRole('heading', { name: 'Unable to Verify Your Profile' })).toBeInTheDocument();
+  getFitnessProfile.mockReset();
+  getFitnessProfile.mockResolvedValue({ ...initialData, shouldOnboard: false });
+  fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+  await act(async () => { await Promise.resolve(); });
+
+  expect(getFitnessProfile).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('heading', { name: 'Unable to Verify Your Profile' })).not.toBeInTheDocument();
+  jest.useRealTimers();
 });

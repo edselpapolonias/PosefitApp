@@ -354,6 +354,7 @@ export default function SquatCameraPage() {
     } = useCameraInactivity({
         enabled: isStarted && !isResting && !workoutComplete,
         onTimeout: cancelForInactivity,
+        videoRef,
     });
 
     // Complete Current Set

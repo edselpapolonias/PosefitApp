@@ -161,6 +161,7 @@ export default function LegRaiseCameraPage() {
   } = useCameraInactivity({
     enabled: started && !resting && !complete,
     onTimeout: cancelForInactivity,
+    videoRef,
   });
 
   const finish = useCallback((status = 'ended') => {
