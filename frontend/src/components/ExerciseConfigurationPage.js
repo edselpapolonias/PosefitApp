@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import WorkoutConfigRow from './WorkoutConfigRow';
 import ExerciseDemoModal from './ExerciseDemoModal';
+import ExerciseConsideration from '../features/fitnessProfile/ExerciseConsideration';
 
 function ExerciseFact({ icon, title, children }) {
   return (
@@ -248,6 +249,7 @@ export default function ExerciseConfigurationPage({ exercise }) {
               <span className="squat-redesign__tip-icon" aria-hidden="true"><i className="fa-regular fa-lightbulb" /></span>
               <span><strong>Tip</strong><small>{exercise.tip}</small></span>
             </aside>
+            <ExerciseConsideration exerciseId={exercise.id} />
           </div>
 
           <aside className="squat-redesign__right">

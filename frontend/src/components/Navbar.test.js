@@ -44,6 +44,16 @@ test('renders working destinations including Progress', () => {
   });
 });
 
+test('opens the User profile from the existing account dropdown', () => {
+  render(<Navbar activeItem="Dashboard" />);
+
+  fireEvent.click(screen.getByRole('button', { name: /Account menu/ }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'User' }));
+
+  expect(mockNavigation).toHaveBeenCalledWith('/user');
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+});
+
 test('parent navigation and modified clicks still work', () => {
   mockLocation.pathname = '/workout-plans/beginner-full-body';
   render(<Navbar activeItem="Workout Plans" />);

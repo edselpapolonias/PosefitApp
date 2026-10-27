@@ -1,0 +1,138 @@
+.fitness-choice-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.fitness-choice {
+  width: 100%;
+  min-height: 68px;
+  padding: 13px 15px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #202737;
+  font-family: inherit;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #dfe4ea;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.fitness-choice:hover,
+.fitness-choice:focus-visible {
+  border-color: #ff9b68;
+  outline: none;
+}
+
+.fitness-choice--selected {
+  background: #fff7f2;
+  border-color: #ff5a0a;
+  box-shadow: 0 0 0 2px rgba(255, 90, 10, 0.1);
+}
+
+.fitness-choice__indicator {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 10px;
+  border: 1.5px solid #bbc3ce;
+  border-radius: 50%;
+}
+
+.fitness-choice--selected .fitness-choice__indicator {
+  background: #ff5a0a;
+  border-color: #ff5a0a;
+}
+
+.fitness-choice strong,
+.fitness-choice small {
+  display: block;
+}
+
+.fitness-choice strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.fitness-choice small {
+  margin-top: 3px;
+  color: #687386;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.fitness-choice-grid--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fitness-choice-grid--compact .fitness-choice {
+  min-height: 54px;
+}
+
+.fitness-area-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fitness-area {
+  min-height: 48px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #344055;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid #dfe4ea;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fitness-area span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: #778195;
+  font-size: 9px;
+  background: #f3f5f7;
+  border-radius: 6px;
+}
+
+.fitness-area:hover,
+.fitness-area:focus-visible {
+  border-color: #ff9b68;
+  outline: none;
+}
+
+.fitness-area--selected {
+  color: #9f3c0a;
+  background: #fff7f2;
+  border-color: #ff5a0a;
+}
+
+.fitness-area--selected span {
+  color: #fff;
+  background: #ff5a0a;
+}
+
+@media (max-width: 560px) {
+  .fitness-choice-grid--compact,
+  .fitness-area-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .fitness-choice-grid--compact {
+    grid-template-columns: 1fr;
+  }
+}

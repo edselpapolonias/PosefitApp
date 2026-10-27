@@ -38,6 +38,9 @@ jest.mock('./pages/workout-plans/details/CoreUpperBodyDetails', () => () => null
 jest.mock('./pages/history/HistoryPage', () => () => null);
 jest.mock('./pages/history/PlanHistoryPage', () => () => null);
 jest.mock('./pages/history/HistorySessionSummaryPage', () => () => null);
+jest.mock('./pages/progress/ProgressPage', () => () => null);
+jest.mock('./pages/user/UserProfilePage', () => () => null);
+jest.mock('./features/fitnessProfile/FitnessProfileOnboarding', () => () => null);
 
 test('keeps every PoseFit route registered after reorganizing pages', () => {
   mockRoutePaths.length = 0;
@@ -69,5 +72,6 @@ test('keeps every PoseFit route registered after reorganizing pages', () => {
     '/history/plan/:planInstanceId',
     '/history/session/:sessionId',
     '/progress',
+    '/user',
   ]);
 });

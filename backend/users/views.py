@@ -8,7 +8,7 @@ from django.db import transaction
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from .models import CustomUser, WorkoutPlanDaySession, WorkoutSession
+from .models import CustomUser, FitnessProfile, WorkoutPlanDaySession, WorkoutSession
 from .dashboard_service import build_dashboard, record_login_day
 from .history_service import (
     build_history,
@@ -67,13 +67,24 @@ def register(request):
         log_debug(f"Register failed: Username {username} already exists")
         return Response({'error': 'Username already exists'}, status=400)
 
-    user = CustomUser.objects.create_user(
-        username=username,
-        first_name=first_name,
-        last_name=last_name,
-        password=password,
-        age=age,
-    )
+    if isinstance(age, bool) or (isinstance(age, float) and not age.is_integer()):
+        return Response({'error': 'Enter a valid whole-number age.'}, status=400)
+    try:
+        parsed_age = int(age)
+    except (TypeError, ValueError):
+        return Response({'error': 'Enter a valid whole-number age.'}, status=400)
+    if parsed_age < 1 or parsed_age > 120:
+        return Response({'error': 'Age must be between 1 and 120.'}, status=400)
+
+    with transaction.atomic():
+        user = CustomUser.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            age=parsed_age,
+        )
+        FitnessProfile.objects.create(user=user, onboarding_required=True)
     log_debug(f"Register success: Created user {username}")
     return Response({'message': 'Account created successfully!'}, status=201)
 
@@ -188,6 +199,106 @@ def history_plan(request, instance_id):
 @api_view(['GET'])
 def csrf_token(request):
     return Response({'csrf_token': get_token(request)})
+
+
+FITNESS_LEVELS = {choice for choice, _ in FitnessProfile.FitnessLevel.choices}
+EXERCISE_EXPERIENCE_OPTIONS = {choice for choice, _ in FitnessProfile.ExerciseExperience.choices}
+LIMITATION_RESPONSES = {choice for choice, _ in FitnessProfile.LimitationResponse.choices}
+AFFECTED_AREA_OPTIONS = {'knee', 'shoulder', 'wrist', 'hip', 'back', 'other'}
+
+
+def _fitness_profile_response(user, profile=None):
+    if profile is None:
+        profile = FitnessProfile.objects.filter(user=user).first()
+
+    profile_data = {
+        'fitnessLevel': profile.fitness_level if profile else '',
+        'exerciseExperience': profile.exercise_experience if profile else '',
+        'physicalLimitations': profile.physical_limitations if profile else '',
+        'affectedAreas': profile.affected_areas if profile else [],
+        'onboardingCompleted': bool(profile and profile.onboarding_completed),
+    }
+    return {
+        'user': {
+            'username': user.username,
+            'firstName': user.first_name,
+            'lastName': user.last_name,
+            'email': user.email,
+            'age': user.age,
+        },
+        'profile': profile_data,
+        'shouldOnboard': bool(profile and profile.onboarding_required and not profile.onboarding_completed),
+    }
+
+
+def _validated_profile_data(data):
+    raw_age = data.get('age')
+    if isinstance(raw_age, bool) or (isinstance(raw_age, float) and not raw_age.is_integer()):
+        return None, 'Enter a valid whole-number age.'
+    try:
+        age = int(raw_age)
+    except (TypeError, ValueError):
+        return None, 'Enter a valid whole-number age.'
+    if age < 1 or age > 120:
+        return None, 'Age must be between 1 and 120.'
+
+    fitness_level = str(data.get('fitnessLevel') or '')
+    if fitness_level not in FITNESS_LEVELS:
+        return None, 'Select a valid fitness level.'
+
+    exercise_experience = str(data.get('exerciseExperience') or '')
+    if exercise_experience not in EXERCISE_EXPERIENCE_OPTIONS:
+        return None, 'Select a valid exercise experience.'
+
+    physical_limitations = str(data.get('physicalLimitations') or '')
+    if physical_limitations not in LIMITATION_RESPONSES:
+        return None, 'Select a valid physical limitations response.'
+
+    affected_areas = data.get('affectedAreas', [])
+    if not isinstance(affected_areas, list):
+        return None, 'Affected areas must be a list.'
+    if any(not isinstance(area, str) or area not in AFFECTED_AREA_OPTIONS for area in affected_areas):
+        return None, 'Select only valid affected areas.'
+    if physical_limitations != FitnessProfile.LimitationResponse.YES:
+        affected_areas = []
+    else:
+        affected_areas = list(dict.fromkeys(affected_areas))
+
+    return {
+        'age': age,
+        'fitness_level': fitness_level,
+        'exercise_experience': exercise_experience,
+        'physical_limitations': physical_limitations,
+        'affected_areas': affected_areas,
+    }, None
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def fitness_profile(request):
+    """Retrieve or update only the authenticated user's fitness profile."""
+    profile = FitnessProfile.objects.filter(user=request.user).first()
+    if request.method == 'GET':
+        return Response(_fitness_profile_response(request.user, profile))
+
+    values, error = _validated_profile_data(request.data or {})
+    if error:
+        return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        request.user.age = values.pop('age')
+        request.user.save(update_fields=['age'])
+        profile, _ = FitnessProfile.objects.select_for_update().get_or_create(
+            user=request.user,
+            defaults={'onboarding_required': False},
+        )
+        for field, value in values.items():
+            setattr(profile, field, value)
+        profile.onboarding_completed = True
+        profile.full_clean()
+        profile.save()
+
+    return Response(_fitness_profile_response(request.user, profile))
 
 
 def _non_negative_integer(value, default=0, nullable=False):

@@ -1,0 +1,325 @@
+.user-profile-page,
+.user-profile-page * {
+  box-sizing: border-box;
+}
+
+.user-profile-page {
+  min-height: 100vh;
+  color: #202737;
+  font-family: 'Poppins', sans-serif;
+  background: #f7f8fa;
+}
+
+.user-profile__main {
+  width: min(100%, 1050px);
+  margin: 0 auto;
+  padding: 38px 28px 64px;
+}
+
+.user-profile__hero {
+  margin-bottom: 25px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.user-profile__eyebrow {
+  color: #ff5a0a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.user-profile__hero h1 {
+  margin: 5px 0 7px;
+  color: #192231;
+  font-size: clamp(25px, 3vw, 34px);
+  letter-spacing: -0.04em;
+}
+
+.user-profile__hero p {
+  max-width: 650px;
+  margin: 0;
+  color: #687386;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.user-profile__edit-button {
+  min-height: 42px;
+  padding: 10px 17px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  color: #fff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  background: #ff5a0a;
+  border: 1px solid #ff5a0a;
+  border-radius: 9px;
+  box-shadow: 0 7px 16px rgba(255, 90, 10, 0.17);
+  cursor: pointer;
+}
+
+.user-profile__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.user-profile__card,
+.user-profile__form {
+  background: #fff;
+  border: 1px solid #e1e6eb;
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgba(29, 39, 55, 0.035);
+}
+
+.user-profile__card--wide {
+  grid-column: 1 / -1;
+}
+
+.user-profile__card header {
+  min-height: 63px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.user-profile__card header span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #ff5a0a;
+  font-size: 13px;
+  background: #fff2e9;
+  border-radius: 9px;
+}
+
+.user-profile__card h2 {
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.user-profile__card dl {
+  margin: 0;
+  padding: 7px 18px;
+}
+
+.user-profile__detail {
+  min-height: 50px;
+  padding: 12px 0;
+  display: grid;
+  grid-template-columns: minmax(130px, 0.42fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.user-profile__detail + .user-profile__detail {
+  border-top: 1px solid #f0f2f4;
+}
+
+.user-profile__detail dt {
+  color: #768093;
+  font-size: 10.5px;
+}
+
+.user-profile__detail dd {
+  margin: 0;
+  color: #293448;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.user-profile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.user-profile__tags em {
+  padding: 5px 9px;
+  color: #a8410e;
+  font-size: 10px;
+  font-style: normal;
+  background: #fff3eb;
+  border-radius: 999px;
+}
+
+.user-profile__loading {
+  padding: 70px 20px;
+  color: #687386;
+  font-size: 12px;
+  text-align: center;
+}
+
+.user-profile__status {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  border-radius: 9px;
+}
+
+.user-profile__status.is-success {
+  color: #216b48;
+  background: #edf9f3;
+  border: 1px solid #cdebdc;
+}
+
+.user-profile__status.is-error {
+  color: #a3382f;
+  background: #fff2f0;
+  border: 1px solid #f1d3cf;
+}
+
+.user-profile__form {
+  padding: 22px;
+}
+
+.user-profile__form-section + .user-profile__form-section {
+  margin-top: 24px;
+  padding-top: 23px;
+  border-top: 1px solid #eceff2;
+}
+
+.user-profile__form-heading {
+  margin-bottom: 13px;
+}
+
+.user-profile__form-heading h2,
+.user-profile__areas h3 {
+  margin: 0;
+  color: #263044;
+  font-size: 13px;
+}
+
+.user-profile__form-heading p,
+.user-profile__areas p {
+  margin: 4px 0 0;
+  color: #778195;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.user-profile__age-field {
+  max-width: 220px;
+}
+
+.user-profile__age-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #475267;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.user-profile__age-field input {
+  width: 100%;
+  height: 45px;
+  padding: 0 13px;
+  color: #263044;
+  font: 600 12px 'Poppins', sans-serif;
+  background: #fff;
+  border: 1px solid #d9dfe6;
+  border-radius: 9px;
+}
+
+.user-profile__age-field input:focus {
+  border-color: #ff5a0a;
+  box-shadow: 0 0 0 3px rgba(255, 90, 10, 0.09);
+  outline: none;
+}
+
+.user-profile__areas {
+  margin-top: 17px;
+  padding: 17px;
+  background: #fafbfc;
+  border: 1px solid #e6e9ed;
+  border-radius: 11px;
+}
+
+.user-profile__areas h3 span {
+  margin-left: 7px;
+  color: #8490a2;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.user-profile__areas .fitness-area-grid {
+  margin-top: 12px;
+}
+
+.user-profile__form-actions {
+  margin-top: 24px;
+  padding-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #eceff2;
+}
+
+.user-profile__form-actions button {
+  min-height: 42px;
+  padding: 9px 18px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.user-profile__form-actions .is-cancel {
+  color: #536074;
+  background: #fff;
+  border: 1px solid #d7dde4;
+}
+
+.user-profile__form-actions .is-save {
+  color: #fff;
+  background: #ff5a0a;
+  border: 1px solid #ff5a0a;
+}
+
+.user-profile__form-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  .user-profile__main {
+    padding: 28px 17px 48px;
+  }
+
+  .user-profile__hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .user-profile__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-profile__card--wide {
+    grid-column: auto;
+  }
+
+  .user-profile__detail {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .user-profile__form {
+    padding: 17px;
+  }
+}

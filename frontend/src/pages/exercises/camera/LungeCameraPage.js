@@ -18,6 +18,8 @@ import { speak } from '../../../utils/speechFeedback';
 import './SquatCameraPage.css';
 import './LungeCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
+import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
+import useCameraInactivity from '../../../hooks/useCameraInactivity';
 
 function readConfig() {
   try { return JSON.parse(sessionStorage.getItem('posefitLungeWorkoutConfig')) || {}; } catch { return {}; }
@@ -137,6 +139,24 @@ export default function LungeCameraPage() {
     window.speechSynthesis.cancel();
     clearCanvas();
   }, [clearCanvas]);
+
+  const cancelForInactivity = useCallback(() => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    stopResources();
+    setResting(false);
+    setStarted(false);
+  }, [stopResources]);
+
+  const {
+    isWarningVisible: inactivityWarningVisible,
+    isCancelled: inactivityCancelled,
+    remainingSeconds: inactivityRemainingSeconds,
+    reportPersonDetection,
+  } = useCameraInactivity({
+    enabled: started && !resting && !complete,
+    onTimeout: cancelForInactivity,
+  });
 
   const finish = useCallback((status = 'ended') => {
     if (finishingRef.current) return;
@@ -278,6 +298,7 @@ export default function LungeCameraPage() {
   const onResults = useCallback((results) => {
     if (!mountedRef.current) return;
     if (pausedRef.current) { clearCanvas(); return; }
+    reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
@@ -322,7 +343,7 @@ export default function LungeCameraPage() {
     }
     processRep(analysis);
     if (!mutedRef.current) speak(live.feedback);
-  }, [clearCanvas, drawAngle, processRep, resetCycle]);
+  }, [clearCanvas, drawAngle, processRep, reportPersonDetection, resetCycle]);
 
   const startCamera = useCallback(async () => {
     setLoading(true); setCameraError(''); finishingRef.current = false; mountedRef.current = true; pausedRef.current = false; resetCycle();
@@ -342,8 +363,8 @@ export default function LungeCameraPage() {
 
   const color = LUNGE_CLASS_COLORS[classification];
   const sessionAccuracy = accuracy(correctRef.current, incorrectCount);
-  const status = complete ? 'Complete' : resting ? 'Resting' : !started ? 'Ready' : position === 'ready' ? 'Tracking' : 'Positioning';
-  const tone = complete ? 'complete' : resting ? 'resting' : position === 'ready' ? 'active' : 'waiting';
+  const status = inactivityCancelled ? 'Cancelled' : complete ? 'Complete' : resting ? 'Resting' : !started ? 'Ready' : position === 'ready' ? 'Tracking' : 'Positioning';
+  const tone = inactivityCancelled ? 'cancelled' : complete ? 'complete' : resting ? 'resting' : position === 'ready' ? 'active' : 'waiting';
   const displayedSet = workoutContext?.currentSet || currentSet;
   const displayedTotalSets = workoutContext?.totalSets || targetSets;
   const completedTargetReps = requiresPerLeg
@@ -361,6 +382,13 @@ export default function LungeCameraPage() {
         </aside>
         <section className="camera-session__camera" style={styles.camera}>
           <video ref={videoRef} style={styles.media} playsInline muted /><canvas ref={canvasRef} style={{ ...styles.media, position: 'absolute', inset: 0 }} />
+          <CameraInactivityOverlay
+            isWarningVisible={inactivityWarningVisible}
+            isCancelled={inactivityCancelled}
+            remainingSeconds={inactivityRemainingSeconds}
+            isWorkoutPlan={Boolean(workoutContext)}
+            onBack={() => navigate(workoutContext?.detailsRoute || '/exercises', { replace: true })}
+          />
           {resting && <div className="camera-session__rest-overlay"><span className="camera-session__rest-check"><i className="fa-solid fa-check" /></span><p className="camera-session__rest-eyebrow">Set {currentSet} Complete</p><h2>Rest</h2><time>{formatTime(restCountdown)}</time><p>Next: Set {currentSet + 1} of {targetSets}</p></div>}
           {complete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {started && !resting && !complete && position !== 'ready' && <div className="camera-session__readiness"><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}

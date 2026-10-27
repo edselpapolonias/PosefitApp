@@ -1,0 +1,206 @@
+.camera-inactivity,
+.camera-inactivity * {
+  box-sizing: border-box;
+}
+
+.camera-inactivity {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  font-family: 'Poppins', sans-serif;
+}
+
+.camera-session__status--cancelled {
+  color: #b42318;
+  background: #fff1ef;
+  border-color: #f4c7c2;
+}
+
+.camera-inactivity--warning {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 35%, rgba(10, 15, 25, .56));
+}
+
+.camera-inactivity__warning-card {
+  width: min(610px, 100%);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 17px;
+  color: #fff;
+  background: rgba(24, 30, 42, .94);
+  border: 1px solid rgba(255, 139, 79, .62);
+  border-radius: 16px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(10px);
+}
+
+.camera-inactivity__warning-icon,
+.camera-inactivity__cancelled-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #fff;
+  background: linear-gradient(145deg, #ff7a31, #ee4e10);
+  box-shadow: 0 8px 20px rgba(238, 78, 16, .28);
+}
+
+.camera-inactivity__warning-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  font-size: 19px;
+}
+
+.camera-inactivity__eyebrow {
+  margin: 0 0 3px;
+  color: #ffad82;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.15px;
+  text-transform: uppercase;
+}
+
+.camera-inactivity__warning-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.camera-inactivity__warning-copy > p:last-child {
+  margin: 3px 0 0;
+  color: #ccd2dc;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.camera-inactivity__countdown {
+  min-width: 82px;
+  text-align: center;
+}
+
+.camera-inactivity__countdown time {
+  display: block;
+  color: #ff8a4c;
+  font-size: clamp(27px, 4vw, 38px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+
+.camera-inactivity__countdown span {
+  display: block;
+  margin-top: 4px;
+  color: #c9d0da;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.camera-inactivity--cancelled {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: auto;
+  color: #fff;
+  text-align: center;
+  background: rgba(12, 17, 27, .91);
+  backdrop-filter: blur(8px);
+}
+
+.camera-inactivity__cancelled-card {
+  width: min(470px, 100%);
+  padding: 28px;
+  background: rgba(28, 34, 47, .98);
+  border: 1px solid rgba(255, 139, 79, .5);
+  border-radius: 20px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .34);
+}
+
+.camera-inactivity__cancelled-icon {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 16px;
+  border-radius: 19px;
+  font-size: 26px;
+}
+
+.camera-inactivity__cancelled-card h2 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: clamp(21px, 4vw, 27px);
+  line-height: 1.25;
+}
+
+.camera-inactivity__cancelled-card > p:not(.camera-inactivity__eyebrow) {
+  margin: 7px 0;
+  color: #d2d7e0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.camera-inactivity__cancelled-card button {
+  min-height: 44px;
+  margin-top: 19px;
+  padding: 11px 19px;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #f25213, #ff6d25);
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 9px 22px rgba(242, 82, 19, .24);
+  cursor: pointer;
+}
+
+.camera-inactivity__cancelled-card button i {
+  margin-right: 8px;
+}
+
+.camera-inactivity__cancelled-card button:hover,
+.camera-inactivity__cancelled-card button:focus-visible {
+  background: linear-gradient(90deg, #df460b, #ed5815);
+}
+
+.camera-inactivity__cancelled-card button:focus-visible {
+  outline: 3px solid rgba(255, 138, 76, .4);
+  outline-offset: 3px;
+}
+
+@media (max-width: 620px) {
+  .camera-inactivity--warning {
+    padding: 10px;
+  }
+
+  .camera-inactivity__warning-card {
+    grid-template-columns: auto 1fr;
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .camera-inactivity__countdown {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, .12);
+  }
+
+  .camera-inactivity__countdown span {
+    margin: 0;
+  }
+
+  .camera-inactivity__cancelled-card {
+    padding: 24px 18px;
+  }
+}

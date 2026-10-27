@@ -19,6 +19,8 @@ import { speak } from '../../../utils/speechFeedback';
 import './SquatCameraPage.css';
 import './PushUpCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
+import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
+import useCameraInactivity from '../../../hooks/useCameraInactivity';
 
 function storedConfig() {
   try {
@@ -151,6 +153,24 @@ export default function PushUpCameraPage() {
     window.speechSynthesis.cancel();
     clearCanvas();
   }, [clearCanvas]);
+
+  const cancelForInactivity = useCallback(() => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    stopResources();
+    setIsResting(false);
+    setIsStarted(false);
+  }, [stopResources]);
+
+  const {
+    isWarningVisible: inactivityWarningVisible,
+    isCancelled: inactivityCancelled,
+    remainingSeconds: inactivityRemainingSeconds,
+    reportPersonDetection,
+  } = useCameraInactivity({
+    enabled: isStarted && !isResting && !workoutComplete,
+    onTimeout: cancelForInactivity,
+  });
 
   const finishSession = useCallback((status = 'ended') => {
     if (finishingRef.current) return;
@@ -316,6 +336,7 @@ export default function PushUpCameraPage() {
       clearCanvas();
       return;
     }
+    reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
@@ -383,7 +404,7 @@ export default function PushUpCameraPage() {
     }
     processRep(analysis);
     if (!voiceMutedRef.current) speak(liveFeedback.feedback);
-  }, [clearCanvas, drawAngle, processRep]);
+  }, [clearCanvas, drawAngle, processRep, reportPersonDetection]);
 
   const startCamera = useCallback(async () => {
     setIsLoading(true);
@@ -446,8 +467,8 @@ export default function PushUpCameraPage() {
 
   const currentColor = PUSH_UP_CLASS_COLORS[classification];
   const currentAccuracy = accuracy(totalCorrectReps, incorrectCount);
-  const sessionStatus = workoutComplete ? 'Complete' : isResting ? 'Resting' : !isStarted ? 'Ready' : positionStatus === 'ready' ? 'Tracking' : 'Positioning';
-  const statusTone = workoutComplete ? 'complete' : isResting ? 'resting' : positionStatus === 'ready' ? 'active' : 'waiting';
+  const sessionStatus = inactivityCancelled ? 'Cancelled' : workoutComplete ? 'Complete' : isResting ? 'Resting' : !isStarted ? 'Ready' : positionStatus === 'ready' ? 'Tracking' : 'Positioning';
+  const statusTone = inactivityCancelled ? 'cancelled' : workoutComplete ? 'complete' : isResting ? 'resting' : positionStatus === 'ready' ? 'active' : 'waiting';
   const displayedSet = workoutContext?.currentSet || currentSet;
   const displayedTotalSets = workoutContext?.totalSets || targetSets;
   const backPath = workoutContext?.detailsRoute || '/exercises/push-up';
@@ -494,6 +515,13 @@ export default function PushUpCameraPage() {
         <section className="camera-session__camera" style={styles.camera}>
           <video ref={videoRef} style={styles.media} playsInline muted />
           <canvas ref={canvasRef} style={{ ...styles.media, position: 'absolute', inset: 0 }} />
+          <CameraInactivityOverlay
+            isWarningVisible={inactivityWarningVisible}
+            isCancelled={inactivityCancelled}
+            remainingSeconds={inactivityRemainingSeconds}
+            isWorkoutPlan={Boolean(workoutContext)}
+            onBack={() => navigate(workoutContext?.detailsRoute || '/exercises', { replace: true })}
+          />
           {isResting && <div className="camera-session__rest-overlay"><span className="camera-session__rest-check"><i className="fa-solid fa-check" /></span><p className="camera-session__rest-eyebrow">Set {currentSet} Complete</p><h2>Rest</h2><time>{formatTime(restCountdown)}</time><p>Next: Set {currentSet + 1} of {targetSets}</p></div>}
           {workoutComplete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {isStarted && !isResting && !workoutComplete && positionStatus !== 'ready' && <div className={`camera-session__readiness camera-session__readiness--${positionStatus}`}><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}

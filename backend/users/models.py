@@ -55,6 +55,56 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+class FitnessProfile(models.Model):
+    class FitnessLevel(models.TextChoices):
+        BEGINNER = 'beginner', 'Beginner'
+        INTERMEDIATE = 'intermediate', 'Intermediate'
+        ADVANCED = 'advanced', 'Advanced'
+
+    class ExerciseExperience(models.TextChoices):
+        LESS_THAN_SIX_MONTHS = 'less_than_6_months', 'Less than 6 months'
+        SIX_TO_TWELVE_MONTHS = '6_to_12_months', '6-12 months'
+        ONE_TO_TWO_YEARS = '1_to_2_years', '1-2 years'
+        MORE_THAN_TWO_YEARS = 'more_than_2_years', 'More than 2 years'
+
+    class LimitationResponse(models.TextChoices):
+        YES = 'yes', 'Yes'
+        NO = 'no', 'No'
+        PREFER_NOT_TO_SAY = 'prefer_not_to_say', 'Prefer not to say'
+
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='fitness_profile',
+    )
+    fitness_level = models.CharField(
+        max_length=20,
+        choices=FitnessLevel.choices,
+        blank=True,
+        default='',
+    )
+    exercise_experience = models.CharField(
+        max_length=24,
+        choices=ExerciseExperience.choices,
+        blank=True,
+        default='',
+    )
+    physical_limitations = models.CharField(
+        max_length=24,
+        choices=LimitationResponse.choices,
+        blank=True,
+        default='',
+    )
+    affected_areas = models.JSONField(default=list, blank=True)
+    onboarding_completed = models.BooleanField(default=False)
+    onboarding_required = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.user.username} fitness profile'
+
+
 class LoginDay(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='login_days')
     date = models.DateField()

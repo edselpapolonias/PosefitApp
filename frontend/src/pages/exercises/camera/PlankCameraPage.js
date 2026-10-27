@@ -19,6 +19,8 @@ import { speak } from '../../../utils/speechFeedback';
 import './SquatCameraPage.css';
 import './PlankCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
+import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
+import useCameraInactivity from '../../../hooks/useCameraInactivity';
 
 function readStoredWorkoutConfig() {
   try {
@@ -221,6 +223,38 @@ export default function PlankCameraPage() {
     navigate('/session-summary', { replace: true, state: { sessionResult } });
   }, [clearCanvas, holdTimeSetting, navigate, restTimeSetting, sessionTime, totalSets, workoutContext]);
 
+  const cancelForInactivity = useCallback(() => {
+    if (isFinishingRef.current) return;
+    isFinishingRef.current = true;
+    isMountedRef.current = false;
+    processingPausedRef.current = true;
+    isRestingRef.current = false;
+    clearInterval(sessionTimerRef.current);
+    clearInterval(restTimerRef.current);
+    clearTimeout(completionTimeoutRef.current);
+    sessionTimerRef.current = null;
+    restTimerRef.current = null;
+    completionTimeoutRef.current = null;
+    cameraRef.current?.stop();
+    cameraRef.current = null;
+    poseRef.current?.close();
+    poseRef.current = null;
+    window.speechSynthesis.cancel();
+    clearCanvas();
+    setIsResting(false);
+    setIsStarted(false);
+  }, [clearCanvas]);
+
+  const {
+    isWarningVisible: inactivityWarningVisible,
+    isCancelled: inactivityCancelled,
+    remainingSeconds: inactivityRemainingSeconds,
+    reportPersonDetection,
+  } = useCameraInactivity({
+    enabled: isStarted && !isResting && !workoutComplete,
+    onTimeout: cancelForInactivity,
+  });
+
   const completeCurrentSet = useCallback(() => {
     if (setCompletingRef.current) return;
     setCompletingRef.current = true;
@@ -350,6 +384,7 @@ export default function PlankCameraPage() {
       clearCanvas();
       return;
     }
+    reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
 
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
@@ -463,7 +498,7 @@ export default function PlankCameraPage() {
     setFeedback(analysis.feedback);
     setFeedbackDetail(analysis.feedbackDetail);
     processHoldFrame(analysis);
-  }, [clearCanvas, drawAngleLabel, processHoldFrame]);
+  }, [clearCanvas, drawAngleLabel, processHoldFrame, reportPersonDetection]);
 
   const startCamera = useCallback(async () => {
     setIsLoading(true);
@@ -551,7 +586,9 @@ export default function PlankCameraPage() {
   }
 
   const currentColor = PLANK_CLASS_COLORS[classification];
-  const sessionStatus = workoutComplete || sessionPhase === PLANK_SESSION_STATES.SESSION_COMPLETE
+  const sessionStatus = inactivityCancelled
+    ? 'Cancelled'
+    : workoutComplete || sessionPhase === PLANK_SESSION_STATES.SESSION_COMPLETE
     ? 'Complete'
     : isResting || sessionPhase === PLANK_SESSION_STATES.RESTING
       ? 'Resting'
@@ -562,7 +599,9 @@ export default function PlankCameraPage() {
           : sessionPhase === PLANK_SESSION_STATES.PLANK_ACTIVE
             ? classification === 'good' ? 'Valid Hold' : 'Adjust Form'
             : 'Waiting for Position';
-  const statusTone = workoutComplete
+  const statusTone = inactivityCancelled
+    ? 'cancelled'
+    : workoutComplete
     ? 'complete'
     : isResting
       ? 'resting'
@@ -659,6 +698,14 @@ export default function PlankCameraPage() {
         <section className="camera-session__camera" style={plankStyles.cameraBox}>
           <video ref={videoRef} style={plankStyles.video} playsInline muted />
           <canvas ref={canvasRef} style={plankStyles.canvas} />
+
+          <CameraInactivityOverlay
+            isWarningVisible={inactivityWarningVisible}
+            isCancelled={inactivityCancelled}
+            remainingSeconds={inactivityRemainingSeconds}
+            isWorkoutPlan={Boolean(workoutContext)}
+            onBack={() => navigate(workoutContext?.detailsRoute || '/exercises', { replace: true })}
+          />
 
           {isResting && (
             <div className="camera-session__rest-overlay">

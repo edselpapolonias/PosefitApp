@@ -323,94 +323,115 @@
 
 .session-feedback {
   min-height: 188px;
-  padding: 18px 19px;
+  padding: 21px 22px;
 }
 
 .session-feedback > h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
 .session-feedback > h2 i {
   color: #9e58f4;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .session-feedback__panel {
   width: 100%;
   max-width: 100%;
   min-height: 137px;
-  margin-top: 10px;
-  padding: 13px 16px;
+  margin-top: 14px;
+  padding: 18px 20px;
   display: grid;
-  grid-template-columns: 45px minmax(0, 1fr);
-  gap: 13px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
-  background: linear-gradient(110deg, #f5efff, #faf7ff);
-  border-radius: 9px;
+  background: linear-gradient(120deg, #f7f2ff 0%, #fdfbff 100%);
+  border: 1px solid #e6d9f8;
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
 }
 
 .session-feedback__robot {
-  width: 43px;
-  height: 43px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   color: #ffffff;
-  font-size: 20px;
+  font-size: 21px;
   background: linear-gradient(145deg, #a26bf6, #8e51e8);
-  border: 5px solid #d9c4fb;
+  border: 5px solid #ddcbfa;
   border-radius: 50%;
+  box-shadow: 0 7px 17px rgba(117, 67, 181, .18);
 }
 
 .session-feedback__body {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 11px;
 }
 
 .session-feedback__paragraph {
   margin: 0;
-  color: #273148;
-  font-size: 10px;
-  line-height: 1.65;
+  color: #28334a;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.72;
   overflow-wrap: anywhere;
 }
 
 .session-feedback__issue {
-  padding-top: 9px;
-  border-top: 1px solid rgba(126, 77, 190, 0.15);
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, .76);
+  border: 1px solid rgba(126, 77, 190, .16);
+  border-left: 3px solid #a265ee;
+  border-radius: 10px;
 }
 
 .session-feedback__issue strong {
   display: block;
-  margin-bottom: 3px;
-  color: #4f2c82;
-  font-size: 9px;
+  margin-bottom: 5px;
+  color: #4a2778;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .session-feedback__issue p {
   margin: 0;
-  color: #273148;
-  font-size: 9px;
-  line-height: 1.5;
+  color: #3f4960;
+  font-size: 12px;
+  line-height: 1.62;
   overflow-wrap: anywhere;
 }
 
+.session-feedback__issue p + p {
+  margin-top: 8px;
+}
+
 .session-feedback__issue p span {
-  color: #7444b8;
-  font-weight: 600;
+  display: inline-flex;
+  padding: 3px 8px;
+  color: #6737a5;
+  background: #eee3fc;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .session-feedback__loading,
 .session-feedback__unavailable {
-  min-height: 60px;
+  min-height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  color: #625477;
+  gap: 12px;
+  color: #554866;
 }
 
 .session-feedback__loading > span {
@@ -426,8 +447,8 @@
 .session-feedback__loading p,
 .session-feedback__unavailable p {
   margin: 0;
-  font-size: 9px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .session-feedback__unavailable i {
@@ -927,11 +948,13 @@
 
   .session-feedback__panel {
     grid-template-columns: 1fr;
+    padding: 17px;
   }
 
   .session-feedback__robot {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
+    border-width: 4px;
   }
 
   .session-feedback,
@@ -951,6 +974,26 @@
   .session-summary__lower-grid {
     gap: 12px;
     margin-bottom: 12px;
+  }
+
+  .session-feedback__panel {
+    padding: 15px;
+  }
+
+  .session-feedback__paragraph {
+    font-size: 13px;
+    line-height: 1.68;
+  }
+
+  .session-feedback__issue {
+    padding: 11px 12px;
+  }
+
+  .session-feedback__issue strong,
+  .session-feedback__issue p,
+  .session-feedback__loading p,
+  .session-feedback__unavailable p {
+    font-size: 11.5px;
   }
 
   .session-summary__date {

@@ -521,3 +521,69 @@
 [2026-10-22T13:41:58.986062] Login attempt: username=admin
 [2026-10-22T13:42:00.454491] Authentication result for admin: SUCCESS
 [2026-10-22T13:42:00.707610] Login session started for admin
+[2026-10-23T10:37:57.272185] Login attempt: username=admin
+[2026-10-23T10:37:59.483562] Authentication result for admin: SUCCESS
+[2026-10-23T10:37:59.954310] Login session started for admin
+[2026-10-23T11:18:05.606509] Login attempt: username=admin
+[2026-10-23T11:18:06.452420] Authentication result for admin: SUCCESS
+[2026-10-23T11:18:06.552485] Login session started for admin
+[2026-10-23T20:18:31.106727] Login attempt: username=admin
+[2026-10-23T20:18:31.830742] Authentication result for admin: SUCCESS
+[2026-10-23T20:18:31.942216] Login session started for admin
+[2026-10-24T10:55:00.649853] Login attempt: username=admin
+[2026-10-24T10:55:02.379447] Authentication result for admin: SUCCESS
+[2026-10-24T10:55:02.794906] Login session started for admin
+[2026-10-24T11:14:30.406773] Login attempt: username=admin
+[2026-10-24T11:14:32.010058] Authentication result for admin: SUCCESS
+[2026-10-24T11:14:32.233954] Login session started for admin
+[2026-10-26T10:42:28.691827] Login attempt: username=admin
+[2026-10-26T10:42:29.993000] Authentication result for admin: SUCCESS
+[2026-10-26T10:42:30.328451] Login session started for admin
+[2026-10-26T13:03:45.955451] Login attempt: username=admin
+[2026-10-26T13:03:47.323846] Authentication result for admin: FAILED
+[2026-10-26T13:03:49.843175] Login attempt: username=admin
+[2026-10-26T13:03:51.182667] Authentication result for admin: SUCCESS
+[2026-10-26T13:03:51.441875] Login session started for admin
+[2026-10-26T13:08:14.553565] Gemini coach feedback failed [provider_error]: Gemini request failed with HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-10-27T17:02:54.577723] Login attempt: username=admin
+[2026-10-27T17:02:56.722798] Authentication result for admin: SUCCESS
+[2026-10-27T17:02:57.378378] Login session started for admin
+[2026-10-27T18:48:50.603019] Login attempt: username=admin
+[2026-10-27T18:48:51.194783] Authentication result for admin: SUCCESS
+[2026-10-27T18:48:51.250169] Login session started for admin
+[2026-10-27T18:49:32.451699] Register attempt: username=123, first_name=Edsel, last_name=Papolo, age=22
+[2026-10-27T18:49:54.340246] Register attempt: username=123eds, first_name=Edsel, last_name=Papolo, age=22
+[2026-10-27T18:51:41.407375] Register attempt: username=123, first_name=Edsel, last_name=Papolo, age=22
+[2026-10-27T18:51:42.211051] Register success: Created user 123
+[2026-10-27T18:51:50.495127] Login attempt: username=123
+[2026-10-27T18:51:51.139289] Authentication result for 123: SUCCESS
+[2026-10-27T18:51:51.161684] Login session started for 123
+[2026-10-27T18:53:48.423925] Login attempt: username=admin
+[2026-10-27T18:53:49.061108] Authentication result for admin: SUCCESS
+[2026-10-27T18:53:49.077940] Login session started for admin
+[2026-10-27T23:06:01.550252] Login attempt: username=admin
+[2026-10-27T23:06:02.256065] Authentication result for admin: SUCCESS
+[2026-10-27T23:06:02.374748] Login session started for admin
+[2026-10-27T23:26:03.276185] Login attempt: username=dashboard-user
+[2026-10-27T23:26:05.252800] Authentication result for dashboard-user: SUCCESS
+[2026-10-27T23:26:05.278754] Login session started for dashboard-user
+[2026-10-27T23:26:05.309683] Login attempt: username=dashboard-user
+[2026-10-27T23:26:06.696459] Authentication result for dashboard-user: SUCCESS
+[2026-10-27T23:26:06.704210] Login session started for dashboard-user
+[2026-10-27T23:26:19.640989] Register attempt: username=new-user, first_name=New, last_name=User, age=21
+[2026-10-27T23:26:21.260442] Register success: Created user new-user
+[2026-10-27T23:26:21.291577] Register attempt: username=decimal-age-user, first_name=Decimal, last_name=Age, age=21.5
+[2026-10-27T23:26:21.305015] Register attempt: username=invalid-age-user, first_name=Invalid, last_name=Age, age=121
+[2026-10-27T23:27:06.620672] Login attempt: username=progress-user
+[2026-10-27T23:27:07.246071] Authentication result for progress-user: SUCCESS
+[2026-10-27T23:27:07.252621] Login session started for progress-user
+[2026-10-27T23:27:08.705358] Login attempt: username=progress-user
+[2026-10-27T23:27:09.394454] Authentication result for progress-user: SUCCESS
+[2026-10-27T23:27:09.402901] Login session started for progress-user

@@ -23,6 +23,8 @@ import {
 } from '../../../services/summaryService';
 import './SquatCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
+import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
+import useCameraInactivity from '../../../hooks/useCameraInactivity';
 
 function readStoredWorkoutConfig() {
     try {
@@ -325,6 +327,35 @@ export default function SquatCameraPage() {
         });
     }, [clearOverlayCanvas, navigate, restTimeSetting, sessionTime, totalReps, totalSets, workoutContext]);
 
+    const cancelForInactivity = useCallback(() => {
+        isMountedRef.current = false;
+        isRestingRef.current = false;
+        poseProcessingPausedRef.current = true;
+        clearInterval(timerRef.current);
+        clearInterval(restTimerRef.current);
+        clearTimeout(completionTimeoutRef.current);
+        restTimerRef.current = null;
+        completionTimeoutRef.current = null;
+        cameraRef.current?.stop();
+        cameraRef.current = null;
+        poseRef.current?.close();
+        poseRef.current = null;
+        window.speechSynthesis.cancel();
+        clearOverlayCanvas();
+        setIsResting(false);
+        setIsStarted(false);
+    }, [clearOverlayCanvas]);
+
+    const {
+        isWarningVisible: inactivityWarningVisible,
+        isCancelled: inactivityCancelled,
+        remainingSeconds: inactivityRemainingSeconds,
+        reportPersonDetection,
+    } = useCameraInactivity({
+        enabled: isStarted && !isResting && !workoutComplete,
+        onTimeout: cancelForInactivity,
+    });
+
     // Complete Current Set
     const completeCurrentSet = useCallback(() => {
         if (completionTimeoutRef.current) {
@@ -489,6 +520,7 @@ export default function SquatCameraPage() {
             clearOverlayCanvas();
             return;
         }
+        reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -585,7 +617,7 @@ export default function SquatCameraPage() {
 
         processRep(analysis);
         syncLiveState(analysis);
-    }, [clearOverlayCanvas, processRep, syncLiveState, resetSquatCycleTracking]);
+    }, [clearOverlayCanvas, processRep, reportPersonDetection, syncLiveState, resetSquatCycleTracking]);
     // Start Camera
     const startCamera = useCallback(async () => {
         setIsLoading(true);
@@ -706,7 +738,9 @@ export default function SquatCameraPage() {
     // CAMERA SCREEN
 
     const currentColor = CLASS_COLORS[sqClassification];
-    const sessionStatus = workoutComplete
+    const sessionStatus = inactivityCancelled
+        ? 'Cancelled'
+        : workoutComplete
         ? 'Complete'
         : isResting
             ? 'Resting'
@@ -717,7 +751,9 @@ export default function SquatCameraPage() {
                     : bodyReadiness === 'too_close'
                         ? 'Reposition'
                         : 'Waiting';
-    const statusTone = workoutComplete
+    const statusTone = inactivityCancelled
+        ? 'cancelled'
+        : workoutComplete
         ? 'complete'
         : isResting
             ? 'resting'
@@ -818,6 +854,14 @@ export default function SquatCameraPage() {
                 <section className="camera-session__camera" style={styles.cameraBox}>
                     <video ref={videoRef} style={styles.video} playsInline muted />
                     <canvas ref={canvasRef} style={styles.canvas} />
+
+                    <CameraInactivityOverlay
+                        isWarningVisible={inactivityWarningVisible}
+                        isCancelled={inactivityCancelled}
+                        remainingSeconds={inactivityRemainingSeconds}
+                        isWorkoutPlan={Boolean(workoutContext)}
+                        onBack={() => navigate(workoutContext?.detailsRoute || '/exercises', { replace: true })}
+                    />
 
                     {/* Rest Overlay */}
                     {isResting && (

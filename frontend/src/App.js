@@ -22,6 +22,9 @@ import HistoryPage from './pages/history/HistoryPage';
 import HistorySessionSummaryPage from './pages/history/HistorySessionSummaryPage';
 import PlanHistoryPage from './pages/history/PlanHistoryPage';
 import ProgressPage from './pages/progress/ProgressPage';
+import UserProfilePage from './pages/user/UserProfilePage';
+import ExerciseConnectionNotice from './components/ExerciseConnectionNotice';
+import FitnessProfileOnboardingGate from './features/fitnessProfile/FitnessProfileOnboarding';
 
 function PrivateRoute({ children }) {
   const user = localStorage.getItem('user');
@@ -31,6 +34,8 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <ExerciseConnectionNotice />
+      <FitnessProfileOnboardingGate />
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<AuthPage />} />
@@ -57,6 +62,7 @@ function App() {
         <Route path="/history/plan/:planInstanceId" element={<PrivateRoute><PlanHistoryPage /></PrivateRoute>} />
         <Route path="/history/session/:sessionId" element={<PrivateRoute><HistorySessionSummaryPage /></PrivateRoute>} />
         <Route path="/progress" element={<PrivateRoute><ProgressPage /></PrivateRoute>} />
+        <Route path="/user" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
       </Routes>
     </BrowserRouter>
   );

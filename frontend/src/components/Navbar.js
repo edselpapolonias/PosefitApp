@@ -150,6 +150,15 @@ export default function Navbar({ activeItem }) {
 
             {accountMenuOpen && (
               <div className="top-navbar__dropdown" role="menu">
+                <NavLink
+                  className="top-navbar__menu-item"
+                  to="/user"
+                  role="menuitem"
+                  onClick={(event) => handleNavigation(event, '/user')}
+                >
+                  <i className="fa-regular fa-user" aria-hidden="true" />
+                  <span>User</span>
+                </NavLink>
                 <button
                   className="top-navbar__logout"
                   type="button"
