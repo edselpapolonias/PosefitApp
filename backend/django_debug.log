@@ -592,3 +592,94 @@
 [2026-10-27T23:41:56.161304] Login attempt: username=jb
 [2026-10-27T23:41:57.168724] Authentication result for jb: SUCCESS
 [2026-10-27T23:41:57.279430] Login session started for jb
+[2026-10-28T10:46:28.274386] Login attempt: username=admin
+[2026-10-28T10:46:29.943417] Authentication result for admin: SUCCESS
+[2026-10-28T10:46:30.099936] Login session started for admin
+[2026-10-28T11:00:25.748554] Register attempt: username=kiking100, first_name=jerome, last_name=requillo, age=28
+[2026-10-28T11:00:27.198125] Register success: Created user kiking100
+[2026-10-28T11:00:42.659836] Login attempt: username=kiking100
+[2026-10-28T11:00:44.046369] Authentication result for kiking100: SUCCESS
+[2026-10-28T11:00:44.095791] Login session started for kiking100
+[2026-10-28T11:02:13.510102] Gemini coach feedback failed [provider_error]: Gemini request failed with HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-10-28T14:06:00.977414] Login attempt: username=admin
+[2026-10-28T14:06:02.394483] Authentication result for admin: SUCCESS
+[2026-10-28T14:06:02.411520] Login session started for admin
+[2026-10-28T14:39:22.359508] Login attempt: username=admin
+[2026-10-28T14:39:24.096314] Authentication result for admin: SUCCESS
+[2026-10-28T14:39:24.117262] Login session started for admin
+[2026-10-28T14:43:09.309806] Gemini coach feedback failed [connection_reset]: Gemini request failed: <urlopen error [WinError 10054] An existing connection was forcibly closed by the remote host>
+[2026-10-28T14:48:18.223535] Login attempt: username=admin
+[2026-10-28T14:48:19.576171] Authentication result for admin: SUCCESS
+[2026-10-28T14:48:19.589700] Login session started for admin
+[2026-10-28T14:58:55.029843] Login attempt: username=admin
+[2026-10-28T14:58:56.395296] Authentication result for admin: FAILED
+[2026-10-28T15:02:44.070289] Login attempt: username=admin
+[2026-10-28T15:02:45.382158] Authentication result for admin: SUCCESS
+[2026-10-28T15:02:45.399563] Login session started for admin
+[2026-10-28T15:14:25.076432] Login attempt: username=admin
+[2026-10-28T15:14:26.620705] Authentication result for admin: SUCCESS
+[2026-10-28T15:14:26.636854] Login session started for admin
+[2026-10-28T15:19:54.536739] Login attempt: username=admin
+[2026-10-28T15:19:56.038726] Authentication result for admin: SUCCESS
+[2026-10-28T15:19:56.105615] Login session started for admin
+[2026-10-29T13:43:57.693014] Login attempt: username=admin
+[2026-10-29T13:43:59.217583] Authentication result for admin: SUCCESS
+[2026-10-29T13:43:59.480046] Login session started for admin
+[2026-10-29T13:49:56.961596] Login attempt: username=admin
+[2026-10-29T13:49:58.471637] Authentication result for admin: SUCCESS
+[2026-10-29T13:49:58.607888] Login session started for admin
+[2026-10-29T14:11:25.702218] Login attempt: username=admin
+[2026-10-29T14:11:27.837979] Authentication result for admin: SUCCESS
+[2026-10-29T14:11:27.943563] Login session started for admin
+[2026-10-29T14:49:48.306828] Login attempt: username=admin
+[2026-10-29T14:49:50.007334] Authentication result for admin: SUCCESS
+[2026-10-29T14:49:50.025483] Login session started for admin
+[2026-10-29T15:12:26.839874] Login attempt: username=admin
+[2026-10-29T15:12:28.238037] Authentication result for admin: FAILED
+[2026-10-29T15:12:34.078477] Login attempt: username=admin
+[2026-10-29T15:12:35.404385] Authentication result for admin: FAILED
+[2026-10-29T15:12:46.513964] Login attempt: username=admin
+[2026-10-29T15:12:47.844759] Authentication result for admin: FAILED
+[2026-10-29T15:12:57.138144] Login attempt: username=admin
+[2026-10-29T15:12:58.539801] Authentication result for admin: SUCCESS
+[2026-10-29T15:12:58.585089] Login session started for admin
+[2026-10-29T15:22:11.369996] Login attempt: username=admin
+[2026-10-29T15:22:12.753519] Authentication result for admin: SUCCESS
+[2026-10-29T15:22:12.789180] Login session started for admin
+[2026-10-29T17:26:14.496650] Login attempt: username=admin
+[2026-10-29T17:26:16.116275] Authentication result for admin: SUCCESS
+[2026-10-29T17:26:16.159982] Login session started for admin
+[2026-10-30T13:50:47.944599] Login attempt: username=admin
+[2026-10-30T13:50:49.028645] Authentication result for admin: SUCCESS
+[2026-10-30T13:50:49.206677] Login session started for admin
+[2026-10-30T14:20:37.588067] Login attempt: username=admin
+[2026-10-30T14:20:39.055344] Authentication result for admin: SUCCESS
+[2026-10-30T14:20:39.073090] Login session started for admin
+[2026-10-30T14:24:58.769074] Login attempt: username=admin
+[2026-10-30T14:25:00.147355] Authentication result for admin: SUCCESS
+[2026-10-30T14:25:00.185120] Login session started for admin
+[2026-10-30T15:17:41.807175] Login attempt: username=admin
+[2026-10-30T15:17:43.158719] Authentication result for admin: SUCCESS
+[2026-10-30T15:17:43.174494] Login session started for admin
+[2026-10-30T15:20:53.788943] Gemini coach feedback failed [dns_error]: Gemini request failed: <urlopen error [Errno 11001] getaddrinfo failed>
+[2026-10-30T15:56:44.354114] Login attempt: username=admin
+[2026-10-30T15:56:45.079124] Authentication result for admin: SUCCESS
+[2026-10-30T15:56:45.222373] Login session started for admin
+[2026-10-30T16:00:30.961982] Gemini coach feedback failed [provider_error]: Gemini request failed with HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "The service is currently unavailable.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-11-03T22:08:37.178349] Login attempt: username=admin
+[2026-11-03T22:08:37.901138] Authentication result for admin: SUCCESS
+[2026-11-03T22:08:38.177383] Login session started for admin
