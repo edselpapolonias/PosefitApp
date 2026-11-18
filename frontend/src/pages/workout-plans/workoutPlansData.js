@@ -12,7 +12,6 @@ export const workoutPlans = [
     slug: 'beginner-full-body',
     detailsRoute: '/workout-plans/beginner-full-body',
     level: 'Beginner',
-    popular: true,
     title: 'Beginner Full Body',
     description: 'A balanced introduction to fitness using all five PoseFit exercises. Build strength, improve endurance, and create a healthy routine.',
     schedule: '3 Days/Week',

@@ -159,6 +159,19 @@ function FeedbackSummary({ session }) {
 }
 
 function SetBreakdown({ session, presentation }) {
+  const setAccuracy = (set) => {
+    const savedAccuracy = validNumber(set.accuracy);
+    if (savedAccuracy !== null) return Math.max(0, Math.min(100, Math.round(savedAccuracy)));
+
+    const goodReps = validNumber(set.goodReps) || 0;
+    const badReps = validNumber(set.badReps) || 0;
+    const attempts = goodReps + badReps;
+    if (attempts > 0) return Math.round((goodReps / attempts) * 100);
+
+    const sessionAccuracy = validNumber(session.accuracy);
+    return sessionAccuracy === null ? null : Math.max(0, Math.min(100, Math.round(sessionAccuracy)));
+  };
+
   const setValue = (set) => {
     if (presentation.isTimeBased) {
       const achieved = validNumber(set.holdTime ?? set.completed ?? set.duration);
@@ -185,7 +198,7 @@ function SetBreakdown({ session, presentation }) {
           <table>
             <thead><tr><th>Set</th><th>{presentation.isTimeBased ? 'Time (Goal)' : 'Reps (Goal)'}</th><th>Accuracy</th><th>Result</th></tr></thead>
             <tbody>{presentation.setResults.map((set, index) => {
-              const result = resultLabel(set.accuracy);
+              const result = resultLabel(setAccuracy(set));
               return (
                 <tr key={set.setNum || index}>
                   <td>{set.setNum || index + 1}</td>

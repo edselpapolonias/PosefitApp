@@ -31,9 +31,9 @@ const squatSession = {
   totalHoldTime: null,
   configuration: { totalSets: 3, repsPerSet: 10 },
   setResults: [
-    { setNum: 1, completedReps: 10, goodReps: 10, badReps: 0, accuracy: 100 },
-    { setNum: 2, completedReps: 10, goodReps: 9, badReps: 1, accuracy: 90 },
-    { setNum: 3, completedReps: 10, goodReps: 9, badReps: 1, accuracy: 90 },
+    { setNum: 1, completedReps: 10, goodReps: 10, badReps: 0 },
+    { setNum: 2, completedReps: 10, goodReps: 9, badReps: 1 },
+    { setNum: 3, completedReps: 10, goodReps: 9, badReps: 1 },
   ],
   formIssues: [
     { issueId: 'squat:depth', label: 'Incomplete Squat Depth', count: 2, advice: 'Lower with control.' },
@@ -78,6 +78,9 @@ test('renders the selected saved session with feedback and set breakdown', async
     'Set', 'Reps (Goal)', 'Accuracy', 'Result',
   ]);
   expect(within(breakdown).getAllByText('10 / 10')).toHaveLength(3);
+  expect(within(breakdown).getByText('100%')).toBeInTheDocument();
+  expect(within(breakdown).getAllByText('90%')).toHaveLength(2);
+  expect(within(breakdown).queryByText('No data')).not.toBeInTheDocument();
   expect(screen.getAllByRole('link', { name: 'Back to History' })).toHaveLength(2);
   expect(screen.queryByText('Performance Overview')).not.toBeInTheDocument();
   expect(screen.queryByText('Share Summary')).not.toBeInTheDocument();

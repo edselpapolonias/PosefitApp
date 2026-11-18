@@ -23,6 +23,29 @@ export const EXERCISE_EXPERIENCE_OPTIONS = [
   { value: 'more_than_2_years', label: 'More than 2 years' },
 ];
 
+export const WORKOUT_FOCUS_OPTIONS = [
+  {
+    value: 'full_body',
+    label: 'General fitness / Full body',
+    description: 'Build balanced strength, movement, and endurance across the whole body.',
+  },
+  {
+    value: 'lower_body',
+    label: 'Lower body / Legs and glutes',
+    description: 'Prioritize lower-body strength with movements for the legs and glutes.',
+  },
+  {
+    value: 'core_upper_body',
+    label: 'Core and upper body',
+    description: 'Focus on core control and upper-body strength.',
+  },
+  {
+    value: 'prefer_not_to_say',
+    label: 'No preference / Prefer not to say',
+    description: 'Do not use a workout focus to personalize plan suggestions.',
+  },
+];
+
 export const LIMITATION_OPTIONS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },

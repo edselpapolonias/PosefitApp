@@ -7,6 +7,7 @@ import {
   EXERCISE_EXPERIENCE_OPTIONS,
   FITNESS_LEVEL_OPTIONS,
   LIMITATION_OPTIONS,
+  WORKOUT_FOCUS_OPTIONS,
   optionLabel,
 } from '../../features/fitnessProfile/fitnessProfileOptions';
 import './UserProfilePage.css';
@@ -15,6 +16,7 @@ const emptyForm = {
   age: '',
   fitnessLevel: '',
   exerciseExperience: '',
+  workoutFocus: '',
   physicalLimitations: '',
   affectedAreas: [],
 };
@@ -24,6 +26,7 @@ function toForm(data) {
     age: data?.user?.age ?? '',
     fitnessLevel: data?.profile?.fitnessLevel || '',
     exerciseExperience: data?.profile?.exerciseExperience || '',
+    workoutFocus: data?.profile?.workoutFocus || '',
     physicalLimitations: data?.profile?.physicalLimitations || '',
     affectedAreas: data?.profile?.affectedAreas || [],
   };
@@ -108,8 +111,8 @@ export default function UserProfilePage() {
       setError('Age must be a whole number between 1 and 120.');
       return;
     }
-    if (!form.fitnessLevel || !form.exerciseExperience || !form.physicalLimitations) {
-      setError('Select a fitness level, exercise experience, and physical limitations response.');
+    if (!form.fitnessLevel || !form.exerciseExperience || !form.workoutFocus || !form.physicalLimitations) {
+      setError('Select a fitness level, exercise experience, workout focus, and physical limitations response.');
       return;
     }
 
@@ -133,8 +136,16 @@ export default function UserProfilePage() {
   const user = data?.user || {};
   const profile = data?.profile || {};
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Not provided';
+  const initials = `${user.firstName?.[0] || user.username?.[0] || 'U'}${user.lastName?.[0] || ''}`.toUpperCase();
   const limitationLabel = optionLabel(LIMITATION_OPTIONS, profile.physicalLimitations);
+  const workoutFocusLabel = optionLabel(WORKOUT_FOCUS_OPTIONS, profile.workoutFocus);
   const affectedLabels = (profile.affectedAreas || []).map((area) => optionLabel(AFFECTED_AREA_OPTIONS, area, area));
+  const profileComplete = profile.onboardingCompleted && Boolean(profile.workoutFocus);
+  const hasPersonalizedGuidance = Boolean(
+    profile.fitnessLevel
+    && profile.workoutFocus
+    && profile.workoutFocus !== 'prefer_not_to_say',
+  );
 
   return (
     <div className="user-profile-page">
@@ -160,44 +171,77 @@ export default function UserProfilePage() {
         {loading && <div className="user-profile__loading" role="status">Loading your profile...</div>}
 
         {!loading && data && !editing && (
-          <div className="user-profile__grid">
-            <section className="user-profile__card" aria-labelledby="personal-information-title">
-              <header><span><i className="fa-regular fa-user" aria-hidden="true" /></span><h2 id="personal-information-title">Personal Information</h2></header>
-              <dl>
-                <DetailRow label="Full Name">{fullName}</DetailRow>
-                <DetailRow label="Email Address">{user.email || 'Not provided'}</DetailRow>
-                <DetailRow label="Age">{user.age ?? 'Not set'}</DetailRow>
-              </dl>
+          <>
+            <section className="user-profile__identity" aria-label="Profile overview">
+              <div className="user-profile__avatar" aria-hidden="true">{initials}</div>
+              <div className="user-profile__identity-copy">
+                <span>Profile overview</span>
+                <h2>{fullName}</h2>
+                <p>@{user.username || 'user'}{user.email ? ` · ${user.email}` : ''}</p>
+              </div>
+              <div className="user-profile__indicators">
+                <div>
+                  <span>Profile status</span>
+                  <strong className={profileComplete ? 'is-complete' : ''}>
+                    <i className={`fa-solid ${profileComplete ? 'fa-circle-check' : 'fa-circle-minus'}`} aria-hidden="true" />
+                    {profileComplete ? 'Complete' : 'Needs update'}
+                  </strong>
+                </div>
+                <div>
+                  <span>Exercise guidance</span>
+                  <strong><i className="fa-solid fa-sliders" aria-hidden="true" />{hasPersonalizedGuidance ? 'Personalized' : 'Standard'}</strong>
+                </div>
+              </div>
             </section>
 
-            <section className="user-profile__card" aria-labelledby="fitness-information-title">
-              <header><span><i className="fa-solid fa-person-running" aria-hidden="true" /></span><h2 id="fitness-information-title">Fitness Information</h2></header>
-              <dl>
-                <DetailRow label="Fitness Level">{optionLabel(FITNESS_LEVEL_OPTIONS, profile.fitnessLevel)}</DetailRow>
-                <DetailRow label="Exercise Experience">{optionLabel(EXERCISE_EXPERIENCE_OPTIONS, profile.exerciseExperience)}</DetailRow>
-              </dl>
-            </section>
+            <div className="user-profile__section-heading">
+              <div><h2>Profile Details</h2><p>Information connected to your PoseFit account and exercise experience.</p></div>
+            </div>
 
-            <section className="user-profile__card user-profile__card--wide" aria-labelledby="limitations-title">
-              <header><span><i className="fa-regular fa-circle-check" aria-hidden="true" /></span><h2 id="limitations-title">Physical Limitations</h2></header>
-              <dl>
-                <DetailRow label="Physical Limitations">{limitationLabel}</DetailRow>
-                {profile.physicalLimitations === 'yes' && (
-                  <DetailRow label="Areas Affected">
-                    {affectedLabels.length ? (
-                      <span className="user-profile__tags">{affectedLabels.map((area) => <em key={area}>{area}</em>)}</span>
-                    ) : 'Not specified'}
-                  </DetailRow>
-                )}
-              </dl>
-            </section>
-          </div>
+            <div className="user-profile__grid">
+              <section className="user-profile__card" aria-labelledby="personal-information-title">
+                <header><span><i className="fa-regular fa-user" aria-hidden="true" /></span><div><h2 id="personal-information-title">Personal Information</h2><p>Your basic account details</p></div></header>
+                <dl>
+                  <DetailRow label="Full Name">{fullName}</DetailRow>
+                  <DetailRow label="Email Address">{user.email || 'Not provided'}</DetailRow>
+                  <DetailRow label="Age">{user.age ?? 'Not set'}</DetailRow>
+                </dl>
+              </section>
+
+              <section className="user-profile__card" aria-labelledby="fitness-information-title">
+                <header><span><i className="fa-solid fa-person-running" aria-hidden="true" /></span><div><h2 id="fitness-information-title">Fitness Information</h2><p>Your self-reported experience</p></div></header>
+                <dl>
+                  <DetailRow label="Fitness Level">{optionLabel(FITNESS_LEVEL_OPTIONS, profile.fitnessLevel)}</DetailRow>
+                  <DetailRow label="Exercise Experience">{optionLabel(EXERCISE_EXPERIENCE_OPTIONS, profile.exerciseExperience)}</DetailRow>
+                  <DetailRow label="Workout Focus">{workoutFocusLabel}</DetailRow>
+                </dl>
+              </section>
+
+              <section className="user-profile__card user-profile__card--wide" aria-labelledby="limitations-title">
+                <header><span><i className="fa-solid fa-universal-access" aria-hidden="true" /></span><div><h2 id="limitations-title">Physical Limitations</h2><p>Used only to display relevant exercise considerations</p></div></header>
+                <dl>
+                  <DetailRow label="Physical Limitations">{limitationLabel}</DetailRow>
+                  {profile.physicalLimitations === 'yes' && (
+                    <DetailRow label="Areas Affected">
+                      {affectedLabels.length ? (
+                        <span className="user-profile__tags">{affectedLabels.map((area) => <em key={area}>{area}</em>)}</span>
+                      ) : 'Not specified'}
+                    </DetailRow>
+                  )}
+                </dl>
+              </section>
+            </div>
+          </>
         )}
 
         {!loading && data && editing && (
           <form className="user-profile__form" onSubmit={save}>
+            <header className="user-profile__form-header">
+              <span aria-hidden="true"><i className="fa-solid fa-user-pen" /></span>
+              <div><h2>Edit Profile</h2><p>Review your fitness details and save only the information that has changed.</p></div>
+            </header>
             <section className="user-profile__form-section">
-              <div className="user-profile__form-heading"><h2>Edit Fitness Profile</h2><p>Update only the details that have changed.</p></div>
+              <div className="user-profile__form-heading"><span>01</span><div><h2>Personal Details</h2><p>Keep your age accurate for your profile information.</p></div></div>
               <div className="user-profile__age-field">
                 <label htmlFor="user-profile-age">Age</label>
                 <input
@@ -215,17 +259,22 @@ export default function UserProfilePage() {
             </section>
 
             <section className="user-profile__form-section">
-              <div className="user-profile__form-heading"><h2>Fitness Level</h2><p>Choose the option that best describes you now.</p></div>
+              <div className="user-profile__form-heading"><span>02</span><div><h2>Fitness Level</h2><p>Choose the option that best describes you now.</p></div></div>
               <ChoiceCards options={FITNESS_LEVEL_OPTIONS} value={form.fitnessLevel} onChange={(value) => updateForm('fitnessLevel', value)} label="Fitness level" />
             </section>
 
             <section className="user-profile__form-section">
-              <div className="user-profile__form-heading"><h2>Exercise Experience</h2><p>How long have you regularly participated in exercise?</p></div>
+              <div className="user-profile__form-heading"><span>03</span><div><h2>Exercise Experience</h2><p>How long have you regularly participated in exercise?</p></div></div>
               <ChoiceCards compact options={EXERCISE_EXPERIENCE_OPTIONS} value={form.exerciseExperience} onChange={(value) => updateForm('exerciseExperience', value)} label="Exercise experience" />
             </section>
 
             <section className="user-profile__form-section">
-              <div className="user-profile__form-heading"><h2>Physical Limitations</h2><p>This is self-reported and does not represent a medical diagnosis.</p></div>
+              <div className="user-profile__form-heading"><span>04</span><div><h2>Workout Focus</h2><p>What would you like to focus on?</p></div></div>
+              <ChoiceCards options={WORKOUT_FOCUS_OPTIONS} value={form.workoutFocus} onChange={(value) => updateForm('workoutFocus', value)} label="Workout focus" />
+            </section>
+
+            <section className="user-profile__form-section">
+              <div className="user-profile__form-heading"><span>05</span><div><h2>Physical Limitations</h2><p>This is self-reported and does not represent a medical diagnosis.</p></div></div>
               <ChoiceCards compact options={LIMITATION_OPTIONS} value={form.physicalLimitations} onChange={(value) => updateForm('physicalLimitations', value)} label="Physical limitations" />
               {form.physicalLimitations === 'yes' && (
                 <div className="user-profile__areas">

@@ -203,6 +203,7 @@ def csrf_token(request):
 
 FITNESS_LEVELS = {choice for choice, _ in FitnessProfile.FitnessLevel.choices}
 EXERCISE_EXPERIENCE_OPTIONS = {choice for choice, _ in FitnessProfile.ExerciseExperience.choices}
+WORKOUT_FOCUS_OPTIONS = {choice for choice, _ in FitnessProfile.WorkoutFocus.choices}
 LIMITATION_RESPONSES = {choice for choice, _ in FitnessProfile.LimitationResponse.choices}
 AFFECTED_AREA_OPTIONS = {'knee', 'shoulder', 'wrist', 'hip', 'back', 'other'}
 
@@ -214,6 +215,7 @@ def _fitness_profile_response(user, profile=None):
     profile_data = {
         'fitnessLevel': profile.fitness_level if profile else '',
         'exerciseExperience': profile.exercise_experience if profile else '',
+        'workoutFocus': profile.workout_focus if profile else '',
         'physicalLimitations': profile.physical_limitations if profile else '',
         'affectedAreas': profile.affected_areas if profile else [],
         'onboardingCompleted': bool(profile and profile.onboarding_completed),
@@ -231,7 +233,7 @@ def _fitness_profile_response(user, profile=None):
     }
 
 
-def _validated_profile_data(data):
+def _validated_profile_data(data, profile=None):
     raw_age = data.get('age')
     if isinstance(raw_age, bool) or (isinstance(raw_age, float) and not raw_age.is_integer()):
         return None, 'Enter a valid whole-number age.'
@@ -250,6 +252,19 @@ def _validated_profile_data(data):
     if exercise_experience not in EXERCISE_EXPERIENCE_OPTIONS:
         return None, 'Select a valid exercise experience.'
 
+    workout_focus_supplied = 'workoutFocus' in data
+    workout_focus = str(data.get('workoutFocus') or '') if workout_focus_supplied else ''
+    if workout_focus_supplied and workout_focus not in WORKOUT_FOCUS_OPTIONS:
+        return None, 'Select a valid workout focus.'
+    if (
+        not workout_focus_supplied
+        and profile
+        and profile.onboarding_required
+        and not profile.onboarding_completed
+        and not profile.workout_focus
+    ):
+        return None, 'Select a workout focus to complete your fitness profile.'
+
     physical_limitations = str(data.get('physicalLimitations') or '')
     if physical_limitations not in LIMITATION_RESPONSES:
         return None, 'Select a valid physical limitations response.'
@@ -264,13 +279,16 @@ def _validated_profile_data(data):
     else:
         affected_areas = list(dict.fromkeys(affected_areas))
 
-    return {
+    values = {
         'age': age,
         'fitness_level': fitness_level,
         'exercise_experience': exercise_experience,
         'physical_limitations': physical_limitations,
         'affected_areas': affected_areas,
-    }, None
+    }
+    if workout_focus_supplied:
+        values['workout_focus'] = workout_focus
+    return values, None
 
 
 @api_view(['GET', 'PUT'])
@@ -281,7 +299,7 @@ def fitness_profile(request):
     if request.method == 'GET':
         return Response(_fitness_profile_response(request.user, profile))
 
-    values, error = _validated_profile_data(request.data or {})
+    values, error = _validated_profile_data(request.data or {}, profile)
     if error:
         return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
 

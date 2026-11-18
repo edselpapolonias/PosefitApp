@@ -7,6 +7,7 @@ import {
   EXERCISE_EXPERIENCE_OPTIONS,
   FITNESS_LEVEL_OPTIONS,
   LIMITATION_OPTIONS,
+  WORKOUT_FOCUS_OPTIONS,
 } from './fitnessProfileOptions';
 import './FitnessProfileOnboarding.css';
 
@@ -27,12 +28,13 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
     age: initialData.user?.age ?? '',
     fitnessLevel: initialData.profile?.fitnessLevel || '',
     exerciseExperience: initialData.profile?.exerciseExperience || '',
+    workoutFocus: initialData.profile?.workoutFocus || '',
     physicalLimitations: initialData.profile?.physicalLimitations || '',
     affectedAreas: initialData.profile?.affectedAreas || [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const totalSteps = answers.physicalLimitations === 'yes' ? 5 : 4;
+  const totalSteps = answers.physicalLimitations === 'yes' ? 6 : 5;
 
   useEffect(() => {
     const stopEscape = (event) => {
@@ -46,7 +48,8 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
     if (step === 0) return Number.isInteger(Number(answers.age)) && Number(answers.age) >= 1 && Number(answers.age) <= 120;
     if (step === 1) return Boolean(answers.fitnessLevel);
     if (step === 2) return Boolean(answers.exerciseExperience);
-    if (step === 3) return Boolean(answers.physicalLimitations);
+    if (step === 3) return Boolean(answers.workoutFocus);
+    if (step === 4) return Boolean(answers.physicalLimitations);
     return true;
   }, [answers, step]);
 
@@ -75,7 +78,7 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
 
   const next = () => {
     if (!canContinue || saving) return;
-    if (step === 3 && answers.physicalLimitations !== 'yes') {
+    if (step === 4 && answers.physicalLimitations !== 'yes') {
       completeSetup([]);
       return;
     }
@@ -122,6 +125,18 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
           options={EXERCISE_EXPERIENCE_OPTIONS}
           value={answers.exerciseExperience}
           onChange={(value) => setAnswer('exerciseExperience', value)}
+        />
+      ),
+    },
+    {
+      title: 'What Would You Like to Focus On?',
+      description: 'Choose the training focus you would most like PoseFit to consider when suggesting an available plan.',
+      content: (
+        <ChoiceCards
+          label="Workout focus"
+          options={WORKOUT_FOCUS_OPTIONS}
+          value={answers.workoutFocus}
+          onChange={(value) => setAnswer('workoutFocus', value)}
         />
       ),
     },
@@ -186,7 +201,7 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
         <footer className="fitness-onboarding__actions">
           {step > 0 ? <button type="button" className="is-secondary" onClick={back} disabled={saving}>Back</button> : <span />}
           <div>
-            {step === 4 && (
+            {step === 5 && (
               <button type="button" className="is-skip" onClick={() => completeSetup([])} disabled={saving}>
                 Skip this question
               </button>
@@ -194,10 +209,10 @@ function FitnessProfileOnboarding({ initialData, onComplete }) {
             <button
               type="button"
               className="is-primary"
-              onClick={step === 4 ? () => completeSetup() : next}
+              onClick={step === 5 ? () => completeSetup() : next}
               disabled={!canContinue || saving}
             >
-              {saving ? 'Saving...' : step === 4 ? 'Complete Setup' : 'Next'}
+              {saving ? 'Saving...' : step === 5 ? 'Complete Setup' : 'Next'}
             </button>
           </div>
         </footer>

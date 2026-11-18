@@ -89,6 +89,299 @@
   line-height: 1.45;
 }
 
+.workout-suggestion {
+  margin: 24px 40px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  color: #233149;
+  background: #fff;
+  border: 1px solid #e1e6ec;
+  border-radius: 14px;
+  box-shadow: 0 7px 22px rgba(27, 38, 55, .06);
+}
+
+.workout-suggestion--with-considerations {
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr);
+}
+
+.workout-suggestion__main {
+  min-width: 0;
+  padding: 24px 26px;
+}
+
+.workout-suggestion__heading {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+
+.workout-suggestion__icon,
+.workout-suggestion__status-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #f4510a;
+  font-size: 17px;
+  background: #fff1e8;
+  border-radius: 10px;
+}
+
+.workout-suggestion__eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: #f4510a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.workout-suggestion__heading h2,
+.workout-suggestion--status h2 {
+  margin: 0;
+  color: #142039;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.workout-suggestion__level {
+  padding: 7px 11px;
+  color: #f4510a;
+  font-size: 10px;
+  font-weight: 650;
+  background: #fff6f0;
+  border: 1px solid #f7d5c2;
+  border-radius: 6px;
+}
+
+.workout-suggestion__level.is-intermediate {
+  color: #1555df;
+  background: #f5f8ff;
+  border-color: #cfdbf5;
+}
+
+.workout-suggestion__reason {
+  margin: 15px 0 0;
+  color: #4e5d73;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.workout-suggestion__facts {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #e9edf1;
+  border-radius: 9px;
+}
+
+.workout-suggestion__facts > span {
+  min-width: 0;
+  min-height: 65px;
+  padding: 11px 13px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-content: center;
+  column-gap: 7px;
+}
+
+.workout-suggestion__facts > span + span {
+  border-left: 1px solid #e9edf1;
+}
+
+.workout-suggestion__facts i {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: #f4510a;
+  font-size: 15px;
+}
+
+.workout-suggestion__facts strong {
+  overflow: hidden;
+  color: #26344a;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workout-suggestion__facts small {
+  color: #798598;
+  font-size: 9px;
+}
+
+.workout-suggestion__actions,
+.workout-suggestion__status-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.workout-suggestion__actions button,
+.workout-suggestion__status-actions button {
+  min-height: 40px;
+  padding: 8px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 650;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.workout-suggestion .is-primary {
+  color: #fff;
+  background: #f4510a;
+  border: 1px solid #f4510a;
+}
+
+.workout-suggestion .is-secondary {
+  color: #46536a;
+  background: #fff;
+  border: 1px solid #d7dde5;
+}
+
+.workout-suggestion button:hover,
+.workout-suggestion button:focus-visible {
+  filter: brightness(.97);
+  outline: 2px solid rgba(244, 81, 10, .16);
+  outline-offset: 2px;
+}
+
+.workout-suggestion__considerations {
+  min-width: 0;
+  max-height: 385px;
+  padding: 22px 24px;
+  overflow-y: auto;
+  background: #fafbfc;
+  border-left: 1px solid #e5e9ee;
+}
+
+.workout-suggestion__considerations-title {
+  margin-bottom: 13px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.workout-suggestion__considerations-title > span {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: #a84616;
+  background: #fff0e6;
+  border-radius: 7px;
+}
+
+.workout-suggestion__considerations h3,
+.workout-suggestion__considerations h4 {
+  margin: 0;
+  color: #253249;
+}
+
+.workout-suggestion__considerations h3 {
+  font-size: 13px;
+}
+
+.workout-suggestion__considerations-title p {
+  margin: 2px 0 0;
+  color: #7a8596;
+  font-size: 9px;
+}
+
+.workout-suggestion__consideration {
+  padding: 11px 0;
+  border-top: 1px solid #e6e9ed;
+}
+
+.workout-suggestion__consideration h4 {
+  font-size: 11px;
+}
+
+.workout-suggestion__consideration h4 span {
+  margin-left: 5px;
+  color: #ad4a18;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.workout-suggestion__consideration p {
+  margin: 6px 0 0;
+  color: #59667a;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.workout-suggestion__notice {
+  margin: 12px 0 0;
+  padding: 10px 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #5b6677;
+  font-size: 9.5px;
+  line-height: 1.55;
+  background: #fff;
+  border: 1px solid #e4e8ec;
+  border-radius: 7px;
+}
+
+.workout-suggestion__notice i {
+  margin-top: 2px;
+  color: #f4510a;
+}
+
+.workout-suggestion--status {
+  min-height: 108px;
+  padding: 20px 24px;
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 14px;
+}
+
+.workout-suggestion--status h2 {
+  font-size: 16px;
+}
+
+.workout-suggestion--status p {
+  margin: 5px 0 0;
+  color: #68768a;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.workout-suggestion__status-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.workout-suggestion--status .workout-suggestion__status-actions {
+  margin: 0 0 0 auto;
+  flex: 0 0 auto;
+}
+
+.workout-suggestion__status-icon.is-loading i {
+  animation: workout-suggestion-spin 850ms linear infinite;
+}
+
+.workout-suggestion__status-icon.is-error {
+  color: #a33c33;
+  background: #fff1ef;
+}
+
+@keyframes workout-suggestion-spin {
+  to { transform: rotate(360deg); }
+}
+
 .workout-plan-controls {
   min-height: 82px;
   padding: 0 46px 30px;
@@ -232,7 +525,7 @@
 }
 
 .workout-plan-card__level,
-.workout-plan-card__popular {
+.workout-plan-card__recommended {
   position: absolute;
   top: 15px;
   min-height: 31px;
@@ -257,7 +550,7 @@
   border-color: rgba(102, 151, 244, 0.28);
 }
 
-.workout-plan-card__popular {
+.workout-plan-card__recommended {
   right: 15px;
   gap: 5px;
   color: #fff;
@@ -265,7 +558,7 @@
   box-shadow: 0 4px 10px rgba(255, 132, 7, 0.18);
 }
 
-.workout-plan-card__popular i {
+.workout-plan-card__recommended i {
   font-size: 9px;
 }
 
@@ -533,6 +826,16 @@
 }
 
 @media (max-width: 1020px) {
+  .workout-suggestion {
+    grid-template-columns: 1fr;
+  }
+
+  .workout-suggestion__considerations {
+    max-height: none;
+    border-top: 1px solid #e5e9ee;
+    border-left: 0;
+  }
+
   .workout-plans-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -564,6 +867,20 @@
 
   .workout-plans-hero__content h1 { font-size: 34px; }
   .workout-plans-hero__intro { max-width: 520px; font-size: 14px; }
+
+  .workout-suggestion {
+    margin: 20px;
+  }
+
+  .workout-suggestion--status {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .workout-suggestion--status .workout-suggestion__status-actions {
+    width: 100%;
+    margin-left: 58px;
+  }
 
   .workout-plan-controls {
     min-height: auto;
@@ -622,6 +939,52 @@
     min-width: 0;
     width: 165px;
     height: 46px;
+  }
+
+  .workout-suggestion {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+
+  .workout-suggestion__main,
+  .workout-suggestion__considerations,
+  .workout-suggestion--status {
+    padding: 18px;
+  }
+
+  .workout-suggestion__heading {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .workout-suggestion__heading h2 {
+    font-size: 17px;
+  }
+
+  .workout-suggestion__level {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .workout-suggestion__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .workout-suggestion__facts > span + span {
+    border-top: 1px solid #e9edf1;
+    border-left: 0;
+  }
+
+  .workout-suggestion__actions {
+    display: grid;
+  }
+
+  .workout-suggestion__actions button,
+  .workout-suggestion__status-actions button {
+    width: 100%;
+  }
+
+  .workout-suggestion--status .workout-suggestion__status-actions {
+    margin-left: 0;
   }
 
   .workout-plans-grid {

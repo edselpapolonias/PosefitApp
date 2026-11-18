@@ -23,6 +23,9 @@ export async function saveFitnessProfile(profile) {
       timeout: 10000,
     },
   );
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('posefit:fitness-profile-updated', { detail: response.data }));
+  }
   return response.data;
 }
 

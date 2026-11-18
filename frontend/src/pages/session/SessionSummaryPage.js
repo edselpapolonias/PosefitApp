@@ -512,9 +512,9 @@ export default function SessionSummaryPage() {
 
         <div className="session-summary__lower-grid">
           <section className="session-summary-card session-feedback">
-            <h2><i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />Form Feedback</h2>
+            <h2><i className="fa-solid fa-message" aria-hidden="true" />Form Feedback</h2>
             <div className="session-feedback__panel">
-              <span className="session-feedback__robot" aria-hidden="true"><i className="fa-solid fa-robot" /></span>
+              <span className="session-feedback__robot" aria-hidden="true"><i className="fa-solid fa-clipboard-check" /></span>
               <div className="session-feedback__body">
                 {feedbackLoading ? (
                   <div className="session-feedback__loading">

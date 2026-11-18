@@ -19,6 +19,7 @@ class FitnessProfileApiTests(TestCase):
             'age': 29,
             'fitnessLevel': 'intermediate',
             'exerciseExperience': '1_to_2_years',
+            'workoutFocus': 'lower_body',
             'physicalLimitations': 'yes',
             'affectedAreas': ['knee', 'back'],
         }
@@ -36,7 +37,9 @@ class FitnessProfileApiTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         profile = FitnessProfile.objects.get(user=self.user)
+        self.assertEqual(profile.workout_focus, 'lower_body')
         self.assertEqual(profile.affected_areas, ['knee', 'back'])
+        self.assertEqual(response.data['profile']['workoutFocus'], 'lower_body')
         self.assertTrue(profile.onboarding_completed)
         self.assertFalse(response.data['shouldOnboard'])
         self.user.refresh_from_db()
@@ -60,6 +63,61 @@ class FitnessProfileApiTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertFalse(FitnessProfile.objects.filter(user=self.user).exists())
+
+    def test_invalid_workout_focus_is_rejected(self):
+        response = self.client.put(
+            '/api/users/fitness-profile/',
+            {**self.payload, 'workoutFocus': 'cardio_only'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Select a valid workout focus.')
+        self.assertFalse(FitnessProfile.objects.filter(user=self.user).exists())
+
+    def test_omitted_workout_focus_retains_saved_selection(self):
+        self.client.put('/api/users/fitness-profile/', self.payload, format='json')
+        payload = {key: value for key, value in self.payload.items() if key != 'workoutFocus'}
+
+        response = self.client.put('/api/users/fitness-profile/', payload, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['workoutFocus'], 'lower_body')
+        self.assertEqual(FitnessProfile.objects.get(user=self.user).workout_focus, 'lower_body')
+
+    def test_no_preference_workout_focus_is_saved(self):
+        response = self.client.put(
+            '/api/users/fitness-profile/',
+            {**self.payload, 'workoutFocus': 'prefer_not_to_say'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['workoutFocus'], 'prefer_not_to_say')
+        self.assertEqual(FitnessProfile.objects.get(user=self.user).workout_focus, 'prefer_not_to_say')
+
+    def test_older_profile_without_workout_focus_is_supported(self):
+        FitnessProfile.objects.create(
+            user=self.user,
+            fitness_level='intermediate',
+            exercise_experience='1_to_2_years',
+            physical_limitations='no',
+            onboarding_completed=True,
+        )
+
+        response = self.client.get('/api/users/fitness-profile/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['profile']['workoutFocus'], '')
+
+    def test_required_onboarding_cannot_complete_without_workout_focus(self):
+        FitnessProfile.objects.create(user=self.user, onboarding_required=True)
+        payload = {key: value for key, value in self.payload.items() if key != 'workoutFocus'}
+
+        response = self.client.put('/api/users/fitness-profile/', payload, format='json')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], 'Select a workout focus to complete your fitness profile.')
 
     def test_request_cannot_select_another_users_profile(self):
         other_user = CustomUser.objects.create_user(username='other-profile-user', age=44)

@@ -67,6 +67,12 @@ class FitnessProfile(models.Model):
         ONE_TO_TWO_YEARS = '1_to_2_years', '1-2 years'
         MORE_THAN_TWO_YEARS = 'more_than_2_years', 'More than 2 years'
 
+    class WorkoutFocus(models.TextChoices):
+        FULL_BODY = 'full_body', 'General fitness / Full body'
+        LOWER_BODY = 'lower_body', 'Lower body / Legs and glutes'
+        CORE_UPPER_BODY = 'core_upper_body', 'Core and upper body'
+        PREFER_NOT_TO_SAY = 'prefer_not_to_say', 'No preference / Prefer not to say'
+
     class LimitationResponse(models.TextChoices):
         YES = 'yes', 'Yes'
         NO = 'no', 'No'
@@ -86,6 +92,12 @@ class FitnessProfile(models.Model):
     exercise_experience = models.CharField(
         max_length=24,
         choices=ExerciseExperience.choices,
+        blank=True,
+        default='',
+    )
+    workout_focus = models.CharField(
+        max_length=20,
+        choices=WorkoutFocus.choices,
         blank=True,
         default='',
     )

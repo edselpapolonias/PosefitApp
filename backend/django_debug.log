@@ -683,3 +683,52 @@
 [2026-11-03T22:08:37.178349] Login attempt: username=admin
 [2026-11-03T22:08:37.901138] Authentication result for admin: SUCCESS
 [2026-11-03T22:08:38.177383] Login session started for admin
+[2026-11-07T21:43:31.078107] Login attempt: username=admin
+[2026-11-07T21:43:32.141183] Authentication result for admin: FAILED
+[2026-11-07T21:43:36.109249] Login attempt: username=admin
+[2026-11-07T21:43:37.146473] Authentication result for admin: FAILED
+[2026-11-07T21:43:42.158792] Login attempt: username=admin
+[2026-11-07T21:43:43.202097] Authentication result for admin: SUCCESS
+[2026-11-07T21:43:43.643541] Login session started for admin
+[2026-11-07T22:10:41.874239] Login attempt: username=admin
+[2026-11-07T22:10:43.101303] Authentication result for admin: SUCCESS
+[2026-11-07T22:10:43.251384] Login session started for admin
+[2026-11-18T19:39:52.845325] Login attempt: username=admin
+[2026-11-18T19:39:54.733240] Authentication result for admin: SUCCESS
+[2026-11-18T19:39:55.110969] Login session started for admin
+[2026-11-18T20:53:26.215089] Register attempt: username=new-user, first_name=New, last_name=User, age=21
+[2026-11-18T20:53:28.101706] Register success: Created user new-user
+[2026-11-18T20:53:28.132878] Register attempt: username=decimal-age-user, first_name=Decimal, last_name=Age, age=21.5
+[2026-11-18T20:53:28.145881] Register attempt: username=invalid-age-user, first_name=Invalid, last_name=Age, age=121
+[2026-11-18T20:57:14.989341] Login attempt: username=dashboard-user
+[2026-11-18T20:57:17.127514] Authentication result for dashboard-user: SUCCESS
+[2026-11-18T20:57:17.146860] Login session started for dashboard-user
+[2026-11-18T20:57:17.164223] Login attempt: username=dashboard-user
+[2026-11-18T20:57:19.383674] Authentication result for dashboard-user: SUCCESS
+[2026-11-18T20:57:19.398759] Login session started for dashboard-user
+[2026-11-18T20:57:45.012739] Register attempt: username=new-user, first_name=New, last_name=User, age=21
+[2026-11-18T20:57:47.036765] Register success: Created user new-user
+[2026-11-18T20:57:47.074957] Register attempt: username=decimal-age-user, first_name=Decimal, last_name=Age, age=21.5
+[2026-11-18T20:57:47.090915] Register attempt: username=invalid-age-user, first_name=Invalid, last_name=Age, age=121
+[2026-11-18T20:58:49.064528] Login attempt: username=progress-user
+[2026-11-18T20:58:50.860138] Authentication result for progress-user: SUCCESS
+[2026-11-18T20:58:50.870832] Login session started for progress-user
+[2026-11-18T20:58:54.517683] Login attempt: username=progress-user
+[2026-11-18T20:58:56.316093] Authentication result for progress-user: SUCCESS
+[2026-11-18T20:58:56.331822] Login session started for progress-user
+[2026-11-18T21:01:23.772460] Register attempt: username=eds, first_name=Juan, last_name=Dela Cruz, age=22
+[2026-11-18T21:01:31.584413] Register attempt: username=eds, first_name=Juan, last_name=Dela Cruz, age=22
+[2026-11-18T21:02:43.727069] Register attempt: username=posefit-registration-check, first_name=Registration, last_name=Check, age=24
+[2026-11-18T21:02:44.939314] Register success: Created user posefit-registration-check
+[2026-11-18T21:03:35.295796] Register attempt: username=eds, first_name=Juan, last_name=Dela Cruz, age=22
+[2026-11-18T21:03:36.380899] Register success: Created user eds
+[2026-11-18T21:03:42.486311] Login attempt: username=eds
+[2026-11-18T21:03:43.603660] Authentication result for eds: SUCCESS
+[2026-11-18T21:03:43.635117] Login session started for eds
+[2026-11-18T21:09:31.659684] Register attempt: username=new-user, first_name=New, last_name=User, age=21
+[2026-11-18T21:09:32.901113] Register success: Created user new-user
+[2026-11-18T21:09:32.927445] Register attempt: username=decimal-age-user, first_name=Decimal, last_name=Age, age=21.5
+[2026-11-18T21:09:32.938015] Register attempt: username=invalid-age-user, first_name=Invalid, last_name=Age, age=121
+[2026-11-18T21:17:56.087154] Login attempt: username=admin
+[2026-11-18T21:17:56.960603] Authentication result for admin: SUCCESS
+[2026-11-18T21:17:56.980554] Login session started for admin
