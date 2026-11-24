@@ -52,6 +52,7 @@ export default function ExerciseConnectionNotice() {
       const target = event.target instanceof Element ? event.target : null;
       const startButton = target?.closest(START_BUTTON_SELECTOR);
       if (!startButton || !isExerciseSession()) return;
+      if (startButton.dataset.readinessCheck === 'true') return;
 
       startAttemptedRef.current = true;
       triggerRef.current = startButton;

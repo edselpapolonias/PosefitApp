@@ -2,12 +2,25 @@ import json
 import os
 import re
 import socket
+import time
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
 AI_FEEDBACK_UNAVAILABLE_MESSAGE = 'AI Coach Feedback is currently unavailable. Your workout statistics are still available for review.'
 DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'
+DEFAULT_GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash-lite'
 GEMINI_ENDPOINT_TEMPLATE = 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
+GEMINI_REQUEST_TIMEOUT_SECONDS = 15
+GEMINI_RETRY_DELAYS_SECONDS = (0.75,)
+GEMINI_RETRYABLE_ERROR_TYPES = {
+    'provider_error',
+    'rate_limited',
+    'request_timeout',
+    'timeout',
+    'connection_reset',
+    'parse_error',
+    'invalid_response',
+}
 
 
 class GeminiConfigError(RuntimeError):
@@ -349,13 +362,54 @@ def _normalize_feedback(feedback, _payload):
     return result
 
 
-def generate_exercise_coach_feedback(data):
+def build_detector_fallback_feedback(data):
+    """Return useful, factual feedback when the optional AI provider is unavailable."""
     payload = normalize_exercise_request(data)
-    api_key = os.getenv('GEMINI_API_KEY')
-    if not api_key:
-        raise GeminiConfigError('GEMINI_API_KEY is not configured.', error_type='missing_api_key')
+    exercise = payload['exercise'].replace('-', ' ').title()
+    summary = payload['summary']
+    accuracy = summary['accuracy']
+    sets_completed = summary['setsCompleted']
+    parts = []
 
-    model = os.getenv('GEMINI_MODEL', DEFAULT_GEMINI_MODEL)
+    if summary['metricType'] == 'time':
+        total_hold_time = summary['totalHoldTime']
+        if total_hold_time > 0:
+            parts.append(
+                f'You recorded {total_hold_time} seconds of valid hold time in this {exercise} session '
+                f'with {accuracy}% form accuracy.'
+            )
+        else:
+            parts.append(f'Your {exercise} session was recorded with {accuracy}% form accuracy.')
+    elif summary['totalAttempts'] > 0:
+        parts.append(
+            f'You completed {summary["totalAttempts"]} attempts in this {exercise} session, '
+            f'including {summary["correctReps"]} correct repetitions, with {accuracy}% form accuracy.'
+        )
+    else:
+        parts.append(f'Your {exercise} session was recorded with {accuracy}% form accuracy.')
+
+    if sets_completed > 0:
+        parts.append(f'You completed {sets_completed} {"set" if sets_completed == 1 else "sets"}.')
+
+    issues = summary.get('formIssues') or []
+    if issues:
+        primary = issues[0]
+        count = primary['count']
+        parts.append(
+            f'Your main detected form issue was {primary["label"]}, recorded '
+            f'{count} {"time" if count == 1 else "times"}. Review the guidance below and use controlled movement in your next session.'
+        )
+    else:
+        parts.append('No significant form issues were recorded. Continue using controlled movement and consistent technique.')
+
+    return {
+        'feedbackParagraph': _shorten_feedback_text(' '.join(parts)),
+        'issueFeedback': [],
+        'source': 'detector_fallback',
+    }
+
+
+def _request_gemini_feedback(payload, api_key, model):
     request_body = _build_request_body(payload)
     req = urlrequest.Request(
         url=GEMINI_ENDPOINT_TEMPLATE.format(model=model, api_key=api_key),
@@ -365,7 +419,7 @@ def generate_exercise_coach_feedback(data):
     )
 
     try:
-        with urlrequest.urlopen(req, timeout=30) as response:
+        with urlrequest.urlopen(req, timeout=GEMINI_REQUEST_TIMEOUT_SECONDS) as response:
             raw = response.read().decode('utf-8')
     except urlerror.HTTPError as exc:
         error_body = exc.read().decode('utf-8', errors='replace') if exc.fp else ''
@@ -381,6 +435,40 @@ def generate_exercise_coach_feedback(data):
     try:
         response_data = json.loads(raw)
         feedback_text = _extract_feedback_text(response_data)
-        return _normalize_feedback(json.loads(_strip_code_fences(feedback_text)), payload)
+        feedback = _normalize_feedback(json.loads(_strip_code_fences(feedback_text)), payload)
+        feedback['source'] = 'gemini'
+        feedback['model'] = model
+        return feedback
     except (json.JSONDecodeError, KeyError, IndexError, TypeError, ValueError) as exc:
         raise GeminiServiceError(f'Failed to parse Gemini response: {exc}', error_type='parse_error') from exc
+
+
+def _gemini_models():
+    primary = os.getenv('GEMINI_MODEL', DEFAULT_GEMINI_MODEL).strip() or DEFAULT_GEMINI_MODEL
+    fallback = os.getenv('GEMINI_FALLBACK_MODEL', DEFAULT_GEMINI_FALLBACK_MODEL).strip()
+    return [model for model in dict.fromkeys([primary, fallback]) if model]
+
+
+def generate_exercise_coach_feedback(data):
+    payload = normalize_exercise_request(data)
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise GeminiConfigError('GEMINI_API_KEY is not configured.', error_type='missing_api_key')
+
+    models = _gemini_models()
+    last_error = None
+    for model_index, model in enumerate(models):
+        attempts = len(GEMINI_RETRY_DELAYS_SECONDS) + 1 if model_index == 0 else 1
+        for attempt in range(attempts):
+            try:
+                return _request_gemini_feedback(payload, api_key, model)
+            except GeminiServiceError as exc:
+                last_error = exc
+                if exc.error_type not in GEMINI_RETRYABLE_ERROR_TYPES:
+                    raise
+                if attempt + 1 < attempts:
+                    time.sleep(GEMINI_RETRY_DELAYS_SECONDS[attempt])
+
+    if last_error:
+        raise last_error
+    raise GeminiServiceError('No Gemini model is configured.', error_type='config_error')

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -20,6 +20,8 @@ import './LungeCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
 import useCameraInactivity from '../../../hooks/useCameraInactivity';
+import ExerciseReadinessButton, { describeExerciseStartError } from '../../../components/ExerciseReadinessCheck';
+import { sendPoseFrameSafely } from '../../../utils/poseFrame';
 
 function readConfig() {
   try { return JSON.parse(sessionStorage.getItem('posefitLungeWorkoutConfig')) || {}; } catch { return {}; }
@@ -134,8 +136,16 @@ export default function LungeCameraPage() {
     clearInterval(timerRef.current);
     clearInterval(restRef.current);
     clearTimeout(completionRef.current);
-    if (cameraRef.current) { cameraRef.current.stop(); cameraRef.current = null; }
-    if (poseRef.current) { poseRef.current.close(); poseRef.current = null; }
+    if (cameraRef.current) {
+      const camera = cameraRef.current;
+      cameraRef.current = null;
+      try { camera.stop(); } catch { /* Camera is already stopped. */ }
+    }
+    if (poseRef.current) {
+      const pose = poseRef.current;
+      poseRef.current = null;
+      try { Promise.resolve(pose.close()).catch(() => {}); } catch { /* Pose is already closed. */ }
+    }
     window.speechSynthesis.cancel();
     clearCanvas();
   }, [clearCanvas]);
@@ -302,7 +312,7 @@ export default function LungeCameraPage() {
     reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
+    if (!canvas || !context || !results?.image) return;
     canvas.width = results.image.width; canvas.height = results.image.height;
     context.clearRect(0, 0, canvas.width, canvas.height); context.drawImage(results.image, 0, 0, canvas.width, canvas.height);
     const readiness = validateLungePosition(results.poseLandmarks);
@@ -352,13 +362,26 @@ export default function LungeCameraPage() {
       const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
       pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
       pose.onResults(onResults); poseRef.current = pose;
-      const camera = new Camera(videoRef.current, { onFrame: async () => { if (poseRef.current && mountedRef.current && !pausedRef.current) await poseRef.current.send({ image: videoRef.current }); }, width: 640, height: 480 });
+      const camera = new Camera(videoRef.current, {
+        onFrame: async () => sendPoseFrameSafely({
+          pose: poseRef.current,
+          video: videoRef.current,
+          isActive: () => mountedRef.current && !pausedRef.current,
+          onActiveError: (frameError) => {
+            stopResources();
+            setStarted(false);
+            setCameraError(describeExerciseStartError(frameError));
+          },
+        }),
+        width: 640,
+        height: 480,
+      });
       cameraRef.current = camera; await camera.start(); setStarted(true);
-    } catch { stopResources(); setCameraError('Could not access the camera. Allow camera permission and try again.'); }
+    } catch (error) { stopResources(); setCameraError(describeExerciseStartError(error)); }
     finally { setLoading(false); }
   }, [onResults, resetCycle, stopResources]);
 
-  useEffect(() => () => stopResources(), [stopResources]);
+  useLayoutEffect(() => () => stopResources(), [stopResources]);
 
   if (!hasConfig) return <div className="camera-session camera-session--lunge camera-session--configuration-error"><header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate('/exercises/lunge')}><i className="fa-solid fa-arrow-left" />Back to configuration</button><div className="camera-session__brand">POSE<span>FIT</span></div></header><main className="camera-configuration-error"><span className="camera-configuration-error__icon"><i className="fa-solid fa-sliders" /></span><h1>Workout configuration required</h1><p>Choose your reps, sets, and rest time before starting.</p><button type="button" onClick={() => navigate('/exercises/lunge')}>Configure Lunge</button></main></div>;
 
@@ -372,9 +395,13 @@ export default function LungeCameraPage() {
     ? Math.min(perLegReps.left, targetReps) + Math.min(perLegReps.right, targetReps)
     : setCompletedReps;
   const backPath = workoutContext?.detailsRoute || '/exercises/lunge';
+  const handleBack = () => {
+    stopResources();
+    navigate(backPath);
+  };
   return (
     <div className="camera-session camera-session--lunge">
-      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={() => navigate(backPath)}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person-walking" /></span><span><h1>Lunge</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps{requiresPerLeg ? ' each leg' : ''}</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
+      <header className="camera-session__header"><button className="camera-session__back" type="button" onClick={handleBack}><i className="fa-solid fa-arrow-left" />Back</button><div className="camera-session__title"><span className="camera-session__exercise-icon"><i className="fa-solid fa-person-walking" /></span><span><h1>Lunge</h1><small>{workoutContext ? `${workoutContext.planName} · Week ${workoutContext.week} · Round ${workoutContext.currentRound} · ` : ''}Set {displayedSet} of {displayedTotalSets} · {targetReps} reps{requiresPerLeg ? ' each leg' : ''}</small></span></div><span className={`camera-session__status camera-session__status--${tone}`}><span />{status}</span><div className="camera-session__actions">{started && <button className={`camera-session__voice${muted ? ' camera-session__voice--muted' : ''}`} type="button" onClick={() => setMuted((old) => { mutedRef.current = !old; if (!old) window.speechSynthesis.cancel(); return !old; })}><i className={`fa-solid ${muted ? 'fa-volume-xmark' : 'fa-volume-high'}`} /><span>{muted ? 'Muted' : 'Voice on'}</span></button>}<div className="camera-session__timer"><i className="fa-regular fa-clock" />{formatTime(sessionTime)}</div></div></header>
       <main className="camera-session__workspace" style={styles.workspace}>
         <aside className="camera-session__progress" style={styles.panel}>
           <Metric label="SET" value={displayedSet} detail={`OF ${displayedTotalSets}`} primary />
@@ -394,7 +421,7 @@ export default function LungeCameraPage() {
           {complete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {started && !resting && !complete && position !== 'ready' && <div className="camera-session__readiness"><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}
           {started && position === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}
-          {!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person-walking" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Lunges?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps{requiresPerLeg ? ' each leg' : ''}</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Stand sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text={requiresPerLeg ? `Complete ${targetReps} valid reps on each leg` : 'Step forward with either leg'} /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
+          {!started && <div className="camera-session__prestart" style={styles.prestart}>{loading ? <div><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person-walking" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Lunges?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps{requiresPerLeg ? ' each leg' : ''}</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Stand sideways to the camera" /><Guide icon="fa-person" text="Keep your full body visible" /><Guide icon="fa-shoe-prints" text={requiresPerLeg ? `Complete ${targetReps} valid reps on each leg` : 'Step forward with either leg'} /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<ExerciseReadinessButton videoRef={videoRef} exerciseName="Lunge" onReady={startCamera} /></div>}</div>}
         </section>
         <aside className="camera-session__insights" style={styles.panel}><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>LIVE FEEDBACK</p>{started ? <div className="camera-session__feedback" style={{ ...styles.feedback, color: color.hex, borderColor: color.hex, background: `${color.hex}12` }}><strong>{feedback}</strong><small>{feedbackDetail}</small></div> : <p style={styles.inactive}>Start session to see feedback</p>}</div><div className="camera-session__insight-card" style={styles.card}><p style={styles.label}>LUNGE DEPTH</p><Row label="Working leg" value={frontLeg} /><Row label="Front knee" value={position === 'ready' ? `${kneeAngle}°` : '—'} /><Row label="Target" value="~90°" /></div><div className="camera-session__insight-card camera-session__legend" style={styles.card}><p style={styles.label}>MOVEMENT</p><Row label="Phase" value={phase} /><Row label="Accepted depth" value={`${LUNGE_DEPTH.goodMin}°–${LUNGE_DEPTH.goodMax}°`} /></div>{started && <button className="camera-session__end-button" type="button" onClick={() => finish('ended')}><i className="fa-solid fa-stop" />End Session</button>}</aside>
       </main>

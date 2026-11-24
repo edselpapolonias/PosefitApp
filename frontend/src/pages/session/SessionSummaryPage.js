@@ -16,26 +16,7 @@ import {
   recordWorkoutSetResult,
   workoutProgress,
 } from '../../services/workoutDaySessionService';
-import squatImage from '@bryllim/workout-guide/assets/bodyweight-squat/frame-2.png';
-import pushUpImage from '@bryllim/workout-guide/assets/push-up/frame-2.png';
-import plankImage from '@bryllim/workout-guide/assets/plank/frame-2.png';
-import lungeImage from '@bryllim/workout-guide/assets/forward-lunge/frame-2.png';
-import sitUpImage from '@bryllim/workout-guide/assets/decline-sit-up/frame-2.png';
-import legRaiseImage from '@bryllim/workout-guide/assets/lying-leg-raise/frame-2.png';
 import './SessionSummaryPage.css';
-
-const exerciseImages = {
-  squat: squatImage,
-  'push-up': pushUpImage,
-  pushup: pushUpImage,
-  plank: plankImage,
-  lunge: lungeImage,
-  'leg-raise': legRaiseImage,
-  legraise: legRaiseImage,
-  // Retained only so existing saved Sit-up sessions keep their historical illustration.
-  'sit-up': sitUpImage,
-  situp: sitUpImage,
-};
 
 function resolveSessionResult(incomingResult) {
   const storedResult = readLatestSessionResult();
@@ -305,7 +286,6 @@ export default function SessionSummaryPage() {
   const workoutContext = sessionResult.workoutContext;
   const exerciseId = sessionResult.exercise.id;
   const exerciseName = sessionResult.exercise.name;
-  const exerciseImage = exerciseImages[exerciseId] || squatImage;
   const userName = getStoredUserName();
   const completed = sessionResult.status === 'completed';
   const completedAt = formatCompletedDate(sessionResult.completedAt);
@@ -428,12 +408,6 @@ export default function SessionSummaryPage() {
         )}
 
         <section className="session-summary__top">
-          <div className="session-summary__exercise-column">
-            <div className="session-summary__exercise-image">
-              <img src={exerciseImage} alt={`${exerciseName} exercise`} />
-            </div>
-          </div>
-
           <section className="session-summary-card session-overview">
             <h2>Performance Overview</h2>
             <div className="session-overview__metrics">
@@ -578,14 +552,6 @@ export default function SessionSummaryPage() {
           <i className="fa-solid fa-arrow-right" aria-hidden="true" />
         </button>}
 
-        <p className="session-summary__artwork-credit">
-          Exercise artwork by{' '}
-          <a href="https://bryllim.com" target="_blank" rel="noreferrer">Bryl Lim</a>
-          {' '}and{' '}
-          <a href="https://github.com/everkinetic/data" target="_blank" rel="noreferrer">Everkinetic</a>,
-          {' '}licensed under{' '}
-          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
-        </p>
       </main>
     </div>
   );

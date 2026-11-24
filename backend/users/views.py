@@ -28,6 +28,7 @@ from .coach_feedback_service import (
     AI_FEEDBACK_UNAVAILABLE_MESSAGE,
     GeminiConfigError,
     GeminiServiceError,
+    build_detector_fallback_feedback,
     generate_exercise_coach_feedback,
 )
 import datetime
@@ -431,10 +432,11 @@ def _generate_feedback_response(data):
         return Response({'feedback': feedback}, status=status.HTTP_200_OK)
     except (GeminiConfigError, GeminiServiceError) as exc:
         log_debug(f"Gemini coach feedback failed [{getattr(exc, 'error_type', 'unknown')}]: {exc}")
-        return Response(
-            {'error': AI_FEEDBACK_UNAVAILABLE_MESSAGE},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
+        fallback = build_detector_fallback_feedback(data)
+        return Response({
+            'feedback': fallback,
+            'notice': AI_FEEDBACK_UNAVAILABLE_MESSAGE,
+        }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

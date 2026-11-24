@@ -732,3 +732,46 @@
 [2026-11-18T21:17:56.087154] Login attempt: username=admin
 [2026-11-18T21:17:56.960603] Authentication result for admin: SUCCESS
 [2026-11-18T21:17:56.980554] Login session started for admin
+[2026-11-22T21:43:18.778261] Login attempt: username=admin
+[2026-11-22T21:43:20.965977] Authentication result for admin: FAILED
+[2026-11-22T21:43:26.120430] Login attempt: username=admin
+[2026-11-22T21:43:27.938757] Authentication result for admin: SUCCESS
+[2026-11-22T21:43:28.294111] Login session started for admin
+[2026-11-22T21:58:52.790603] Login attempt: username=admin
+[2026-11-22T21:58:53.977458] Authentication result for admin: SUCCESS
+[2026-11-22T21:58:54.015703] Login session started for admin
+[2026-11-23T21:20:31.048939] Login attempt: username=admin
+[2026-11-23T21:20:32.533247] Authentication result for admin: SUCCESS
+[2026-11-23T21:20:32.762103] Login session started for admin
+[2026-11-24T21:08:03.706087] Login attempt: username=admin
+[2026-11-24T21:08:04.598954] Authentication result for admin: SUCCESS
+[2026-11-24T21:08:04.805663] Login session started for admin
+[2026-11-24T21:18:52.668455] Login attempt: username=admin
+[2026-11-24T21:18:53.621753] Authentication result for admin: SUCCESS
+[2026-11-24T21:18:53.653616] Login session started for admin
+[2026-11-24T21:30:41.080412] Gemini coach feedback failed [provider_error]: Gemini request failed with HTTP 503: {
+  "error": {
+    "code": 503,
+    "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+    "status": "UNAVAILABLE"
+  }
+}
+
+[2026-11-24T21:35:40.364958] Gemini coach feedback failed [provider_error]: provider busy
+[2026-11-24T21:36:24.913315] Login attempt: username=dashboard-user
+[2026-11-24T21:36:26.174795] Authentication result for dashboard-user: SUCCESS
+[2026-11-24T21:36:26.191613] Login session started for dashboard-user
+[2026-11-24T21:36:26.205006] Login attempt: username=dashboard-user
+[2026-11-24T21:36:27.439273] Authentication result for dashboard-user: SUCCESS
+[2026-11-24T21:36:27.444098] Login session started for dashboard-user
+[2026-11-24T21:36:42.744475] Register attempt: username=new-user, first_name=New, last_name=User, age=21
+[2026-11-24T21:36:43.792005] Register success: Created user new-user
+[2026-11-24T21:36:43.815721] Register attempt: username=decimal-age-user, first_name=Decimal, last_name=Age, age=21.5
+[2026-11-24T21:36:43.825531] Register attempt: username=invalid-age-user, first_name=Invalid, last_name=Age, age=121
+[2026-11-24T21:37:17.505793] Login attempt: username=progress-user
+[2026-11-24T21:37:18.643707] Authentication result for progress-user: SUCCESS
+[2026-11-24T21:37:18.654786] Login session started for progress-user
+[2026-11-24T21:37:20.972469] Login attempt: username=progress-user
+[2026-11-24T21:37:22.162093] Authentication result for progress-user: SUCCESS
+[2026-11-24T21:37:22.171933] Login session started for progress-user
+[2026-11-24T21:37:22.209236] Gemini coach feedback failed [provider_error]: provider busy

@@ -25,6 +25,14 @@ beforeEach(() => {
     formIssues: { 'Not deep enough': 4, 'Uneven leg movement': 2, 'Hold for one second.': 1 } };
 });
 
+test('expands Performance Overview after removing the exercise image area', () => {
+  mockSession = { ...mockSession, accuracy: 84, correctReps: 8, incorrectReps: 2, status: 'completed' };
+  const { container } = render(<SessionSummaryPage />);
+  const overview = screen.getByRole('heading', { name: 'Performance Overview' }).closest('section');
+  expect(overview.parentElement).toHaveClass('session-summary__top');
+  expect(container.querySelector('.session-summary__exercise-column')).not.toBeInTheDocument();
+});
+
 test('shows every issue once even when AI omits it or adds an unknown ID', () => {
   mockSession.feedback.issueFeedback = [{ issueId: 'invented', advice: 'Invented problem' }];
   render(<SessionSummaryPage />);

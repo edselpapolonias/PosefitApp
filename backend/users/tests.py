@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone as django_timezone
@@ -7,7 +8,11 @@ from rest_framework.test import APIClient
 
 from .coach_feedback_service import (
     _build_request_body,
+    _gemini_models,
     _normalize_feedback,
+    build_detector_fallback_feedback,
+    generate_exercise_coach_feedback,
+    GeminiServiceError,
     normalize_exercise_request,
 )
 from .session_progress_service import build_progress_comparison
@@ -89,6 +94,73 @@ class WorkoutPlanDaySessionApiTests(TestCase):
 
 
 class CoachFeedbackServiceTests(SimpleTestCase):
+    def test_detector_fallback_returns_session_specific_rep_feedback(self):
+        feedback = build_detector_fallback_feedback({
+            'exercise': 'squat',
+            'summary': {
+                'correctReps': 8,
+                'incorrectReps': 2,
+                'totalAttempts': 10,
+                'setsCompleted': 1,
+                'accuracy': 80,
+                'formIssues': [
+                    {'issueId': 'squat:insufficient-depth', 'label': 'Incomplete Squat Depth', 'count': 2},
+                ],
+            },
+        })
+
+        self.assertEqual(feedback['source'], 'detector_fallback')
+        self.assertIn('8 correct repetitions', feedback['feedbackParagraph'])
+        self.assertIn('Incomplete Squat Depth', feedback['feedbackParagraph'])
+
+    @patch('users.coach_feedback_service.time.sleep')
+    @patch('users.coach_feedback_service._request_gemini_feedback')
+    @patch.dict('os.environ', {
+        'GEMINI_API_KEY': 'test-key',
+        'GEMINI_MODEL': 'primary-model',
+        'GEMINI_FALLBACK_MODEL': 'fallback-model',
+    })
+    def test_transient_provider_errors_retry_then_use_fallback_model(self, request_feedback, sleep):
+        request_feedback.side_effect = [
+            GeminiServiceError('busy', error_type='provider_error'),
+            GeminiServiceError('still busy', error_type='provider_error'),
+            {'feedbackParagraph': 'Fallback model succeeded.', 'source': 'gemini'},
+        ]
+
+        feedback = generate_exercise_coach_feedback({'exercise': 'squat'})
+
+        self.assertEqual(feedback['feedbackParagraph'], 'Fallback model succeeded.')
+        self.assertEqual([call.args[2] for call in request_feedback.call_args_list], [
+            'primary-model', 'primary-model', 'fallback-model',
+        ])
+        sleep.assert_called_once()
+
+    @patch.dict('os.environ', {
+        'GEMINI_MODEL': 'same-model',
+        'GEMINI_FALLBACK_MODEL': 'same-model',
+    })
+    def test_duplicate_fallback_model_is_removed(self):
+        self.assertEqual(_gemini_models(), ['same-model'])
+
+    @patch(
+        'users.views.generate_exercise_coach_feedback',
+        side_effect=GeminiServiceError('provider busy', error_type='provider_error'),
+    )
+    def test_feedback_endpoint_returns_detector_fallback_when_gemini_fails(self, _generate):
+        response = APIClient().post('/api/users/exercise-coach-feedback/', {
+            'exercise': 'push-up',
+            'summary': {
+                'correctReps': 5,
+                'incorrectReps': 1,
+                'totalAttempts': 6,
+                'accuracy': 83,
+            },
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['feedback']['source'], 'detector_fallback')
+        self.assertIn('5 correct repetitions', response.data['feedback']['feedbackParagraph'])
+
     def test_all_structured_issues_reach_gemini_and_unknown_response_ids_are_removed(self):
         issues = [
             {'issueId': 'squat:insufficient-depth', 'label': 'Incomplete Squat Depth', 'count': 6},

@@ -45,6 +45,17 @@ test('does not interfere with an exercise start while online', () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
+test('leaves readiness-managed starts to the shared readiness check while offline', () => {
+  const start = jest.fn();
+  setOnline(false);
+  render(<><ExerciseConnectionNotice /><button className="camera-session__start-button" data-readiness-check="true" onClick={start}>Start Session</button></>);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Start Session' }));
+
+  expect(start).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
 test('retry starts the original session after the connection returns', () => {
   jest.useFakeTimers();
   const start = jest.fn();

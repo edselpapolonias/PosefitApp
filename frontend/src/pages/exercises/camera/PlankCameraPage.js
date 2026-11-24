@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -21,6 +21,8 @@ import './PlankCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
 import useCameraInactivity from '../../../hooks/useCameraInactivity';
+import ExerciseReadinessButton, { describeExerciseStartError } from '../../../components/ExerciseReadinessCheck';
+import { sendPoseFrameSafely } from '../../../utils/poseFrame';
 
 function readStoredWorkoutConfig() {
   try {
@@ -123,6 +125,30 @@ export default function PlankCameraPage() {
     if (canvas && context) context.clearRect(0, 0, canvas.width, canvas.height);
   }, []);
 
+  const stopResources = useCallback(() => {
+    isMountedRef.current = false;
+    processingPausedRef.current = true;
+    isRestingRef.current = false;
+    clearInterval(sessionTimerRef.current);
+    clearInterval(restTimerRef.current);
+    clearTimeout(completionTimeoutRef.current);
+    sessionTimerRef.current = null;
+    restTimerRef.current = null;
+    completionTimeoutRef.current = null;
+    if (cameraRef.current) {
+      const camera = cameraRef.current;
+      cameraRef.current = null;
+      try { camera.stop(); } catch { /* Camera is already stopped. */ }
+    }
+    if (poseRef.current) {
+      const pose = poseRef.current;
+      poseRef.current = null;
+      try { Promise.resolve(pose.close()).catch(() => {}); } catch { /* Pose is already closed. */ }
+    }
+    window.speechSynthesis.cancel();
+    clearCanvas();
+  }, [clearCanvas]);
+
   const resetSetTracking = useCallback(() => {
     currentValidMsRef.current = 0;
     currentEvaluatedMsRef.current = 0;
@@ -153,26 +179,7 @@ export default function PlankCameraPage() {
   const finishSession = useCallback((status = 'ended') => {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
-    isMountedRef.current = false;
-    processingPausedRef.current = true;
-    isRestingRef.current = false;
-    clearInterval(sessionTimerRef.current);
-    clearInterval(restTimerRef.current);
-    clearTimeout(completionTimeoutRef.current);
-    sessionTimerRef.current = null;
-    restTimerRef.current = null;
-    completionTimeoutRef.current = null;
-    clearCanvas();
-
-    if (cameraRef.current) {
-      cameraRef.current.stop();
-      cameraRef.current = null;
-    }
-    if (poseRef.current) {
-      poseRef.current.close();
-      poseRef.current = null;
-    }
-    window.speechSynthesis.cancel();
+    stopResources();
 
     const currentSetAlreadySaved = setResultsRef.current.some((result) => result.setNum === currentSetRef.current);
     if (
@@ -221,29 +228,15 @@ export default function PlankCameraPage() {
     }));
 
     navigate('/session-summary', { replace: true, state: { sessionResult } });
-  }, [clearCanvas, holdTimeSetting, navigate, restTimeSetting, sessionTime, totalSets, workoutContext]);
+  }, [holdTimeSetting, navigate, restTimeSetting, sessionTime, stopResources, totalSets, workoutContext]);
 
   const cancelForInactivity = useCallback(() => {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
-    isMountedRef.current = false;
-    processingPausedRef.current = true;
-    isRestingRef.current = false;
-    clearInterval(sessionTimerRef.current);
-    clearInterval(restTimerRef.current);
-    clearTimeout(completionTimeoutRef.current);
-    sessionTimerRef.current = null;
-    restTimerRef.current = null;
-    completionTimeoutRef.current = null;
-    cameraRef.current?.stop();
-    cameraRef.current = null;
-    poseRef.current?.close();
-    poseRef.current = null;
-    window.speechSynthesis.cancel();
-    clearCanvas();
+    stopResources();
     setIsResting(false);
     setIsStarted(false);
-  }, [clearCanvas]);
+  }, [stopResources]);
 
   const {
     isWarningVisible: inactivityWarningVisible,
@@ -389,7 +382,7 @@ export default function PlankCameraPage() {
 
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
+    if (!canvas || !context || !results?.image) return;
     canvas.width = results.image.width;
     canvas.height = results.image.height;
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -525,46 +518,34 @@ export default function PlankCameraPage() {
       poseRef.current = pose;
 
       const camera = new Camera(videoRef.current, {
-        onFrame: async () => {
-          if (poseRef.current && videoRef.current && isMountedRef.current && !processingPausedRef.current) {
-            await poseRef.current.send({ image: videoRef.current });
-          }
-        },
+        onFrame: async () => sendPoseFrameSafely({
+          pose: poseRef.current,
+          video: videoRef.current,
+          isActive: () => isMountedRef.current && !processingPausedRef.current,
+          onActiveError: (frameError) => {
+            stopResources();
+            setIsStarted(false);
+            setCameraError(describeExerciseStartError(frameError));
+          },
+        }),
         width: 640,
         height: 480,
       });
       cameraRef.current = camera;
       await camera.start();
+      if (!isMountedRef.current || cameraRef.current !== camera) return;
       setIsStarted(true);
-    } catch {
-      isMountedRef.current = false;
-      processingPausedRef.current = true;
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-        cameraRef.current = null;
-      }
-      if (poseRef.current) {
-        poseRef.current.close();
-        poseRef.current = null;
-      }
-      setCameraError('Could not access the camera. Allow camera permission and try again.');
+    } catch (error) {
+      stopResources();
+      setCameraError(describeExerciseStartError(error));
     } finally {
       setIsLoading(false);
     }
-  }, [clearCanvas, onResults, resetSetTracking]);
+  }, [clearCanvas, onResults, resetSetTracking, stopResources]);
 
   const stopSession = useCallback(() => finishSession('ended'), [finishSession]);
 
-  useEffect(() => () => {
-    isMountedRef.current = false;
-    processingPausedRef.current = true;
-    clearInterval(sessionTimerRef.current);
-    clearInterval(restTimerRef.current);
-    clearTimeout(completionTimeoutRef.current);
-    if (cameraRef.current) cameraRef.current.stop();
-    if (poseRef.current) poseRef.current.close();
-    window.speechSynthesis.cancel();
-  }, []);
+  useLayoutEffect(() => () => stopResources(), [stopResources]);
 
   if (!hasWorkoutConfig) {
     return (
@@ -612,6 +593,10 @@ export default function PlankCameraPage() {
   const displayedSet = workoutContext?.currentSet || currentSet;
   const displayedTotalSets = workoutContext?.totalSets || totalSets;
   const backPath = workoutContext?.detailsRoute || '/exercises/plank';
+  const handleBack = () => {
+    stopResources();
+    navigate(backPath);
+  };
   const feedbackColor = sessionPhase === PLANK_SESSION_STATES.PLANK_ACTIVE
     ? currentColor.hex
     : sessionPhase === PLANK_SESSION_STATES.VALIDATING_POSITION
@@ -621,7 +606,7 @@ export default function PlankCameraPage() {
   return (
     <div className="camera-session camera-session--plank">
       <header className="camera-session__header">
-        <button className="camera-session__back" type="button" onClick={() => navigate(backPath)}>
+        <button className="camera-session__back" type="button" onClick={handleBack}>
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           Back
         </button>
@@ -775,10 +760,7 @@ export default function PlankCameraPage() {
                     </div>
                   </div>
                   {cameraError && <p style={plankStyles.cameraError}>{cameraError}</p>}
-                  <button className="camera-session__start-button" type="button" onClick={startCamera}>
-                    <i className="fa-solid fa-video" aria-hidden="true" />
-                    Start Session
-                  </button>
+                  <ExerciseReadinessButton videoRef={videoRef} exerciseName="Plank" onReady={startCamera} />
                 </div>
               )}
             </div>

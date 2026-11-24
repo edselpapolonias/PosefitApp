@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera } from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -21,6 +21,8 @@ import './PushUpCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
 import useCameraInactivity from '../../../hooks/useCameraInactivity';
+import ExerciseReadinessButton, { describeExerciseStartError } from '../../../components/ExerciseReadinessCheck';
+import { sendPoseFrameSafely } from '../../../utils/poseFrame';
 
 function storedConfig() {
   try {
@@ -143,12 +145,14 @@ export default function PushUpCameraPage() {
     clearInterval(restTimerRef.current);
     clearTimeout(completionTimeoutRef.current);
     if (cameraRef.current) {
-      cameraRef.current.stop();
+      const camera = cameraRef.current;
       cameraRef.current = null;
+      try { camera.stop(); } catch { /* Camera is already stopped. */ }
     }
     if (poseRef.current) {
-      poseRef.current.close();
+      const pose = poseRef.current;
       poseRef.current = null;
+      try { Promise.resolve(pose.close()).catch(() => {}); } catch { /* Pose is already closed. */ }
     }
     window.speechSynthesis.cancel();
     clearCanvas();
@@ -340,7 +344,7 @@ export default function PushUpCameraPage() {
     reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
+    if (!canvas || !context || !results?.image) return;
     canvas.width = results.image.width;
     canvas.height = results.image.height;
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -426,26 +430,31 @@ export default function PushUpCameraPage() {
       pose.onResults(onResults);
       poseRef.current = pose;
       const camera = new Camera(videoRef.current, {
-        onFrame: async () => {
-          if (poseRef.current && videoRef.current && mountedRef.current && !processingPausedRef.current) {
-            await poseRef.current.send({ image: videoRef.current });
-          }
-        },
+        onFrame: async () => sendPoseFrameSafely({
+          pose: poseRef.current,
+          video: videoRef.current,
+          isActive: () => mountedRef.current && !processingPausedRef.current,
+          onActiveError: (frameError) => {
+            stopResources();
+            setIsStarted(false);
+            setCameraError(describeExerciseStartError(frameError));
+          },
+        }),
         width: 640,
         height: 480,
       });
       cameraRef.current = camera;
       await camera.start();
       setIsStarted(true);
-    } catch {
+    } catch (error) {
       stopResources();
-      setCameraError('Could not access the camera. Allow camera permission and try again.');
+      setCameraError(describeExerciseStartError(error));
     } finally {
       setIsLoading(false);
     }
   }, [onResults, resetCycle, stopResources]);
 
-  useEffect(() => () => stopResources(), [stopResources]);
+  useLayoutEffect(() => () => stopResources(), [stopResources]);
 
   if (!hasConfig) {
     return (
@@ -473,11 +482,15 @@ export default function PushUpCameraPage() {
   const displayedSet = workoutContext?.currentSet || currentSet;
   const displayedTotalSets = workoutContext?.totalSets || targetSets;
   const backPath = workoutContext?.detailsRoute || '/exercises/push-up';
+  const handleBack = () => {
+    stopResources();
+    navigate(backPath);
+  };
 
   return (
     <div className="camera-session camera-session--push-up">
       <header className="camera-session__header">
-        <button className="camera-session__back" type="button" onClick={() => navigate(backPath)}>
+        <button className="camera-session__back" type="button" onClick={handleBack}>
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />Back
         </button>
         <div className="camera-session__title">
@@ -527,7 +540,7 @@ export default function PushUpCameraPage() {
           {workoutComplete && <div className="camera-session__complete-overlay"><span><i className="fa-solid fa-trophy" /></span><h2>{workoutContext ? 'Set Complete' : 'Workout Complete'}</h2><p>Preparing your session summary…</p></div>}
           {isStarted && !isResting && !workoutComplete && positionStatus !== 'ready' && <div className={`camera-session__readiness camera-session__readiness--${positionStatus}`}><i className="fa-solid fa-person-circle-question" /><span>{feedback}</span></div>}
           {isStarted && positionStatus === 'ready' && <div className="camera-session__tracking-badge"><span />Body tracking active</div>}
-          {!isStarted && <div className="camera-session__prestart" style={styles.prestart}>{isLoading ? <div style={{ textAlign: 'center' }}><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Push Ups?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Position the camera at your side" /><Guide icon="fa-person" text="Keep your full body inside the frame" /><Guide icon="fa-arrows-left-right" text="Start with arms fully extended" /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<button className="camera-session__start-button" type="button" onClick={startCamera}><i className="fa-solid fa-video" />Start Session</button></div>}</div>}
+          {!isStarted && <div className="camera-session__prestart" style={styles.prestart}>{isLoading ? <div style={{ textAlign: 'center' }}><div style={styles.spinner} /><p>Loading Pose Detection...</p></div> : <div className="camera-session__start-card" style={styles.startCard}><span className="camera-session__start-icon"><i className="fa-solid fa-person" /></span><p className="camera-session__start-eyebrow">PoseFit Live Coaching</p><h2>Ready for Push Ups?</h2><div className="camera-session__plan"><span><strong>{targetReps}</strong> reps</span><span><strong>{workoutContext ? `Set ${displayedSet}/${displayedTotalSets}` : targetSets}</strong> {workoutContext ? `round ${workoutContext.currentRound}` : 'sets'}</span><span><strong>{restSeconds}s</strong> rest</span></div><div className="camera-session__position-guide"><Guide icon="fa-camera" text="Position the camera at your side" /><Guide icon="fa-person" text="Keep your full body inside the frame" /><Guide icon="fa-arrows-left-right" text="Start with arms fully extended" /></div>{cameraError && <p style={{ color: '#ef4444', fontSize: 12 }}>{cameraError}</p>}<ExerciseReadinessButton videoRef={videoRef} exerciseName="Push-up" onReady={startCamera} /></div>}</div>}
         </section>
 
         <aside className="camera-session__insights" style={styles.sidePanel}>

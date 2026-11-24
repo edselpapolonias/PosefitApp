@@ -3,6 +3,7 @@ import { normalizeFormIssues } from './formIssues';
 import { apiUrl } from './apiConfig';
 
 const AI_FEEDBACK_URL = apiUrl('/api/users/exercise-coach-feedback/');
+const AI_FEEDBACK_TIMEOUT_MS = 45000;
 
 function normalizeText(value) {
     if (Array.isArray(value)) {
@@ -22,7 +23,12 @@ function normalizeFeedback(feedback) {
         normalizeText(feedback.whatToImprove || feedback.areasForImprovement || feedback.recommendations),
     ].filter(Boolean).join(' ');
 
-    return feedbackParagraph ? { feedbackParagraph, issueFeedback: Array.isArray(feedback.issueFeedback) ? feedback.issueFeedback : [] } : null;
+    return feedbackParagraph ? {
+        feedbackParagraph,
+        issueFeedback: Array.isArray(feedback.issueFeedback) ? feedback.issueFeedback : [],
+        source: normalizeText(feedback.source),
+        model: normalizeText(feedback.model),
+    } : null;
 }
 
 function buildAngleStats(repAngles = []) {
@@ -85,7 +91,7 @@ export async function fetchSquatCoachFeedback(stats) {
     const response = await axios.post(
         AI_FEEDBACK_URL,
         { exercise: 'squat', summary: stats },
-        { timeout: 25000 }
+        { timeout: AI_FEEDBACK_TIMEOUT_MS }
     );
     return normalizeFeedback(response.data?.feedback);
 }
@@ -128,7 +134,7 @@ export async function fetchSessionCoachFeedback(sessionResult) {
             exercise: sessionResult.exercise?.id || sessionResult.exercise?.name,
             summary,
         },
-        { timeout: 25000 }
+        { timeout: AI_FEEDBACK_TIMEOUT_MS }
     );
     const feedback = normalizeFeedback(response.data?.feedback);
     if (!feedback) throw new Error('AI feedback returned an invalid response.');

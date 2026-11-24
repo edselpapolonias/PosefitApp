@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Pose } from '@mediapipe/pose';
 import { Camera } from '@mediapipe/camera_utils';
@@ -25,6 +25,8 @@ import './SquatCameraPage.css';
 import { resolveWorkoutContext } from '../../../services/workoutDaySessionService';
 import CameraInactivityOverlay from '../../../components/CameraInactivityOverlay';
 import useCameraInactivity from '../../../hooks/useCameraInactivity';
+import ExerciseReadinessButton, { describeExerciseStartError } from '../../../components/ExerciseReadinessCheck';
+import { sendPoseFrameSafely } from '../../../utils/poseFrame';
 
 function readStoredWorkoutConfig() {
     try {
@@ -159,6 +161,29 @@ export default function SquatCameraPage() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }, []);
 
+    const stopResources = useCallback(() => {
+        isMountedRef.current = false;
+        isRestingRef.current = false;
+        poseProcessingPausedRef.current = true;
+        clearInterval(timerRef.current);
+        clearInterval(restTimerRef.current);
+        clearTimeout(completionTimeoutRef.current);
+        restTimerRef.current = null;
+        completionTimeoutRef.current = null;
+        if (cameraRef.current) {
+            const camera = cameraRef.current;
+            cameraRef.current = null;
+            try { camera.stop(); } catch { /* Camera is already stopped. */ }
+        }
+        if (poseRef.current) {
+            const pose = poseRef.current;
+            poseRef.current = null;
+            try { Promise.resolve(pose.close()).catch(() => {}); } catch { /* Pose is already closed. */ }
+        }
+        window.speechSynthesis.cancel();
+        clearOverlayCanvas();
+    }, [clearOverlayCanvas]);
+
     const resetSquatCycleTracking = useCallback(() => {
         if (hadAttemptRef.current) {
             const reasons = determineIncorrectReason(deepestAngleRef.current, formIssuesRef.current)
@@ -264,23 +289,7 @@ export default function SquatCameraPage() {
     }, [isResting, clearOverlayCanvas, resetSquatCycleTracking]);
 
     const finishSession = useCallback((status = 'ended') => {
-        isMountedRef.current = false;
-        isRestingRef.current = false;
-        poseProcessingPausedRef.current = true;
-        clearInterval(restTimerRef.current);
-        restTimerRef.current = null;
-        clearInterval(timerRef.current);
-        clearOverlayCanvas();
-
-        if (cameraRef.current) {
-            cameraRef.current.stop();
-            cameraRef.current = null;
-        }
-        if (poseRef.current) {
-            poseRef.current.close();
-            poseRef.current = null;
-        }
-        window.speechSynthesis.cancel();
+        stopResources();
 
         const finalDuration = sessionStartRef.current
             ? Math.floor((Date.now() - sessionStartRef.current) / 1000)
@@ -325,26 +334,13 @@ export default function SquatCameraPage() {
             replace: true,
             state: { sessionResult },
         });
-    }, [clearOverlayCanvas, navigate, restTimeSetting, sessionTime, totalReps, totalSets, workoutContext]);
+    }, [navigate, restTimeSetting, sessionTime, stopResources, totalReps, totalSets, workoutContext]);
 
     const cancelForInactivity = useCallback(() => {
-        isMountedRef.current = false;
-        isRestingRef.current = false;
-        poseProcessingPausedRef.current = true;
-        clearInterval(timerRef.current);
-        clearInterval(restTimerRef.current);
-        clearTimeout(completionTimeoutRef.current);
-        restTimerRef.current = null;
-        completionTimeoutRef.current = null;
-        cameraRef.current?.stop();
-        cameraRef.current = null;
-        poseRef.current?.close();
-        poseRef.current = null;
-        window.speechSynthesis.cancel();
-        clearOverlayCanvas();
+        stopResources();
         setIsResting(false);
         setIsStarted(false);
-    }, [clearOverlayCanvas]);
+    }, [stopResources]);
 
     const {
         isWarningVisible: inactivityWarningVisible,
@@ -523,8 +519,9 @@ export default function SquatCameraPage() {
         }
         reportPersonDetection(Boolean(results.poseLandmarks?.length >= 33));
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || !results?.image) return;
         const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
         canvas.width = results.image.width;
         canvas.height = results.image.height;
@@ -624,6 +621,7 @@ export default function SquatCameraPage() {
         setIsLoading(true);
         setCameraError('');
         poseProcessingPausedRef.current = false;
+        isMountedRef.current = true;
         resetSquatCycleTracking();
         clearOverlayCanvas();
         if (completionTimeoutRef.current) {
@@ -645,25 +643,30 @@ export default function SquatCameraPage() {
             poseRef.current = pose;
 
             const camera = new Camera(videoRef.current, {
-                onFrame: async () => {
-                    if (poseRef.current && videoRef.current && isMountedRef.current && !poseProcessingPausedRef.current) {
-                        await poseRef.current.send({ image: videoRef.current });
-                    }
-                },
+                onFrame: async () => sendPoseFrameSafely({
+                    pose: poseRef.current,
+                    video: videoRef.current,
+                    isActive: () => isMountedRef.current && !poseProcessingPausedRef.current,
+                    onActiveError: (frameError) => {
+                        stopResources();
+                        setIsStarted(false);
+                        setCameraError(describeExerciseStartError(frameError));
+                    },
+                }),
                 width: 640,
                 height: 480,
             });
-            await camera.start();
             cameraRef.current = camera;
-            isMountedRef.current = true;
+            await camera.start();
+            if (!isMountedRef.current || cameraRef.current !== camera) return;
             setIsLoading(false);
             setIsStarted(true);
         } catch (err) {
-            poseProcessingPausedRef.current = true;
+            stopResources();
             setIsLoading(false);
-            setCameraError('Could not access camera. Please allow camera permission and try again.');
+            setCameraError(describeExerciseStartError(err));
         }
-    }, [clearOverlayCanvas, onResults, resetSquatCycleTracking]);
+    }, [clearOverlayCanvas, onResults, resetSquatCycleTracking, stopResources]);
     // Stop Session
     const stopSession = useCallback(() => {
         if (completionTimeoutRef.current) {
@@ -688,28 +691,7 @@ export default function SquatCameraPage() {
         finishSession('ended');
     }, [finishSession]);
 
-    useEffect(() => {
-        return () => {
-            isMountedRef.current = false;
-            poseProcessingPausedRef.current = true;
-            if (completionTimeoutRef.current) {
-                clearTimeout(completionTimeoutRef.current);
-                completionTimeoutRef.current = null;
-            }
-            if (cameraRef.current) {
-                cameraRef.current.stop();
-                cameraRef.current = null;
-            }
-            if (poseRef.current) {
-                poseRef.current.close();
-                poseRef.current = null;
-            }
-            clearInterval(timerRef.current);
-            clearInterval(restTimerRef.current);
-            restTimerRef.current = null;
-            window.speechSynthesis.cancel();
-        };
-    }, []);
+    useLayoutEffect(() => () => stopResources(), [stopResources]);
     const workoutLayoutStyle = styles.cameraWrapper;
     const leftPanelStyle = styles.leftPanel;
     const rightPanelStyle = styles.rightPanel;
@@ -764,6 +746,10 @@ export default function SquatCameraPage() {
     const displayedSet = workoutContext?.currentSet || currentSet;
     const displayedTotalSets = workoutContext?.totalSets || totalSets;
     const backPath = workoutContext?.detailsRoute || '/exercises/squat';
+    const handleBack = () => {
+        stopResources();
+        navigate(backPath);
+    };
 
     return (
         <div className="camera-session">
@@ -771,7 +757,7 @@ export default function SquatCameraPage() {
                 <button
                     className="camera-session__back"
                     type="button"
-                    onClick={() => navigate(backPath)}
+                    onClick={handleBack}
                 >
                     <i className="fa-solid fa-arrow-left" aria-hidden="true" />
                     Back
@@ -943,14 +929,7 @@ export default function SquatCameraPage() {
                                         </div>
                                     </div>
                                     {cameraError && <p style={styles.cameraError}>{cameraError}</p>}
-                                    <button
-                                        className="camera-session__start-button"
-                                        type="button"
-                                        onClick={startCamera}
-                                    >
-                                        <i className="fa-solid fa-video" aria-hidden="true" />
-                                        Start Session
-                                    </button>
+                                    <ExerciseReadinessButton videoRef={videoRef} exerciseName="Squat" onReady={startCamera} />
                                 </div>
                             )}
                         </div>
